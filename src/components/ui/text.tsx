@@ -26,7 +26,16 @@ export type TextVariant =
   /** Etichette di colonna, tutto maiuscolo. */
   | 'label';
 
-export type TextTone = 'default' | 'dim' | 'faint' | 'accent' | 'danger' | 'success' | 'record' | 'onAccent';
+export type TextTone =
+  | 'default'
+  | 'dim'
+  | 'faint'
+  | 'accent'
+  | 'danger'
+  | 'warning'
+  | 'success'
+  | 'record'
+  | 'onAccent';
 
 export type TextProps = RNTextProps & {
   variant?: TextVariant;
@@ -44,6 +53,7 @@ export function Text({ variant = 'body', tone = 'default', numeric, style, ...re
     faint: theme.colors.textFaint,
     accent: theme.colors.accent,
     danger: theme.colors.danger,
+    warning: theme.colors.warning,
     success: theme.colors.success,
     record: theme.colors.record,
     onAccent: theme.colors.onAccent,

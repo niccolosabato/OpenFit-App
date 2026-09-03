@@ -7,9 +7,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import migrations from '../../drizzle/migrations';
+// Import con effetto collaterale: registra come si comportano le notifiche
+// quando arrivano ad app aperta (suono sì, banner no).
+import '@/features/timer/notifications';
 import { BootErrorScreen, BootScreen } from '@/components/boot-screen';
 import { bootstrapDatabase } from '@/db/bootstrap';
 import { db } from '@/db/client';
+import { ToastHost } from '@/components/ui/toast';
 import { SettingsProvider } from '@/store/settings';
 import { ThemeProvider } from '@/theme';
 import { neutral } from '@/theme/tokens';
@@ -60,7 +64,14 @@ export default function RootLayout() {
                   animation: 'slide_from_right',
                 }}>
                 <Stack.Screen name="(tabs)" />
+                {/* La sessione sale dal basso: è un contesto in cui si entra
+                    e da cui si esce, non una pagina della navigazione. */}
+                <Stack.Screen
+                  name="session/active"
+                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                />
               </Stack>
+              <ToastHost />
             </ThemeProvider>
           </SettingsProvider>
         )}

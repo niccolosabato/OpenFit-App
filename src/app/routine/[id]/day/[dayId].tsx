@@ -30,6 +30,8 @@ import {
   updateRoutineSet,
 } from '@/db/queries/routines';
 import type { RoutineExercise, RoutineSet } from '@/db/schema';
+import { startSessionFromDay } from '@/db/queries/sessions';
+import { startWorkout } from '@/features/session/start';
 import { formatRest } from '@/lib/format';
 import { describeRoutineSet } from '@/lib/set-summary';
 import { useSettings } from '@/store/settings';
@@ -228,10 +230,19 @@ export default function RoutineDayScreen() {
 
         <Button
           title="Aggiungi esercizio"
-          variant={items.length === 0 ? 'primary' : 'secondary'}
+          variant="secondary"
           fullWidth
           onPress={() => router.push({ pathname: '/exercise/picker', params: { dayId } })}
         />
+
+        {items.length > 0 ? (
+          <Button
+            title="Inizia questo allenamento"
+            size="lg"
+            fullWidth
+            onPress={() => startWorkout(() => startSessionFromDay(dayId))}
+          />
+        ) : null}
       </ScrollView>
 
       {/* ─────────────────────────────────────────── opzioni di un esercizio ── */}
