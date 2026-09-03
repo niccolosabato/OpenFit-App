@@ -21,9 +21,9 @@ type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 const TABS: Record<string, { label: string; icon: IconName; iconActive: IconName }> = {
   index: { label: 'Oggi', icon: 'dumbbell', iconActive: 'dumbbell' },
   routines: { label: 'Schede', icon: 'clipboard-list-outline', iconActive: 'clipboard-list' },
+  exercises: { label: 'Esercizi', icon: 'weight-lifter', iconActive: 'weight-lifter' },
   history: { label: 'Storico', icon: 'history', iconActive: 'history' },
   stats: { label: 'Statistiche', icon: 'chart-timeline-variant', iconActive: 'chart-timeline-variant-shimmer' },
-  profile: { label: 'Profilo', icon: 'cog-outline', iconActive: 'cog' },
 };
 
 export function TabBar({ state, navigation }: BottomTabBarProps) {

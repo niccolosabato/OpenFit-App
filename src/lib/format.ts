@@ -16,14 +16,19 @@ export function formatDuration(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-/** Durata discorsiva per liste e riepiloghi: `1h 12min`, `48min`. */
+/** Durata discorsiva per liste e riepiloghi: `1h 12min`, `48min`, `30s`. */
 export function formatDurationLong(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
-  const hours = Math.floor(s / 3600);
-  const minutes = Math.round((s % 3600) / 60);
-  if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
-  if (minutes > 0) return `${minutes}min`;
-  return `${s}s`;
+  if (s < 60) return `${s}s`;
+
+  // Si arrotonda ai minuti *prima* di separare ore e minuti, altrimenti 59'59"
+  // diventerebbe "60min" invece di "1h".
+  const totalMinutes = Math.round(s / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) return `${minutes}min`;
+  return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
 }
 
 /** Recupero come lo si scrive in una scheda: `90"`, `2'`, `2'30"`. */

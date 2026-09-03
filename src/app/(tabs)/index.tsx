@@ -1,9 +1,12 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { count } from 'drizzle-orm';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { router } from 'expo-router';
+import { ScrollView, View } from 'react-native';
 
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
+import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import { db } from '@/db/client';
 import { exercises } from '@/db/schema';
@@ -16,18 +19,33 @@ export default function TodayScreen() {
   const { data: exerciseCount } = useLiveQuery(db.select({ value: count() }).from(exercises));
 
   return (
-    <Screen>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: theme.space.lg, paddingVertical: theme.space.lg }}>
-        <View>
-          <Text variant="label" tone="dim">
-            Oggi
-          </Text>
-          <Text variant="title">
-            {settings.userName ? `Ciao, ${settings.userName}` : 'Pronto ad allenarti?'}
-          </Text>
-        </View>
+    <Screen padded={false}>
+      <ScreenHeader
+        title={settings.userName ? `Ciao, ${settings.userName}` : 'Pronto ad allenarti?'}
+        subtitle="Nessun allenamento in corso"
+        actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
+      />
 
+      <ScrollView
+        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.lg, paddingBottom: theme.space.xxxl }}
+        showsVerticalScrollIndicator={false}>
         <Card>
+          <View style={{ gap: theme.space.md }}>
+            <Text variant="heading">Inizia un allenamento</Text>
+            <Text variant="caption" tone="dim">
+              Scegli un giorno da una scheda oppure parti libero e aggiungi gli esercizi
+              man mano.
+            </Text>
+            <Button
+              title="Allenamento libero"
+              variant="secondary"
+              fullWidth
+              onPress={() => router.push('/routines')}
+            />
+          </View>
+        </Card>
+
+        <Card onPress={() => router.push('/exercises')}>
           <Text variant="label" tone="dim">
             Libreria
           </Text>
@@ -42,5 +60,3 @@ export default function TodayScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({});

@@ -37,7 +37,11 @@ export function toKg(value: number, unit: WeightUnit): number {
 /** Arrotonda al multiplo più vicino di `step`, evitando le code binarie. */
 export function roundToIncrement(value: number, step: number): number {
   if (step <= 0) return value;
-  return Number((Math.round(value / step) * step).toFixed(6));
+  // `value / step` può cadere appena *sotto* il .5 per errore di
+  // rappresentazione (2.675 / 0.05 fa 53.49999…, non 53.5), e Math.round
+  // arrotonderebbe per difetto. Si normalizza il rapporto prima di arrotondare.
+  const ratio = Number((value / step).toFixed(9));
+  return Number((Math.round(ratio) * step).toFixed(6));
 }
 
 /**
