@@ -1,16 +1,192 @@
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+
+import { BarChart, type BarDatum } from '@/components/charts/bar-chart';
+import { LineChart } from '@/components/charts/line-chart';
+import { Card } from '@/components/ui/card';
+import { Chip, ChipRow } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen } from '@/components/ui/screen';
+import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
+import { MUSCLE_GROUPS, MUSCLE_GROUP_LABELS } from '@/db/enums';
+import { bucketByWeek, setCountsByGroup, weeklyStreak } from '@/features/stats/aggregate';
+import { statSetsQuery, toStatSets } from '@/features/stats/queries';
+import { formatVolume } from '@/lib/units';
+import { useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
 
-export default function StatisticheScreen() {
+const PERIODS = [
+  { weeks: 4, label: '4 settimane' },
+  { weeks: 12, label: '3 mesi' },
+  { weeks: 26, label: '6 mesi' },
+] as const;
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+export default function StatsScreen() {
   const theme = useTheme();
+  const { settings } = useSettings();
+  const [weeks, setWeeks] = useState<number>(12);
+
+  const since = useMemo(() => new Date(Date.now() - weeks * WEEK_MS), [weeks]);
+  const { data } = useLiveQuery(useMemo(() => statSetsQuery(since), [since]), [since]);
+  const sets = useMemo(() => toStatSets(data), [data]);
+
+  const buckets = useMemo(
+    () => bucketByWeek(sets, { weeks, now: Date.now(), firstDayOfWeek: settings.firstDayOfWeek }),
+    [sets, weeks, settings.firstDayOfWeek],
+  );
+
+  const currentWeek = buckets[buckets.length - 1];
+
+  // Le serie per gruppo si guardano sull'ultima settimana chiusa più quella in
+  // corso: è la finestra su cui si ragiona quando si programma il volume.
+  const lastWeekStart = buckets.length >= 1 ? buckets[buckets.length - 1].weekStart : 0;
+  const weekSets = useMemo(
+    () => sets.filter((s) => s.startedAt >= lastWeekStart),
+    [sets, lastWeekStart],
+  );
+
+  const groupCounts = useMemo(() => setCountsByGroup(weekSets), [weekSets]);
+
+  const groupData: BarDatum[] = MUSCLE_GROUPS.filter((g) => g !== 'other').map((group) => ({
+    label: MUSCLE_GROUP_LABELS[group],
+    value: groupCounts[group],
+    display: formatSetCount(groupCounts[group]),
+    // Sotto le 10 serie settimanali il gruppo è verosimilmente sottoallenato:
+    // la barra resta grigia per farlo notare senza gridare.
+    muted: groupCounts[group] < 10,
+  }));
+
+  const volumePoints = buckets.map((b) => ({ x: b.weekStart, y: b.volume }));
+  const sessionPoints = buckets.map((b) => ({ x: b.weekStart, y: b.sessionIds.size }));
+
+  const totalSessions = new Set(sets.map((s) => s.sessionId)).size;
+  const streak = weeklyStreak(buckets);
+
+  if (sets.length === 0) {
+    return (
+      <Screen padded={false}>
+        <ScreenHeader title="Statistiche" />
+        <EmptyState
+          icon="chart-timeline-variant"
+          title="Niente da mostrare"
+          description="Concludi qualche allenamento e qui compariranno serie per gruppo muscolare, volume e frequenza."
+        />
+      </Screen>
+    );
+  }
+
   return (
-    <Screen>
-      <Text variant="title" style={{ paddingVertical: theme.space.lg }}>
-        Statistiche
-      </Text>
-      <EmptyState icon="chart-timeline-variant" title="In arrivo" description="Questa sezione arriva nella prossima tappa." />
+    <Screen padded={false}>
+      <ScreenHeader title="Statistiche" />
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: theme.space.xxxl, gap: theme.space.md }}
+        showsVerticalScrollIndicator={false}>
+        <ChipRow>
+          {PERIODS.map((period) => (
+            <Chip
+              key={period.weeks}
+              label={period.label}
+              compact
+              selected={weeks === period.weeks}
+              onPress={() => setWeeks(period.weeks)}
+            />
+          ))}
+        </ChipRow>
+
+        <View style={{ paddingHorizontal: theme.space.lg, gap: theme.space.md }}>
+          <View style={[styles.row, { gap: theme.space.md }]}>
+            <Card style={{ flex: 1 }}>
+              <Text variant="label" tone="dim">
+                Questa settimana
+              </Text>
+              <Text variant="display" numeric>
+                {currentWeek?.sessionIds.size ?? 0}
+              </Text>
+              <Text variant="caption" tone="faint">
+                su {settings.weeklySessionGoal} previsti
+              </Text>
+            </Card>
+
+            <Card style={{ flex: 1 }}>
+              <Text variant="label" tone="dim">
+                Settimane di fila
+              </Text>
+              <Text variant="display" numeric>
+                {streak}
+              </Text>
+              <Text variant="caption" tone="faint">
+                {totalSessions} allenamenti nel periodo
+              </Text>
+            </Card>
+          </View>
+
+          <Card>
+            <View style={{ gap: theme.space.md }}>
+              <View>
+                <Text variant="heading">Serie per gruppo</Text>
+                <Text variant="caption" tone="dim">
+                  Settimana in corso. I muscoli secondari contano mezza serie.
+                </Text>
+              </View>
+              <BarChart data={groupData} emptyLabel="Nessuna serie questa settimana." />
+            </View>
+          </Card>
+
+          <Card>
+            <View style={{ gap: theme.space.md }}>
+              <View>
+                <Text variant="heading">Volume settimanale</Text>
+                <Text variant="caption" tone="dim">
+                  Carico esterno per ripetizioni, sommato per settimana.
+                </Text>
+              </View>
+              <LineChart
+                data={volumePoints}
+                formatValue={(v) => formatVolume(v, settings.unit)}
+                formatX={formatWeekLabel}
+                emptyLabel="Servono almeno due settimane di allenamenti."
+              />
+            </View>
+          </Card>
+
+          <Card>
+            <View style={{ gap: theme.space.md }}>
+              <View>
+                <Text variant="heading">Frequenza</Text>
+                <Text variant="caption" tone="dim">
+                  Allenamenti conclusi per settimana.
+                </Text>
+              </View>
+              <LineChart
+                data={sessionPoints}
+                formatValue={(v) => `${v} ${v === 1 ? 'allenamento' : 'allenamenti'}`}
+                formatX={formatWeekLabel}
+                emptyLabel="Servono almeno due settimane di allenamenti."
+              />
+            </View>
+          </Card>
+        </View>
+      </ScrollView>
     </Screen>
   );
 }
+
+/** `12,5` invece di `12.5`, e senza decimale quando è intero. */
+function formatSetCount(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(value).replace('.', ',');
+}
+
+function formatWeekLabel(weekStart: number): string {
+  return format(new Date(weekStart), 'd MMM', { locale: it });
+}
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row' },
+});

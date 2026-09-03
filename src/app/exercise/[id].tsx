@@ -14,6 +14,7 @@ import {
   TRACKING_TYPE_LABELS,
 } from '@/db/enums';
 import { archiveExercise, exerciseQuery, toggleFavorite } from '@/db/queries/exercises';
+import { ExerciseSummary } from '@/features/stats/exercise-summary';
 import { formatRest } from '@/lib/format';
 import { useTheme } from '@/theme';
 
@@ -129,14 +130,7 @@ export default function ExerciseDetailScreen() {
           </Card>
         ) : null}
 
-        <Card>
-          <Text variant="label" tone="dim">
-            Storico e record
-          </Text>
-          <Text variant="caption" tone="faint" style={{ marginTop: theme.space.sm }}>
-            Compariranno qui appena avrai registrato la prima sessione con questo esercizio.
-          </Text>
-        </Card>
+        <ExerciseSummary exercise={exercise} />
       </ScrollView>
     </Screen>
   );
