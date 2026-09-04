@@ -69,9 +69,14 @@ export const glass = {
   strokeTop: 'rgba(255, 255, 255, 0.18)',
   /** Bordo sugli altri lati, appena percettibile. */
   stroke: 'rgba(255, 255, 255, 0.09)',
-  /** Riflesso: dall'alto verso il basso, fino a sparire. */
-  sheenFrom: 'rgba(255, 255, 255, 0.13)',
-  sheenTo: 'rgba(255, 255, 255, 0)',
+  /**
+   * Riflesso: opacità del bianco in cima, che scende fino a zero.
+   *
+   * È un numero e non un colore `rgba()` di proposito: react-native-svg non
+   * legge l'alfa dentro `stopColor`, e una stringa traslucida gli diventa
+   * bianco pieno. L'alfa va passata a parte, con `stopOpacity`.
+   */
+  sheenOpacity: 0.13,
   /** Velo scuro dietro il chrome sfocato, perché il testo resti leggibile. */
   scrim: 'rgba(11, 11, 13, 0.55)',
   /** Fondo dei fogli: più coprente, ci vanno sopra dei controlli. */

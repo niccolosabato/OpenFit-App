@@ -17,7 +17,7 @@
  * grafici: non serve aggiungere `expo-linear-gradient` solo per questo.
  */
 
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -54,18 +54,39 @@ const FILL: Record<GlassLevel, 'fillLow' | 'fillMid' | 'fillHigh'> = {
   high: 'fillHigh',
 };
 
-/** Il riflesso occupa il terzo superiore: più in basso non lo si legge. */
+/**
+ * Il riflesso occupa la metà superiore: più in basso non lo si legge.
+ *
+ * Due accortezze, entrambe imparate a spese di una schermata bianca:
+ *
+ * - l'opacità va in `stopOpacity`, non dentro un `rgba()` in `stopColor`:
+ *   react-native-svg l'alfa nella stringa non la legge, e ogni riflesso
+ *   diventa un rettangolo bianco pieno sopra il contenuto;
+ * - l'`id` del gradiente è unico per istanza. Sono decine di lastre per
+ *   schermata, e un id ripetuto fa sì che tutte peschino la definizione di
+ *   un'altra.
+ */
 function Sheen({ radius }: { radius: number }) {
   const theme = useTheme();
+  const gradientId = `glassSheen-${useId()}`;
+
   return (
     <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
-        <LinearGradient id="glassSheen" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={theme.glass.sheenFrom} />
-          <Stop offset="1" stopColor={theme.glass.sheenTo} />
+        <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#FFFFFF" stopOpacity={theme.glass.sheenOpacity} />
+          <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
         </LinearGradient>
       </Defs>
-      <Rect x="0" y="0" width="100%" height="55%" rx={radius} ry={radius} fill="url(#glassSheen)" />
+      <Rect
+        x="0"
+        y="0"
+        width="100%"
+        height="55%"
+        rx={radius}
+        ry={radius}
+        fill={`url(#${gradientId})`}
+      />
     </Svg>
   );
 }
