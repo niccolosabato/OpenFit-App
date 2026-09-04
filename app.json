@@ -17,7 +17,6 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png",
         "backgroundImage": "./assets/images/android-icon-background.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "ios": {
