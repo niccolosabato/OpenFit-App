@@ -75,9 +75,9 @@ export default function RoutineScreen() {
       padded={false}
       header={
         <ScreenHeader
-        title={routine.name}
-        subtitle={`${days.length} ${days.length === 1 ? 'giorno' : 'giorni'}`}
-        showBack
+          title={routine.name}
+          subtitle={`${days.length} ${days.length === 1 ? 'giorno' : 'giorni'}`}
+          showBack
           actions={[{ icon: 'dots-horizontal', label: 'Opzioni', onPress: () => setMenuOpen(true) }]}
         />
       }
@@ -88,7 +88,6 @@ export default function RoutineScreen() {
           </View>
         </ActionBar>
       }>
-
       {days.length === 0 ? (
         <EmptyState
           icon="calendar-blank-outline"
