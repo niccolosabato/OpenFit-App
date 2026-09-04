@@ -1,13 +1,13 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
 import { TextField } from '@/components/ui/field';
 import { NumberStepper } from '@/components/ui/number-stepper';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { NavRow, SettingsSection, SwitchRow } from '@/components/ui/settings-row';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
@@ -99,11 +99,9 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader title="Profilo" showBack />
+    <Screen padded={false} header={<ScreenHeader title="Profilo" showBack />}>
 
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.xl, paddingBottom: theme.space.xxxl }}>
+      <ScreenScroll gap={theme.space.xl}>
         <SettingsSection title="Tu">
           <NavRow
             label="Nome"
@@ -280,7 +278,7 @@ export default function ProfileScreen() {
             I tuoi dati restano su questo telefono.
           </Text>
         </View>
-      </ScrollView>
+      </ScreenScroll>
 
       <Sheet visible={identityOpen} onClose={() => setIdentityOpen(false)} title="Nome" scrollable={false}>
         <TextField

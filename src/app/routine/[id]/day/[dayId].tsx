@@ -1,16 +1,18 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
 import { Tag } from '@/components/ui/chip';
 import { TextField } from '@/components/ui/field';
 import { NumberStepper } from '@/components/ui/number-stepper';
 import { RoutineSetEditor } from '@/components/routine/routine-set-editor';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
@@ -68,12 +70,12 @@ export default function RoutineDayScreen() {
   const [editingSet, setEditingSet] = useState<RoutineSet | null>(null);
   const [editingTracking, setEditingTracking] = useState<'weight_reps' | string>('weight_reps');
   const [renameOpen, setRenameOpen] = useState(false);
+  const [dayMenuOpen, setDayMenuOpen] = useState(false);
   const [dayName, setDayName] = useState('');
 
   if (!day) {
     return (
-      <Screen padded={false}>
-        <ScreenHeader title="Giorno" showBack />
+      <Screen padded={false} header={<ScreenHeader title="Giorno" showBack />}>
         <Text variant="caption" tone="dim" style={{ padding: theme.space.lg }}>
           Giorno non trovato.
         </Text>
@@ -98,26 +100,49 @@ export default function RoutineDayScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
-        title={day.name}
-        subtitle={`${items.length} ${items.length === 1 ? 'esercizio' : 'esercizi'} · ${totalSets} ${totalSets === 1 ? 'serie' : 'serie'}`}
-        showBack
-        actions={[
-          {
-            icon: 'pencil-outline',
-            label: 'Rinomina',
-            onPress: () => {
-              setDayName(day!.name);
-              setRenameOpen(true);
+    <Screen
+      padded={false}
+      header={
+        <ScreenHeader
+          title={day.name}
+          subtitle={`${items.length} ${items.length === 1 ? 'esercizio' : 'esercizi'} · ${totalSets} ${totalSets === 1 ? 'serie' : 'serie'}`}
+          showBack
+          // Nell'header resta solo ciò che non fa danni. "Elimina giorno" era
+          // qui, a un tocco dal pollice che regge il telefono: ora sta nel
+          // menu del giorno, dove ci si arriva di proposito.
+          actions={[
+            {
+              icon: 'dots-horizontal',
+              label: 'Opzioni del giorno',
+              onPress: () => setDayMenuOpen(true),
             },
-          },
-          { icon: 'trash-can-outline', label: 'Elimina giorno', onPress: confirmDeleteDay },
-        ]}
-      />
-
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.md, paddingBottom: theme.space.xxxl }}>
+          ]}
+        />
+      }
+      // L'azione piu' importante della schermata era l'ultimo elemento dello
+      // scroll: con otto esercizi da quattro serie stava due schermate piu' in
+      // basso. Qui e' sempre sotto il pollice.
+      actionBar={
+        <ActionBar>
+          <Button
+            title="Esercizio"
+            variant="secondary"
+            icon={<MaterialCommunityIcons name="plus" size={18} color={theme.colors.text} />}
+            onPress={() => router.push({ pathname: '/exercise/picker', params: { dayId } })}
+          />
+          {items.length > 0 ? (
+            <View style={{ flex: 1 }}>
+              <Button
+                title="Inizia questo allenamento"
+                size="lg"
+                fullWidth
+                onPress={() => startWorkout(() => startSessionFromDay(dayId))}
+              />
+            </View>
+          ) : null}
+        </ActionBar>
+      }>
+      <ScreenScroll gap={theme.space.md}>
         {items.map((item, index) => {
           const sets = setsByExercise.get(item.routineExercise.id) ?? [];
           const previous = items[index - 1];
@@ -147,17 +172,12 @@ export default function RoutineDayScreen() {
                     <Text variant="heading" style={{ flex: 1 }} numberOfLines={2}>
                       {item.exercise.name}
                     </Text>
-                    <Pressable
+                    <IconButton
+                      icon="dots-horizontal"
+                      label="Opzioni esercizio"
+                      tone="dim"
                       onPress={() => setMenuFor(item.routineExercise)}
-                      hitSlop={12}
-                      accessibilityRole="button"
-                      accessibilityLabel="Opzioni esercizio">
-                      <MaterialCommunityIcons
-                        name="dots-horizontal"
-                        size={22}
-                        color={theme.colors.textDim}
-                      />
-                    </Pressable>
+                    />
                   </View>
                   <Text variant="caption" tone="faint">
                     Recupero {formatRest(item.routineExercise.restSeconds ?? settings.defaultRestSeconds)}
@@ -165,7 +185,7 @@ export default function RoutineDayScreen() {
                   </Text>
                 </Pressable>
 
-                <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border }}>
+                <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.glass.stroke }}>
                   {sets.map((set) => {
                     if (set.setType === 'working') workingIndex += 1;
                     const badge = SET_TYPE_BADGE[set.setType];
@@ -180,12 +200,12 @@ export default function RoutineDayScreen() {
                         style={({ pressed }) => [
                           styles.setRow,
                           {
-                            minHeight: 44,
+                            minHeight: 52,
                             paddingHorizontal: theme.space.lg,
-                            borderTopColor: theme.colors.border,
+                            borderTopColor: theme.glass.stroke,
                             gap: theme.space.md,
                           },
-                          pressed && { backgroundColor: theme.colors.surface2 },
+                          pressed && { backgroundColor: theme.glass.fillPress },
                         ]}>
                         <View style={styles.setIndex}>
                           {set.setType === 'working' ? (
@@ -211,11 +231,11 @@ export default function RoutineDayScreen() {
                     style={({ pressed }) => [
                       styles.addSet,
                       {
-                        minHeight: 44,
-                        borderTopColor: theme.colors.border,
+                        minHeight: 52,
+                        borderTopColor: theme.glass.stroke,
                         gap: theme.space.sm,
                       },
-                      pressed && { backgroundColor: theme.colors.surface2 },
+                      pressed && { backgroundColor: theme.glass.fillPress },
                     ]}>
                     <MaterialCommunityIcons name="plus" size={16} color={theme.colors.accent} />
                     <Text variant="caption" tone="accent">
@@ -228,22 +248,32 @@ export default function RoutineDayScreen() {
           );
         })}
 
-        <Button
-          title="Aggiungi esercizio"
-          variant="secondary"
-          fullWidth
-          onPress={() => router.push({ pathname: '/exercise/picker', params: { dayId } })}
-        />
+      </ScreenScroll>
 
-        {items.length > 0 ? (
-          <Button
-            title="Inizia questo allenamento"
-            size="lg"
-            fullWidth
-            onPress={() => startWorkout(() => startSessionFromDay(dayId))}
-          />
-        ) : null}
-      </ScrollView>
+      {/* ──────────────────────────────────────────────── opzioni del giorno ── */}
+      <Sheet
+        visible={dayMenuOpen}
+        onClose={() => setDayMenuOpen(false)}
+        title={day.name}
+        scrollable={false}>
+        <SheetAction
+          label="Rinomina il giorno"
+          onPress={() => {
+            setDayMenuOpen(false);
+            setDayName(day!.name);
+            setRenameOpen(true);
+          }}
+        />
+        <SheetAction
+          label="Elimina il giorno"
+          description="Sparisce con tutti i suoi esercizi."
+          destructive
+          onPress={() => {
+            setDayMenuOpen(false);
+            confirmDeleteDay();
+          }}
+        />
+      </Sheet>
 
       {/* ─────────────────────────────────────────── opzioni di un esercizio ── */}
       <Sheet visible={menuFor !== null} onClose={() => setMenuFor(null)} title="Esercizio" scrollable={false}>

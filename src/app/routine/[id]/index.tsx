@@ -1,13 +1,14 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TextField } from '@/components/ui/field';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
@@ -38,8 +39,7 @@ export default function RoutineScreen() {
 
   if (!routine) {
     return (
-      <Screen padded={false}>
-        <ScreenHeader title="Scheda" showBack />
+      <Screen padded={false} header={<ScreenHeader title="Scheda" showBack />}>
         <Text variant="caption" tone="dim" style={{ padding: theme.space.lg }}>
           Scheda non trovata.
         </Text>
@@ -71,13 +71,23 @@ export default function RoutineScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
+    <Screen
+      padded={false}
+      header={
+        <ScreenHeader
         title={routine.name}
         subtitle={`${days.length} ${days.length === 1 ? 'giorno' : 'giorni'}`}
         showBack
-        actions={[{ icon: 'dots-horizontal', label: 'Opzioni', onPress: () => setMenuOpen(true) }]}
-      />
+          actions={[{ icon: 'dots-horizontal', label: 'Opzioni', onPress: () => setMenuOpen(true) }]}
+        />
+      }
+      actionBar={
+        <ActionBar>
+          <View style={{ flex: 1 }}>
+            <Button title="Aggiungi un giorno" size="lg" fullWidth onPress={() => setNewDayOpen(true)} />
+          </View>
+        </ActionBar>
+      }>
 
       {days.length === 0 ? (
         <EmptyState
@@ -88,8 +98,7 @@ export default function RoutineScreen() {
           onAction={() => setNewDayOpen(true)}
         />
       ) : (
-        <ScrollView
-          contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.md, paddingBottom: theme.space.xxxl }}>
+        <ScreenScroll gap={theme.space.md}>
           {days.map((day, index) => (
             <Card key={day.id} onPress={() => openDay(day.id)}>
               <View style={styles.dayRow}>
@@ -110,13 +119,7 @@ export default function RoutineScreen() {
             </Card>
           ))}
 
-          <Button
-            title="Aggiungi un giorno"
-            variant="secondary"
-            fullWidth
-            onPress={() => setNewDayOpen(true)}
-          />
-        </ScrollView>
+        </ScreenScroll>
       )}
 
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={routine.name} scrollable={false}>

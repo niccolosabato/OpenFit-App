@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { LineChart } from '@/components/charts/line-chart';
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { NumberStepper } from '@/components/ui/number-stepper';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
@@ -75,15 +76,17 @@ export default function BodyScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
-        title="Peso e misure"
-        showBack
-        actions={[{ icon: 'plus', label: 'Registra', onPress: openEditor }]}
-      />
-
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.md, paddingBottom: theme.space.xxxl }}>
+    <Screen
+      padded={false}
+      header={<ScreenHeader title="Peso e misure" showBack />}
+      actionBar={
+        <ActionBar>
+          <View style={{ flex: 1 }}>
+            <Button title="Registra la misurazione di oggi" size="lg" fullWidth onPress={openEditor} />
+          </View>
+        </ActionBar>
+      }>
+      <ScreenScroll gap={theme.space.md}>
         <Card>
           <View style={{ gap: theme.space.md }}>
             <View>
@@ -103,11 +106,13 @@ export default function BodyScreen() {
           </View>
         </Card>
 
-        {measurements.length === 0 ? (
-          <Button title="Registra la prima misurazione" fullWidth onPress={openEditor} />
-        ) : (
-          measurements.map((m) => (
-            <Card key={m.id} onPress={() => confirmDelete(m.id)}>
+        {measurements.length === 0
+          ? null
+          : measurements.map((m) => (
+            // Il tap singolo apriva l'avviso di eliminazione: un dito storto
+            // su una lista di pesate cancellava un dato senza appello. Ora
+            // apre l'editor, e a eliminare ci si arriva con la pressione lunga.
+            <Card key={m.id} onPress={openEditor} onLongPress={() => confirmDelete(m.id)}>
               <View style={styles.row}>
                 <Text variant="subtitle" style={{ flex: 1 }}>
                   {formatSessionDate(parseISO(m.measuredOn))}
@@ -127,11 +132,14 @@ export default function BodyScreen() {
                   .join(' · ') || 'Solo il peso'}
               </Text>
             </Card>
-          ))
-        )}
-      </ScrollView>
+          ))}
+      </ScreenScroll>
 
-      <Sheet visible={open} onClose={() => setOpen(false)} title="Misurazione di oggi">
+      <Sheet
+        visible={open}
+        onClose={() => setOpen(false)}
+        title="Misurazione di oggi"
+        footer={<Button title="Salva" size="lg" fullWidth onPress={save} />}>
         <NumberStepper
           label="Peso"
           value={weight}
@@ -169,7 +177,6 @@ export default function BodyScreen() {
           />
         ))}
 
-        <Button title="Salva" fullWidth onPress={save} />
         <SheetAction label="Annulla" onPress={() => setOpen(false)} />
       </Sheet>
     </Screen>

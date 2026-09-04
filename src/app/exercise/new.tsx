@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { OptionField, TextField } from '@/components/ui/field';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import {
@@ -62,11 +63,19 @@ export default function NewExerciseScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader title="Nuovo esercizio" showBack />
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.xl, paddingBottom: theme.space.xxxl }}
-        keyboardShouldPersistTaps="handled">
+    <Screen
+      padded={false}
+      header={<ScreenHeader title="Nuovo esercizio" showBack />}
+      // "Salva" era l'ultimo elemento dopo sette campi: con la tastiera aperta
+      // andava chiusa e poi inseguita fino in fondo allo scroll.
+      actionBar={
+        <ActionBar>
+          <View style={{ flex: 1 }}>
+            <Button title="Salva esercizio" onPress={save} fullWidth size="lg" />
+          </View>
+        </ActionBar>
+      }>
+      <ScreenScroll gap={theme.space.xl} keyboardShouldPersistTaps="handled">
         <TextField
           label="Nome"
           value={name}
@@ -132,13 +141,10 @@ export default function NewExerciseScreen() {
           multiline
         />
 
-        <View style={{ gap: theme.space.sm }}>
-          <Button title="Salva esercizio" onPress={save} fullWidth size="lg" />
-          <Text variant="caption" tone="faint" style={{ textAlign: 'center' }}>
-            Gli esercizi personalizzati non vengono mai sovrascritti dagli aggiornamenti.
-          </Text>
-        </View>
-      </ScrollView>
+        <Text variant="caption" tone="faint" style={{ textAlign: 'center' }}>
+          Gli esercizi personalizzati non vengono mai sovrascritti dagli aggiornamenti.
+        </Text>
+      </ScreenScroll>
     </Screen>
   );
 }

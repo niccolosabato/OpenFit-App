@@ -1,14 +1,16 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
 
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tag } from '@/components/ui/chip';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
+import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { SET_TYPE_BADGE, countsAsWorkingSet, usesDuration, usesWeight } from '@/db/enums';
 import {
@@ -29,6 +31,7 @@ export default function SessionDetailScreen() {
   const theme = useTheme();
   const { settings } = useSettings();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { data: sessionRows } = useLiveQuery(useMemo(() => sessionQuery(id), [id]), [id]);
   const { data: exerciseRows } = useLiveQuery(useMemo(() => sessionExercisesQuery(id), [id]), [id]);
@@ -49,8 +52,7 @@ export default function SessionDetailScreen() {
 
   if (!session) {
     return (
-      <Screen padded={false}>
-        <ScreenHeader title="Allenamento" showBack />
+      <Screen padded={false} header={<ScreenHeader title="Allenamento" showBack />}>
         <Text variant="caption" tone="dim" style={{ padding: theme.space.lg }}>
           Allenamento non trovato.
         </Text>
@@ -77,16 +79,31 @@ export default function SessionDetailScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
-        title={session.name}
-        subtitle={`${formatSessionDate(session.startedAt)} alle ${formatTime(session.startedAt)}`}
-        showBack
-        actions={[{ icon: 'trash-can-outline', label: 'Elimina', onPress: confirmDelete }]}
-      />
-
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.md, paddingBottom: theme.space.xxxl }}>
+    <Screen
+      padded={false}
+      header={
+        <ScreenHeader
+          title={session.name}
+          subtitle={`${formatSessionDate(session.startedAt)} alle ${formatTime(session.startedAt)}`}
+          showBack
+          actions={[{ icon: 'dots-horizontal', label: 'Opzioni', onPress: () => setMenuOpen(true) }]}
+        />
+      }
+      actionBar={
+        session.routineDayId ? (
+          <ActionBar>
+            <View style={{ flex: 1 }}>
+              <Button
+                title="Ripeti questo allenamento"
+                size="lg"
+                fullWidth
+                onPress={() => startWorkout(() => startSessionFromDay(session.routineDayId!))}
+              />
+            </View>
+          </ActionBar>
+        ) : undefined
+      }>
+      <ScreenScroll gap={theme.space.md}>
         <Card>
           <View style={[styles.stats, { gap: theme.space.lg }]}>
             <Metric label="Durata" value={formatDurationLong(session.durationSeconds ?? 0)} />
@@ -143,15 +160,21 @@ export default function SessionDetailScreen() {
           );
         })}
 
-        {session.routineDayId ? (
-          <Button
-            title="Ripeti questo allenamento"
-            variant="secondary"
-            fullWidth
-            onPress={() => startWorkout(() => startSessionFromDay(session.routineDayId!))}
-          />
-        ) : null}
-      </ScrollView>
+      </ScreenScroll>
+
+      {/* L'eliminazione era un cestino nell'angolo alto-destro: un tocco solo,
+          nel punto piu' facile da sfiorare reggendo il telefono. */}
+      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={session.name} scrollable={false}>
+        <SheetAction
+          label="Elimina l’allenamento"
+          description="Sparisce dallo storico e dalle statistiche."
+          destructive
+          onPress={() => {
+            setMenuOpen(false);
+            confirmDelete();
+          }}
+        />
+      </Sheet>
     </Screen>
   );
 }

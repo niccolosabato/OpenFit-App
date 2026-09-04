@@ -1,11 +1,12 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/ui/card';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
+import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import {
   EQUIPMENT_LABELS,
@@ -21,6 +22,7 @@ import { useTheme } from '@/theme';
 export default function ExerciseDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const query = useMemo(() => exerciseQuery(id), [id]);
   const { data } = useLiveQuery(query, [id]);
@@ -28,8 +30,7 @@ export default function ExerciseDetailScreen() {
 
   if (!exercise) {
     return (
-      <Screen padded={false}>
-        <ScreenHeader title="Esercizio" showBack />
+      <Screen padded={false} header={<ScreenHeader title="Esercizio" showBack />}>
         <Text variant="caption" tone="dim" style={{ padding: theme.space.lg }}>
           Esercizio non trovato.
         </Text>
@@ -67,23 +68,25 @@ export default function ExerciseDetailScreen() {
   ];
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
-        title={exercise.name}
-        subtitle={exercise.isCustom ? 'Esercizio personalizzato' : undefined}
-        showBack
-        actions={[
-          {
-            icon: exercise.isFavorite ? 'star' : 'star-outline',
-            label: exercise.isFavorite ? 'Togli dai preferiti' : 'Aggiungi ai preferiti',
-            onPress: () => toggleFavorite(exercise.id, !exercise.isFavorite),
-          },
-          { icon: 'archive-outline', label: 'Archivia', onPress: confirmArchive },
-        ]}
-      />
-
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.lg, paddingBottom: theme.space.xxxl }}>
+    <Screen
+      padded={false}
+      header={
+        <ScreenHeader
+          title={exercise.name}
+          subtitle={exercise.isCustom ? 'Esercizio personalizzato' : undefined}
+          showBack
+          // Il preferito resta: non fa danni. L'archiviazione scende nel menu.
+          actions={[
+            {
+              icon: exercise.isFavorite ? 'star' : 'star-outline',
+              label: exercise.isFavorite ? 'Togli dai preferiti' : 'Aggiungi ai preferiti',
+              onPress: () => toggleFavorite(exercise.id, !exercise.isFavorite),
+            },
+            { icon: 'dots-horizontal', label: 'Opzioni', onPress: () => setMenuOpen(true) },
+          ]}
+        />
+      }>
+      <ScreenScroll gap={theme.space.lg}>
         <Card>
           <View style={{ gap: theme.space.md }}>
             {facts.map((fact) => (
@@ -131,7 +134,19 @@ export default function ExerciseDetailScreen() {
         ) : null}
 
         <ExerciseSummary exercise={exercise} />
-      </ScrollView>
+      </ScreenScroll>
+
+      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={exercise.name} scrollable={false}>
+        <SheetAction
+          label="Archivia l’esercizio"
+          description="Sparisce dalla libreria; lo storico resta."
+          destructive
+          onPress={() => {
+            setMenuOpen(false);
+            confirmArchive();
+          }}
+        />
+      </Sheet>
     </Screen>
   );
 }

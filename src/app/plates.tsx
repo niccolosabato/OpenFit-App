@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import { NumberStepper } from '@/components/ui/number-stepper';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import type { PlateSpec } from '@/db/schema';
@@ -50,11 +50,9 @@ export default function PlatesScreen() {
   const example = calculatePlates(100, settings.barWeight, inventory);
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader title="Bilanciere e dischi" showBack />
+    <Screen padded={false} header={<ScreenHeader title="Bilanciere e dischi" showBack />}>
 
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.lg, paddingBottom: theme.space.xxxl }}>
+      <ScreenScroll gap={theme.space.lg}>
         <Card>
           <View style={{ gap: theme.space.md }}>
             <Text variant="heading">Peso del bilanciere</Text>
@@ -139,7 +137,7 @@ export default function PlatesScreen() {
           fullWidth
           onPress={() => update({ plateInventory: DEFAULT_PLATE_INVENTORY })}
         />
-      </ScrollView>
+      </ScreenScroll>
     </Screen>
   );
 }
