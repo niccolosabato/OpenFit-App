@@ -27,6 +27,19 @@ export type ScreenChrome = {
 
 const ScreenChromeContext = createContext<ScreenChrome>({ top: 0, bottom: 0 });
 
+/**
+ * Chrome che non appartiene alla schermata ma le sta comunque sopra: la tab
+ * bar e la barra dell'allenamento in corso, montate nel layout delle tab.
+ *
+ * Le schermate non possono misurarlo — non è roba loro — ma devono lasciargli
+ * spazio, e la barra delle azioni deve poggiarci sopra invece di finirci sotto.
+ */
+const OuterChromeContext = createContext<number>(0);
+
+export function OuterChromeProvider({ height, children }: { height: number; children: ReactNode }) {
+  return <OuterChromeContext.Provider value={height}>{children}</OuterChromeContext.Provider>;
+}
+
 /** Quanto spazio il chrome fisso sta occupando sopra e sotto il contenuto. */
 export function useScreenChrome(): ScreenChrome {
   return useContext(ScreenChromeContext);
@@ -55,6 +68,7 @@ export function Screen({
 
   const [topHeight, setTopHeight] = useState(0);
   const [bottomHeight, setBottomHeight] = useState(0);
+  const outerBottom = useContext(OuterChromeContext);
 
   const hasChrome = Boolean(header || actionBar);
 
@@ -68,11 +82,15 @@ export function Screen({
   };
 
   if (!hasChrome) {
-    return <View style={[styles.root, root, style]}>{children}</View>;
+    return (
+      <ScreenChromeContext.Provider value={{ top: 0, bottom: outerBottom }}>
+        <View style={[styles.root, root, style]}>{children}</View>
+      </ScreenChromeContext.Provider>
+    );
   }
 
   return (
-    <ScreenChromeContext.Provider value={{ top: topHeight, bottom: bottomHeight }}>
+    <ScreenChromeContext.Provider value={{ top: topHeight, bottom: bottomHeight + outerBottom }}>
       <View style={[styles.root, root, style]}>
         {/* Il contenuto è il bersaglio del blur; il chrome gli sta sopra come
             fratello, mai come figlio: una vista non può sfocare sé stessa. */}
@@ -89,7 +107,8 @@ export function Screen({
 
         {actionBar ? (
           <View
-            style={styles.bottom}
+            // Poggia sopra la tab bar, non sotto.
+            style={[styles.bottom, { bottom: outerBottom }]}
             pointerEvents="box-none"
             onLayout={(e) => setBottomHeight(e.nativeEvent.layout.height)}>
             {actionBar}

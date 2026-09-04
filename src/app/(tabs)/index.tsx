@@ -2,11 +2,12 @@ import { count, desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import { db } from '@/db/client';
@@ -46,15 +47,29 @@ export default function TodayScreen() {
   const lastSession = lastRows?.[0];
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
-        title={settings.userName ? `Ciao, ${settings.userName}` : 'Pronto ad allenarti?'}
-        actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
-      />
-
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.lg, paddingBottom: theme.space.xxxl }}
-        showsVerticalScrollIndicator={false}>
+    <Screen
+      padded={false}
+      header={
+        <ScreenHeader
+          title={settings.userName ? `Ciao, ${settings.userName}` : 'Pronto ad allenarti?'}
+          actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
+        />
+      }
+      // L'allenamento libero era in fondo alla lista dei giorni: con una scheda
+      // da cinque o sei giorni finiva sotto la piega. Qui non scorre mai via.
+      actionBar={
+        <ActionBar safeBottom={false}>
+          <View style={{ flex: 1 }}>
+            <Button
+              title="Allenamento libero"
+              variant={days.length > 0 ? 'secondary' : 'primary'}
+              fullWidth
+              onPress={() => startWorkout(() => startEmptySession())}
+            />
+          </View>
+        </ActionBar>
+      }>
+      <ScreenScroll gap={theme.space.lg} showsVerticalScrollIndicator={false}>
         {days.length > 0 ? (
           <View style={{ gap: theme.space.sm }}>
             <Text variant="label" tone="dim">
@@ -88,13 +103,6 @@ export default function TodayScreen() {
           </Card>
         )}
 
-        <Button
-          title="Allenamento libero"
-          variant={days.length > 0 ? 'secondary' : 'primary'}
-          fullWidth
-          onPress={() => startWorkout(() => startEmptySession())}
-        />
-
         {lastSession ? (
           <Card onPress={() => router.push({ pathname: '/session/[id]', params: { id: lastSession.id } })}>
             <View style={{ gap: 4 }}>
@@ -125,7 +133,7 @@ export default function TodayScreen() {
             esercizi disponibili
           </Text>
         </Card>
-      </ScrollView>
+      </ScreenScroll>
     </Screen>
   );
 }

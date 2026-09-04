@@ -1,10 +1,10 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import { sessionHistoryQuery } from '@/db/queries/sessions';
@@ -20,12 +20,15 @@ export default function HistoryScreen() {
   const sessions = data ?? [];
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
-        title="Storico"
-        subtitle={sessions.length > 0 ? `${sessions.length} allenamenti` : undefined}
-      />
-
+    <Screen
+      padded={false}
+      header={
+        <ScreenHeader
+          title="Storico"
+          subtitle={sessions.length > 0 ? `${sessions.length} allenamenti` : undefined}
+          actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
+        />
+      }>
       {sessions.length === 0 ? (
         <EmptyState
           icon="history"
@@ -33,8 +36,7 @@ export default function HistoryScreen() {
           description="Gli allenamenti che concludi finiscono qui, con volume, serie e record."
         />
       ) : (
-        <ScrollView
-          contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.md, paddingBottom: theme.space.xxxl }}>
+        <ScreenScroll gap={theme.space.md}>
           {sessions.map((session) => (
             <Card
               key={session.id}
@@ -61,7 +63,7 @@ export default function HistoryScreen() {
               </View>
             </Card>
           ))}
-        </ScrollView>
+        </ScreenScroll>
       )}
     </Screen>
   );

@@ -1,15 +1,16 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { router } from 'expo-router';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { BarChart, type BarDatum } from '@/components/charts/bar-chart';
 import { LineChart } from '@/components/charts/line-chart';
 import { Card } from '@/components/ui/card';
 import { Chip, ChipRow } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import { MUSCLE_GROUPS, MUSCLE_GROUP_LABELS } from '@/db/enums';
@@ -70,8 +71,7 @@ export default function StatsScreen() {
 
   if (sets.length === 0) {
     return (
-      <Screen padded={false}>
-        <ScreenHeader title="Statistiche" />
+      <Screen padded={false} header={<ScreenHeader title="Statistiche" actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]} />}>
         <EmptyState
           icon="chart-timeline-variant"
           title="Niente da mostrare"
@@ -82,24 +82,30 @@ export default function StatsScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader title="Statistiche" />
-
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: theme.space.xxxl, gap: theme.space.md }}
-        showsVerticalScrollIndicator={false}>
-        <ChipRow>
-          {PERIODS.map((period) => (
-            <Chip
-              key={period.weeks}
-              label={period.label}
-              compact
-              selected={weeks === period.weeks}
-              onPress={() => setWeeks(period.weeks)}
-            />
-          ))}
-        </ChipRow>
-
+    <Screen
+      padded={false}
+      header={
+        <ScreenHeader
+          title="Statistiche"
+          actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
+          // Il periodo era in cima allo scroll e spariva appena si guardava un
+          // grafico: per cambiarlo bisognava risalire quattro schermate.
+          below={
+            <ChipRow>
+              {PERIODS.map((period) => (
+                <Chip
+                  key={period.weeks}
+                  label={period.label}
+                  compact
+                  selected={weeks === period.weeks}
+                  onPress={() => setWeeks(period.weeks)}
+                />
+              ))}
+            </ChipRow>
+          }
+        />
+      }>
+      <ScreenScroll gap={theme.space.md} padded={false} showsVerticalScrollIndicator={false}>
         <View style={{ paddingHorizontal: theme.space.lg, gap: theme.space.md }}>
           <View style={[styles.row, { gap: theme.space.md }]}>
             <Card style={{ flex: 1 }}>
@@ -173,7 +179,7 @@ export default function StatsScreen() {
             </View>
           </Card>
         </View>
-      </ScrollView>
+      </ScreenScroll>
     </Screen>
   );
 }

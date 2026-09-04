@@ -1,6 +1,8 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Glass } from '@/components/ui/glass';
+import { IconButton } from '@/components/ui/icon-button';
 import { Text } from '@/components/ui/text';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, type Equipment } from '@/db/enums';
 import type { Exercise } from '@/db/schema';
@@ -28,11 +30,16 @@ export function ExerciseRow({
   onToggleFavorite,
   /** Riga di dettaglio a destra: ultimo carico, numero di serie, ecc. */
   trailing,
+  /** In selezione multipla la riga mostra una spunta invece della stella. */
+  selectable = false,
+  selected = false,
 }: {
   exercise: Exercise;
   onPress?: () => void;
   onToggleFavorite?: () => void;
   trailing?: React.ReactNode;
+  selectable?: boolean;
+  selected?: boolean;
 }) {
   const theme = useTheme();
 
@@ -47,21 +54,17 @@ export function ExerciseRow({
           paddingHorizontal: theme.space.lg,
           paddingVertical: theme.space.md,
           gap: theme.space.md,
-          borderBottomColor: theme.colors.border,
+          borderBottomColor: theme.glass.stroke,
         },
-        pressed && { backgroundColor: theme.colors.surface },
+        pressed && { backgroundColor: theme.glass.fillLow },
       ]}>
-      <View
-        style={[
-          styles.icon,
-          { backgroundColor: theme.colors.surface2, borderRadius: theme.radius.md },
-        ]}>
+      <Glass level="mid" radius={theme.radius.md} sheen={false} tinted={selected} style={styles.icon}>
         <MaterialCommunityIcons
-          name={EQUIPMENT_ICON[exercise.equipment]}
+          name={selected ? 'check' : EQUIPMENT_ICON[exercise.equipment]}
           size={20}
-          color={theme.colors.textDim}
+          color={selected ? theme.colors.accent : theme.colors.textDim}
         />
-      </View>
+      </Glass>
 
       <View style={styles.body}>
         <Text variant="subtitle" numberOfLines={1}>
@@ -75,18 +78,19 @@ export function ExerciseRow({
 
       {trailing}
 
-      {onToggleFavorite ? (
-        <Pressable
+      {selectable ? (
+        <MaterialCommunityIcons
+          name={selected ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+          size={24}
+          color={selected ? theme.colors.accent : theme.colors.textFaint}
+        />
+      ) : onToggleFavorite ? (
+        <IconButton
+          icon={exercise.isFavorite ? 'star' : 'star-outline'}
+          label={exercise.isFavorite ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}
+          tone={exercise.isFavorite ? 'accent' : 'dim'}
           onPress={onToggleFavorite}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={exercise.isFavorite ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}>
-          <MaterialCommunityIcons
-            name={exercise.isFavorite ? 'star' : 'star-outline'}
-            size={22}
-            color={exercise.isFavorite ? theme.colors.accent : theme.colors.textFaint}
-          />
-        </Pressable>
+        />
       ) : null}
     </Pressable>
   );

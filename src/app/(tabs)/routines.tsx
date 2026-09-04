@@ -1,13 +1,14 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Screen } from '@/components/ui/screen';
+import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
@@ -37,12 +38,23 @@ export default function RoutinesScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <ScreenHeader
-        title="Schede"
-        actions={[{ icon: 'plus', label: 'Nuova scheda', onPress: () => setNewOpen(true) }]}
-      />
-
+    <Screen
+      padded={false}
+      header={<ScreenHeader title="Schede" actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]} />}
+      // "Parti da un modello" stava in fondo alla lista: con qualche scheda
+      // già creata bisognava scorrere per trovarlo. Ora è sempre qui.
+      actionBar={
+        <ActionBar safeBottom={false}>
+          <View style={{ flex: 1 }}>
+            <Button title="Nuova scheda" fullWidth onPress={() => setNewOpen(true)} />
+          </View>
+          <Button
+            title="Modelli"
+            variant="secondary"
+            onPress={() => setTemplatesOpen(true)}
+          />
+        </ActionBar>
+      }>
       {routines.length === 0 ? (
         <EmptyState
           icon="clipboard-list-outline"
@@ -52,8 +64,7 @@ export default function RoutinesScreen() {
           onAction={() => setTemplatesOpen(true)}
         />
       ) : (
-        <ScrollView
-          contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.md, paddingBottom: theme.space.xxxl }}>
+        <ScreenScroll gap={theme.space.md}>
           {routines.map((routine) => (
             <Card key={routine.id} onPress={() => openRoutine(routine.id)}>
               <View style={{ gap: 4 }}>
@@ -68,14 +79,7 @@ export default function RoutinesScreen() {
               </View>
             </Card>
           ))}
-
-          <Button
-            title="Parti da un modello"
-            variant="secondary"
-            fullWidth
-            onPress={() => setTemplatesOpen(true)}
-          />
-        </ScrollView>
+        </ScreenScroll>
       )}
 
       <Sheet

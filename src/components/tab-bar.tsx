@@ -12,7 +12,7 @@
  */
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import type { BottomTabBarProps } from 'expo-router/js-tabs';
+import { router, useSegments } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,20 +20,34 @@ import { Glass } from '@/components/ui/glass';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/theme';
 
+import type { Href } from 'expo-router';
+
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
-/** Icona e etichetta per ogni rotta di primo livello. */
-const TABS: Record<string, { label: string; icon: IconName; iconActive: IconName }> = {
-  index: { label: 'Oggi', icon: 'dumbbell', iconActive: 'dumbbell' },
-  routines: { label: 'Schede', icon: 'clipboard-list-outline', iconActive: 'clipboard-list' },
-  exercises: { label: 'Esercizi', icon: 'weight-lifter', iconActive: 'weight-lifter' },
-  history: { label: 'Storico', icon: 'history', iconActive: 'history' },
-  stats: { label: 'Statistiche', icon: 'chart-timeline-variant', iconActive: 'chart-timeline-variant-shimmer' },
-};
+type Tab = { name: string; href: Href; label: string; icon: IconName; iconActive: IconName };
 
-export function TabBar({ state, navigation }: BottomTabBarProps) {
+/**
+ * Le voci, in ordine. Sono dichiarate qui e non ricavate dallo stato del
+ * navigatore perché la barra vive *fuori* da `<Tabs>`: deve stare sopra le
+ * schermate per poterle sfocare, e da lì lo stato del navigatore non arriva.
+ * La rotta attiva si legge dai segmenti del router.
+ */
+const TABS: Tab[] = [
+  { name: 'index', href: '/', label: 'Oggi', icon: 'dumbbell', iconActive: 'dumbbell' },
+  { name: 'routines', href: '/routines', label: 'Schede', icon: 'clipboard-list-outline', iconActive: 'clipboard-list' },
+  { name: 'exercises', href: '/exercises', label: 'Esercizi', icon: 'weight-lifter', iconActive: 'weight-lifter' },
+  { name: 'history', href: '/history', label: 'Storico', icon: 'history', iconActive: 'history' },
+  { name: 'stats', href: '/stats', label: 'Statistiche', icon: 'chart-timeline-variant', iconActive: 'chart-timeline-variant-shimmer' },
+];
+
+export function TabBar() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const segments = useSegments();
+
+  // Dentro `(tabs)` il secondo segmento è il nome della rotta; sulla schermata
+  // iniziale non c'è e vale `index`.
+  const current = segments[0] === '(tabs)' ? (segments[1] ?? 'index') : 'index';
 
   return (
     <Glass
@@ -51,22 +65,16 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
           borderBottomWidth: 0,
         },
       ]}>
-      {state.routes.map((route, index) => {
-        const config = TABS[route.name];
-        if (!config) return null;
-
-        const isFocused = state.index === index;
+      {TABS.map((config) => {
+        const isFocused = current === config.name;
 
         const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
+          if (!isFocused) router.navigate(config.href);
         };
 
         return (
           <Pressable
-            key={route.key}
+            key={config.name}
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={config.label}

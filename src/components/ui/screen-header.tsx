@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,11 +33,18 @@ export function ScreenHeader({
   subtitle,
   showBack,
   actions = [],
+  below,
 }: {
   title: string;
   subtitle?: string;
   showBack?: boolean;
   actions?: HeaderAction[];
+  /**
+   * Riga agganciata sotto il titolo, dentro la stessa lastra: filtri, periodo,
+   * ricerca. Sta qui e non in cima allo scroll perché è roba che si cambia
+   * dopo aver guardato il contenuto, e inseguirla scorrendo all'insù è assurdo.
+   */
+  below?: ReactNode;
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -52,43 +60,47 @@ export function ScreenHeader({
         styles.root,
         {
           paddingTop: insets.top + theme.space.sm,
-          paddingBottom: theme.space.md,
-          paddingHorizontal: theme.space.lg,
+          paddingBottom: below ? theme.space.sm : theme.space.md,
           gap: theme.space.sm,
           borderTopWidth: 0,
           borderLeftWidth: 0,
           borderRightWidth: 0,
         },
       ]}>
-      {showBack ? (
-        <IconButton icon="chevron-left" label="Indietro" size={30} onPress={() => router.back()} />
-      ) : null}
-
-      <View style={styles.titles}>
-        <Text variant="title" numberOfLines={1}>
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text variant="caption" tone="dim" numberOfLines={1}>
-            {subtitle}
-          </Text>
+      <View style={[styles.bar, { paddingHorizontal: theme.space.lg, gap: theme.space.sm }]}>
+        {showBack ? (
+          <IconButton icon="chevron-left" label="Indietro" size={30} onPress={() => router.back()} />
         ) : null}
+
+        <View style={styles.titles}>
+          <Text variant="title" numberOfLines={1}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text variant="caption" tone="dim" numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+
+        {actions.map((action) => (
+          <IconButton
+            key={action.label}
+            icon={action.icon}
+            label={action.label}
+            onPress={action.onPress}
+            surface
+          />
+        ))}
       </View>
 
-      {actions.map((action) => (
-        <IconButton
-          key={action.label}
-          icon={action.icon}
-          label={action.label}
-          onPress={action.onPress}
-          surface
-        />
-      ))}
+      {below ? <View style={{ paddingBottom: theme.space.xs }}>{below}</View> : null}
     </Glass>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: 'row', alignItems: 'center' },
+  root: { flexDirection: 'column' },
+  bar: { flexDirection: 'row', alignItems: 'center' },
   titles: { flex: 1, gap: 2 },
 });
