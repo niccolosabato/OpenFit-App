@@ -1,16 +1,20 @@
 /**
  * Design tokens di OpenFit.
  *
- * Estetica: sala pesi. Fondo quasi nero, superfici carbone, bordi netti,
- * un solo accento saturo. Niente gradienti pastello, niente ombre morbide.
+ * Estetica: vetro su fondo scuro. Il fondo resta quasi nero — si legge in
+ * palestra, con la luce addosso — ma le superfici non sono più lastre opache:
+ * sono strati traslucidi con una luce sul bordo alto e un riflesso che scende.
+ * La gerarchia si legge dalla trasparenza e dall'ombra, non dai bordi netti.
+ *
  * I colori non si scrivono mai a mano nei componenti: si passa da qui.
+ * E il vetro non si compone a mano: si passa da `Glass`.
  */
 
 /** Scala di grigi neutra, dal fondo alla superficie più alta. */
 export const neutral = {
   /** Fondo dell'app. */
   bg: '#0B0B0D',
-  /** Card e liste. */
+  /** Fondo opaco sotto il vetro: si vede dove la traslucenza non basta. */
   surface: '#141418',
   /** Elementi sopra una card (input, righe di set). */
   surface2: '#1C1C22',
@@ -38,6 +42,88 @@ export const semantic = {
   success: '#3DDC84',
   /** Badge dei record personali. */
   record: '#FFC53D',
+} as const;
+
+/**
+ * Il vetro.
+ *
+ * Su fondo scuro una superficie traslucida si legge solo se la si costruisce a
+ * strati: un velo chiaro che alza la luminosità, una linea di luce sul bordo
+ * alto (da dove arriva la luce), un bordo più tenue sugli altri lati, e un
+ * riflesso che scende dall'alto e si spegne. Sono i quattro ingredienti che
+ * `Glass` combina; qui ci sono solo i valori.
+ *
+ * Le opacità sono basse di proposito: sopra i ~0.14 il vetro smette di sembrare
+ * vetro e diventa grigio.
+ */
+export const glass = {
+  /** Card a riposo. */
+  fillLow: 'rgba(255, 255, 255, 0.04)',
+  /** Card sollevata, input, superfici di secondo livello. */
+  fillMid: 'rgba(255, 255, 255, 0.07)',
+  /** Chrome fisso e pannelli dei fogli. */
+  fillHigh: 'rgba(255, 255, 255, 0.10)',
+  /** Stato premuto, per qualunque livello. */
+  fillPress: 'rgba(255, 255, 255, 0.14)',
+  /** Linea di luce sul bordo superiore: è ciò che dà lo spessore. */
+  strokeTop: 'rgba(255, 255, 255, 0.18)',
+  /** Bordo sugli altri lati, appena percettibile. */
+  stroke: 'rgba(255, 255, 255, 0.09)',
+  /** Riflesso: dall'alto verso il basso, fino a sparire. */
+  sheenFrom: 'rgba(255, 255, 255, 0.13)',
+  sheenTo: 'rgba(255, 255, 255, 0)',
+  /** Velo scuro dietro il chrome sfocato, perché il testo resti leggibile. */
+  scrim: 'rgba(11, 11, 13, 0.55)',
+  /** Fondo dei fogli: più coprente, ci vanno sopra dei controlli. */
+  panel: 'rgba(30, 30, 38, 0.86)',
+  /** Sfondo dietro un foglio aperto. */
+  backdrop: 'rgba(0, 0, 0, 0.72)',
+} as const;
+
+/**
+ * Ombre.
+ *
+ * L'app non ne aveva nessuna: la gerarchia era tutta nei bordi. Col vetro
+ * l'ombra diventa il modo principale per dire cosa sta sopra cosa.
+ * `elevation` è per Android, il resto per iOS: vanno tenuti insieme.
+ */
+export const elevation = {
+  none: {},
+  /** Card. */
+  low: {
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  /** Elementi flottanti: barre di azioni, chip attivi. */
+  mid: {
+    shadowColor: '#000',
+    shadowOpacity: 0.45,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  /** Fogli e chrome: stacca dal contenuto che ci scorre sotto. */
+  high: {
+    shadowColor: '#000',
+    shadowOpacity: 0.55,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: 18 },
+    elevation: 16,
+  },
+} as const;
+
+export type ElevationKey = keyof typeof elevation;
+
+/**
+ * Intensità del blur (0-100) per il chrome che sfoca davvero il contenuto.
+ * Oltre ~70 su fondo scuro il risultato è una macchia grigia senza profondità.
+ */
+export const blurIntensity = {
+  chrome: 60,
+  panel: 40,
 } as const;
 
 export type AccentKey = 'volt' | 'emerald' | 'cyan' | 'violet' | 'amber' | 'rose';
@@ -77,6 +163,24 @@ export const ACCENT_LABELS: Record<AccentKey, string> = {
 
 export const DEFAULT_ACCENT: AccentKey = 'volt';
 
+/**
+ * Da `#RRGGBB` a `rgba(...)`.
+ *
+ * Serve a velare una superficie con l'accento scelto dall'utente senza dover
+ * scrivere a mano sei varianti traslucide per ognuno dei sei accenti.
+ * Se il colore non è un esadecimale a 6 cifre lo restituisce com'è: meglio un
+ * colore pieno che un `rgba(NaN)`, che su Android non disegna nulla.
+ */
+export function withAlpha(hex: string, alpha: number): string {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return hex;
+  const value = parseInt(match[1], 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 /** Scala di spaziatura a passo 4. */
 export const space = {
   xs: 4,
@@ -88,11 +192,15 @@ export const space = {
   xxxl: 48,
 } as const;
 
+/**
+ * Raggi morbidi: il vetro non ha spigoli. Ogni valore e' cresciuto rispetto
+ * alla versione a bordi netti dell'app.
+ */
 export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 20,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
   pill: 999,
 } as const;
 

@@ -9,7 +9,23 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
 import { useSettings } from '@/store/settings';
-import { ACCENTS, DEFAULT_ACCENT, font, HIT, MONO, neutral, radius, semantic, space, type Accent, type AccentKey } from './tokens';
+import {
+  ACCENTS,
+  blurIntensity,
+  DEFAULT_ACCENT,
+  elevation,
+  font,
+  glass,
+  HIT,
+  MONO,
+  neutral,
+  radius,
+  semantic,
+  space,
+  withAlpha,
+  type Accent,
+  type AccentKey,
+} from './tokens';
 
 export type ThemeColors = typeof neutral &
   typeof semantic & {
@@ -17,6 +33,12 @@ export type ThemeColors = typeof neutral &
     accentDim: string;
     onAccent: string;
     accentGlow: string;
+    /** Velo d'accento per le superfici in vetro selezionate o attive. */
+    accentTint: string;
+    /** Velo d'accento più marcato: bordi di ciò che è attivo. */
+    accentEdge: string;
+    /** Velo rosso per le superfici distruttive in vetro. */
+    dangerTint: string;
   };
 
 export type Theme = {
@@ -25,6 +47,9 @@ export type Theme = {
   space: typeof space;
   radius: typeof radius;
   font: typeof font;
+  glass: typeof glass;
+  elevation: typeof elevation;
+  blurIntensity: typeof blurIntensity;
   mono: string;
   hit: number;
 };
@@ -39,11 +64,20 @@ function buildTheme(accentKey: AccentKey): Theme {
       accentDim: accent.dim,
       onAccent: accent.on,
       accentGlow: accent.glow,
+      // Calcolati dall'accento invece che scritti a mano sei volte in
+      // `ACCENTS`: aggiungere un accento non deve voler dire ricordarsi di
+      // aggiungere anche le sue varianti traslucide.
+      accentTint: withAlpha(accent.base, 0.12),
+      accentEdge: withAlpha(accent.base, 0.42),
+      dangerTint: withAlpha(semantic.danger, 0.14),
     },
     accentKey,
     space,
     radius,
     font,
+    glass,
+    elevation,
+    blurIntensity,
     mono: MONO,
     hit: HIT,
   };
