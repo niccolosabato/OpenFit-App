@@ -6,9 +6,9 @@
  * delle statistiche.
  */
 
-import { updateSessionSet } from '@/db/queries/sessions';
+import { deleteSession, discardSession, updateSessionSet } from '@/db/queries/sessions';
 import type { SessionSet } from '@/db/schema';
-import { applyRecords, type RecordHit } from '@/features/stats/records';
+import { applyRecords, rebuildRecords, type RecordHit } from '@/features/stats/records';
 
 export type SetValues = {
   weight: number | null;
@@ -45,4 +45,21 @@ export function completeSet(
 /** Toglie la spunta: la serie torna modificabile e smette di contare. */
 export function uncompleteSet(setId: string): void {
   updateSessionSet(setId, { isCompleted: false, completedAt: null, isPr: false });
+}
+
+/**
+ * Elimina una sessione dallo storico e riallinea i record.
+ *
+ * I due passaggi vanno insieme: senza il ricalcolo resterebbero primati
+ * appesi a serie cancellate.
+ */
+export function removeSession(sessionId: string): void {
+  deleteSession(sessionId);
+  rebuildRecords();
+}
+
+/** Scarta la sessione in corso; se aveva già segnato record, li ritira. */
+export function abandonSession(sessionId: string): void {
+  discardSession(sessionId);
+  rebuildRecords();
 }

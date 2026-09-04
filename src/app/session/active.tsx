@@ -29,7 +29,6 @@ import {
   addSessionSet,
   computeTotals,
   deleteSessionSet,
-  discardSession,
   finishSession,
   getPreviousPerformance,
   moveSessionExercise,
@@ -40,7 +39,7 @@ import {
 } from '@/db/queries/sessions';
 import type { SessionExercise, SessionSet } from '@/db/schema';
 import { PlateSheet } from '@/features/session/plate-sheet';
-import { completeSet, uncompleteSet, type SetValues } from '@/features/session/actions';
+import { abandonSession, completeSet, uncompleteSet, type SetValues } from '@/features/session/actions';
 import { describeRecordHits } from '@/features/session/record-message';
 import { SetRow, SetRowHeader } from '@/features/session/set-row';
 import { RestTimerBar } from '@/features/timer/rest-timer-bar';
@@ -99,15 +98,21 @@ export default function ActiveSessionScreen() {
     return () => clearInterval(interval);
   }, [session]);
 
-  /** Prestazione precedente per ogni esercizio, una lettura sola all'apertura. */
+  /**
+   * Prestazione precedente per ogni esercizio.
+   *
+   * La chiave del memo è la lista degli esercizi e non `items`: quest'ultimo
+   * cambia identità a ogni serie spuntata, e rileggere lo storico dal database
+   * a ogni tocco durante l'allenamento sarebbe uno spreco.
+   */
+  const exerciseIds = items.map((i) => i.exercise.id).join(',');
   const previousByExercise = useMemo(() => {
     const map = new Map<string, SessionSet[]>();
-    for (const item of items) {
-      const previous = getPreviousPerformance(item.exercise.id, sessionId);
-      map.set(item.exercise.id, previous?.sets ?? []);
+    for (const id of exerciseIds ? exerciseIds.split(',') : []) {
+      map.set(id, getPreviousPerformance(id, sessionId)?.sets ?? []);
     }
     return map;
-  }, [items, sessionId]);
+  }, [exerciseIds, sessionId]);
 
   const setsByExercise = useMemo(() => {
     const map = new Map<string, SessionSet[]>();
@@ -183,7 +188,7 @@ export default function ActiveSessionScreen() {
             text: 'Scarta',
             style: 'destructive',
             onPress: () => {
-              discardSession(sessionId);
+              abandonSession(sessionId);
               router.back();
             },
           },
@@ -468,7 +473,7 @@ export default function ActiveSessionScreen() {
                 text: 'Scarta',
                 style: 'destructive',
                 onPress: () => {
-                  discardSession(sessionId);
+                  abandonSession(sessionId);
                   router.back();
                 },
               },

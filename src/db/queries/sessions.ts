@@ -334,7 +334,11 @@ export function getPreviousPerformance(
       ),
     )
     .orderBy(asc(sessionSets.orderIndex))
-    .all();
+    .all()
+    // Solo le serie allenanti: in sessione la colonna "precedente" si allinea
+    // per posizione, e un riscaldamento della volta scorsa finirebbe accanto
+    // alla prima serie vera di oggi.
+    .filter((set) => countsAsWorkingSet(set.setType));
 
   if (sets.length === 0) return null;
 
@@ -363,6 +367,7 @@ export function computeTotals(sets: SessionSet[]): SessionTotals {
 
   for (const set of sets) {
     if (!set.isCompleted) continue;
+    if (!countsTowardVolume(set.setType)) continue;
     totalVolume += setVolume(set);
     totalReps += set.reps ?? 0;
     // Le serie allenanti si contano solo di primo livello: uno stripping resta

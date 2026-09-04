@@ -43,8 +43,8 @@ export default function StatsScreen() {
 
   const currentWeek = buckets[buckets.length - 1];
 
-  // Le serie per gruppo si guardano sull'ultima settimana chiusa più quella in
-  // corso: è la finestra su cui si ragiona quando si programma il volume.
+  // Le serie per gruppo si guardano sulla settimana in corso: è la finestra su
+  // cui si ragiona quando si aggiusta il volume in corsa.
   const lastWeekStart = buckets.length >= 1 ? buckets[buckets.length - 1].weekStart : 0;
   const weekSets = useMemo(
     () => sets.filter((s) => s.startedAt >= lastWeekStart),

@@ -7,11 +7,17 @@
  * scandire tutto lo storico mentre si è sotto il bilanciere.
  */
 
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import type { PrType } from '@/db/enums';
-import { personalRecords, type SessionSet } from '@/db/schema';
+import {
+  personalRecords,
+  sessionExercises,
+  sessionSets,
+  workoutSessions,
+  type SessionSet,
+} from '@/db/schema';
 import { newId } from '@/lib/ids';
 import { beatsRecord, candidateRecords, type RecordCandidate } from './record-rules';
 
@@ -84,31 +90,88 @@ export function applyRecords(
 }
 
 /**
- * Toglie i record che puntano a serie non più esistenti.
+ * Ricalcola da zero tutti i record a partire dalle serie registrate.
  *
- * Serve dopo una modifica retroattiva o la cancellazione di una sessione: la
- * riga del record sopravviverebbe con `sessionSetId` a null e continuerebbe a
- * dichiarare un primato che nessuna serie sostiene più.
+ * Serve dopo aver cancellato o scartato una sessione: la riga del record
+ * sopravviverebbe a una serie che non esiste più. Cancellarla e basta sarebbe
+ * sbagliato quanto tenerla — il primato non svanisce, *retrocede* al secondo
+ * miglior risultato — e solo un ricalcolo lo trova.
+ *
+ * Costa una scansione dello storico, ma gira solo quando si elimina qualcosa.
  */
-export function pruneOrphanRecords(): number {
-  const orphans = db
-    .select({ id: personalRecords.id })
-    .from(personalRecords)
-    .where(isNull(personalRecords.sessionSetId))
+export function rebuildRecords(): void {
+  const rows = db
+    .select({
+      set: sessionSets,
+      exerciseId: sessionExercises.exerciseId,
+      sessionId: workoutSessions.id,
+    })
+    .from(sessionSets)
+    .innerJoin(sessionExercises, eq(sessionSets.sessionExerciseId, sessionExercises.id))
+    .innerJoin(workoutSessions, eq(sessionExercises.sessionId, workoutSessions.id))
+    .where(and(eq(workoutSessions.status, 'completed'), eq(sessionSets.isCompleted, true)))
+    // In ordine cronologico: a parità di valore il record resta al primo che
+    // l'ha ottenuto, non all'ultimo.
+    .orderBy(asc(workoutSessions.startedAt), asc(sessionSets.orderIndex))
     .all();
 
-  if (orphans.length === 0) return 0;
+  type Best = {
+    exerciseId: string;
+    type: PrType;
+    reps: number;
+    value: number;
+    weight: number | null;
+    achievedReps: number | null;
+    sessionSetId: string;
+    sessionId: string;
+    achievedAt: Date;
+    previousValue: number | null;
+  };
 
-  db.delete(personalRecords)
-    .where(
-      inArray(
-        personalRecords.id,
-        orphans.map((o) => o.id),
-      ),
-    )
-    .run();
+  const best = new Map<string, Best>();
 
-  return orphans.length;
+  for (const row of rows) {
+    for (const candidate of candidateRecords(row.set.weight, row.set.reps, row.set.setType)) {
+      const key = `${row.exerciseId}:${candidate.type}:${candidate.reps}`;
+      const previous = best.get(key);
+      if (!beatsRecord(candidate.value, previous?.value)) continue;
+
+      best.set(key, {
+        exerciseId: row.exerciseId,
+        type: candidate.type,
+        reps: candidate.reps,
+        value: candidate.value,
+        weight: row.set.weight,
+        achievedReps: row.set.reps,
+        sessionSetId: row.set.id,
+        sessionId: row.sessionId,
+        achievedAt: row.set.completedAt ?? new Date(),
+        previousValue: previous?.value ?? null,
+      });
+    }
+  }
+
+  const holders = new Set([...best.values()].map((b) => b.sessionSetId));
+
+  db.transaction((tx) => {
+    tx.delete(personalRecords).run();
+
+    if (best.size > 0) {
+      tx.insert(personalRecords)
+        .values([...best.values()].map((b) => ({ id: newId(), ...b })))
+        .run();
+    }
+
+    // La spunta 🏆 sulle righe dello storico è una cache come il resto:
+    // va riallineata, altrimenti resterebbe accesa su serie non più record.
+    tx.update(sessionSets).set({ isPr: false }).run();
+    if (holders.size > 0) {
+      tx.update(sessionSets)
+        .set({ isPr: true })
+        .where(inArray(sessionSets.id, [...holders]))
+        .run();
+    }
+  });
 }
 
 export function exerciseRecordsQuery(exerciseId: string) {

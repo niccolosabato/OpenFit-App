@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
-import { discardSession, getActiveSession } from '@/db/queries/sessions';
+import { getActiveSession } from '@/db/queries/sessions';
+import { abandonSession } from './actions';
 
 /**
  * Avvia un allenamento, gestendo il caso in cui ce ne sia già uno aperto.
@@ -32,7 +33,7 @@ export function startWorkout(begin: () => string): void {
         text: 'Scarta e ricomincia',
         style: 'destructive',
         onPress: () => {
-          discardSession(active.id);
+          abandonSession(active.id);
           begin();
           router.push('/session/active');
         },

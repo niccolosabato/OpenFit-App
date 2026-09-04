@@ -12,13 +12,13 @@ import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import { SET_TYPE_BADGE, countsAsWorkingSet, usesDuration, usesWeight } from '@/db/enums';
 import {
-  deleteSession,
   sessionExercisesQuery,
   sessionQuery,
   sessionSetsQuery,
   startSessionFromDay,
 } from '@/db/queries/sessions';
 import type { SessionSet } from '@/db/schema';
+import { removeSession } from '@/features/session/actions';
 import { startWorkout } from '@/features/session/start';
 import { formatDuration, formatDurationLong, formatSessionDate, formatTime } from '@/lib/format';
 import { formatNumber, formatVolume, fromKg } from '@/lib/units';
@@ -68,7 +68,7 @@ export default function SessionDetailScreen() {
           text: 'Elimina',
           style: 'destructive',
           onPress: () => {
-            deleteSession(id);
+            removeSession(id);
             router.back();
           },
         },

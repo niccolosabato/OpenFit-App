@@ -321,13 +321,11 @@ export default function ProfileScreen() {
         />
       </Sheet>
 
-      {busy ? (
-        <Sheet visible onClose={() => {}} title="Un attimo…" scrollable={false}>
-          <Text variant="caption" tone="dim">
-            Sto lavorando sul file.
-          </Text>
-        </Sheet>
-      ) : null}
+      <Sheet visible={busy} onClose={() => setBusy(false)} title="Un attimo…" scrollable={false}>
+        <Text variant="caption" tone="dim">
+          Sto lavorando sul file.
+        </Text>
+      </Sheet>
     </Screen>
   );
 }
