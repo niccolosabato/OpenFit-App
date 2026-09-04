@@ -313,6 +313,7 @@ export default function ActiveSessionScreen() {
                           previous={previous}
                           unit={settings.unit}
                           effortScale={settings.effortScale}
+                          prefill={settings.prefillFromPrevious}
                           onComplete={(values) => handleComplete(set, item.exercise.id, values)}
                           onUncomplete={() => uncompleteSet(set.id)}
                           onOpenMenu={() => setMenuSet(set)}

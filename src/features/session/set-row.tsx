@@ -58,6 +58,7 @@ export function SetRow({
   unit,
   effortScale,
   isChild,
+  prefill,
   onComplete,
   onUncomplete,
   onOpenMenu,
@@ -71,6 +72,9 @@ export function SetRow({
   unit: WeightUnit;
   effortScale: EffortScale;
   isChild?: boolean;
+  /** Riempie i campi vuoti con la prestazione precedente invece di limitarsi
+   *  a mostrarla come segnaposto. */
+  prefill?: boolean;
   onComplete: (values: SetValues) => void;
   onUncomplete: () => void;
   onOpenMenu: () => void;
@@ -89,12 +93,43 @@ export function SetRow({
 
   useEffect(() => {
     if (focusedRef.current) return;
-    setWeight(set.weight === null ? '' : formatNumber(fromKg(set.weight, unit)));
-    setReps(set.reps === null ? '' : String(set.reps));
-    setDuration(set.durationSeconds === null ? '' : String(set.durationSeconds));
+
+    // Una serie già spuntata mostra sempre e solo quello che è stato fatto:
+    // suggerire qualcosa sopra un dato reale sarebbe un falso.
+    const suggest = prefill && !set.isCompleted ? previous : null;
+
+    setWeight(
+      set.weight !== null
+        ? formatNumber(fromKg(set.weight, unit))
+        : suggest?.weight != null
+          ? formatNumber(fromKg(suggest.weight, unit))
+          : '',
+    );
+    setReps(
+      set.reps !== null ? String(set.reps) : suggest?.reps != null ? String(suggest.reps) : '',
+    );
+    setDuration(
+      set.durationSeconds !== null
+        ? String(set.durationSeconds)
+        : suggest?.durationSeconds != null
+          ? String(suggest.durationSeconds)
+          : '',
+    );
+
     const value = effortScale === 'rir' ? set.rir : set.rpe;
     setEffort(value === null ? '' : String(value));
-  }, [set.weight, set.reps, set.durationSeconds, set.rpe, set.rir, unit, effortScale]);
+  }, [
+    set.weight,
+    set.reps,
+    set.durationSeconds,
+    set.rpe,
+    set.rir,
+    set.isCompleted,
+    previous,
+    prefill,
+    unit,
+    effortScale,
+  ]);
 
   function parse(raw: string): number | null {
     const cleaned = raw.replace(',', '.').trim();

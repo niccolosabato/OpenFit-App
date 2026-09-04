@@ -7,8 +7,8 @@ precedente sono sempre sotto gli occhi.
 I dati restano **sul telefono**. Nessun account, nessun server, nessuna
 sincronizzazione: il backup si fa esportando un file JSON.
 
-> **Stato:** in sviluppo. Vedi *Cosa c'è adesso* più sotto per quello che
-> funziona davvero, senza promesse.
+> **Stato:** funzionalmente completa e usabile in palestra, non ancora provata
+> su un ciclo di allenamento lungo. Sotto c'è anche cosa *non* fa.
 
 ## Cosa fa
 
@@ -26,6 +26,20 @@ sincronizzazione: il backup si fa esportando un file JSON.
   badge quando si batte un record
 - **Statistiche** — serie settimanali per gruppo muscolare, volume, frequenza,
   peso corporeo
+
+- **Backup** — export e import di un file JSON con tutto dentro
+- **Calcolatore dischi** — quali dischi per lato, con la dotazione della *tua*
+  palestra e il tuo bilanciere
+
+## Cosa non fa
+
+- Nessuna sincronizzazione fra dispositivi e nessun account: si passa dal file
+  di backup.
+- Nessun conteggio calorie, nessun piano alimentare.
+- Niente iOS al momento: il progetto è cross-platform ma è provato solo su
+  Android.
+- Il volume conta il **carico esterno**: un esercizio a corpo libero senza
+  zavorra registra le ripetizioni ma non fa tonnellaggio.
 
 ## Stack
 
@@ -45,6 +59,20 @@ Dopo aver modificato `src/db/schema.ts`:
 
 ```bash
 npm run db:generate
+```
+
+Verifiche:
+
+```bash
+npm test           # logica pura: e1RM, dischi, unità, aggregazioni
+npm run typecheck
+npx expo export -p android
+```
+
+Per un APK installabile senza Expo Go (serve un account Expo gratuito):
+
+```bash
+npx eas build -p android --profile preview
 ```
 
 ## Dati e privacy
