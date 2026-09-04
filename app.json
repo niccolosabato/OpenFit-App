@@ -24,10 +24,6 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.niccolosabato.openfit"
     },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
       "expo-router",
       "expo-sqlite",
@@ -50,6 +46,10 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "platforms": [
+      "android",
+      "ios"
+    ]
   }
 }
