@@ -21,8 +21,12 @@ export const SETTINGS_ID = 1;
 /**
  * Crea la riga di impostazioni al primo avvio. Se esiste già non la tocca:
  * i default dello schema valgono solo alla creazione.
+ *
+ * Esportata perché serve anche a `wipeAllData`: la cancellazione totale porta
+ * via anche `settings`, e senza ricrearla subito l'app resterebbe senza la
+ * riga finché non viene riavviata.
  */
-function ensureSettings(db: DB): void {
+export function ensureSettings(db: DB): void {
   db.insert(settings)
     .values({
       id: SETTINGS_ID,

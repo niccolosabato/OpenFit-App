@@ -10,7 +10,8 @@
  * se domani cambiano le mappature dell'ORM.
  */
 
-import { sqlite } from '../client';
+import { db, sqlite } from '../client';
+import { ensureSettings } from '../bootstrap';
 
 export const BACKUP_FORMAT = 'openfit-backup';
 export const BACKUP_VERSION = 1;
@@ -139,14 +140,27 @@ export function restoreBackup(backup: Backup): void {
         );
       }
     }
+
+    // Se il backup arrivasse senza `settings` — file troncato, versione più
+    // vecchia del formato — l'app resterebbe senza la sua riga singleton.
+    ensureSettings(db);
   });
 }
 
-/** Svuota tutto e lascia il database pronto per essere riseminato all'avvio. */
+/**
+ * Svuota tutto e lascia il database pronto per essere riseminato all'avvio.
+ *
+ * `settings` è fra le tabelle cancellate, e la riga va ricreata subito: il
+ * resto dell'app la dà per esistente, e il primo avvio si riconosce proprio dal
+ * suo `onboardingCompleted` a `false`. Ricrearla qui — invece di aspettare il
+ * prossimo `bootstrapDatabase` — significa che dopo "Cancella tutti i dati"
+ * l'app riparte dalla presentazione, che è il comportamento voluto.
+ */
 export function wipeAllData(): void {
   sqlite.withTransactionSync(() => {
     for (const table of [...TABLES].reverse()) {
       sqlite.runSync(`delete from ${table}`);
     }
+    ensureSettings(db);
   });
 }

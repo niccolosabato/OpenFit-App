@@ -124,6 +124,11 @@ export default function ProfileScreen() {
               setGoalOpen(true);
             }}
           />
+          <NavRow
+            label="Rivedi la presentazione"
+            description="Rifà i primi passi: nome, unità, colore."
+            onPress={() => update({ onboardingCompleted: false })}
+          />
         </SettingsSection>
 
         <SettingsSection title="Unità e aspetto">

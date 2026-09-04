@@ -11,7 +11,8 @@ import { BootErrorScreen, BootScreen } from '@/components/boot-screen';
 import { bootstrapDatabase } from '@/db/bootstrap';
 import { db } from '@/db/client';
 import { ToastHost } from '@/components/ui/toast';
-import { SettingsProvider } from '@/store/settings';
+import { OnboardingFlow } from '@/features/onboarding/onboarding-flow';
+import { SettingsProvider, useSettings } from '@/store/settings';
 import { ThemeProvider } from '@/theme';
 import { neutral } from '@/theme/tokens';
 
@@ -27,6 +28,46 @@ SplashScreen.preventAutoHideAsync().catch(() => {
  * dirlo è meglio che lasciare girare lo splash all'infinito.
  */
 const BOOT_TIMEOUT_MS = 10_000;
+
+/**
+ * Le rotte, oppure la presentazione al primo avvio.
+ *
+ * È un componente a parte perché `RootLayout` è quello che *monta*
+ * `SettingsProvider`, e da lì non può leggerne il contenuto.
+ *
+ * La condizione è `isLoaded && !onboardingCompleted`, e il controllo su
+ * `isLoaded` non è ridondante: finché la prima lettura dal database non arriva,
+ * `settings` è il fallback scritto a mano nello store, che ha
+ * `onboardingCompleted: false`. Senza quel controllo la presentazione
+ * lampeggerebbe a ogni avvio anche a chi l'ha già fatta.
+ *
+ * Nessun `Redirect`: montare le tab e poi navigare via significherebbe uno
+ * sfarfallio e un "indietro" che riporta dentro l'app da cui si è appena usciti.
+ */
+function AppRoutes() {
+  const { settings, isLoaded } = useSettings();
+
+  if (!isLoaded) return <BootScreen message="Carico il profilo…" />;
+
+  if (!settings.onboardingCompleted) return <OnboardingFlow />;
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: neutral.bg },
+        animation: 'slide_from_right',
+      }}>
+      <Stack.Screen name="(tabs)" />
+      {/* La sessione sale dal basso: è un contesto in cui si entra e da cui si
+          esce, non una pagina della navigazione. */}
+      <Stack.Screen
+        name="session/active"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
@@ -84,20 +125,7 @@ export default function RootLayout() {
         ) : (
           <SettingsProvider>
             <ThemeProvider>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: neutral.bg },
-                  animation: 'slide_from_right',
-                }}>
-                <Stack.Screen name="(tabs)" />
-                {/* La sessione sale dal basso: è un contesto in cui si entra
-                    e da cui si esce, non una pagina della navigazione. */}
-                <Stack.Screen
-                  name="session/active"
-                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-                />
-              </Stack>
+              <AppRoutes />
               <ToastHost />
             </ThemeProvider>
           </SettingsProvider>
