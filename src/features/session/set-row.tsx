@@ -2,6 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { Glass } from '@/components/ui/glass';
 import { Text } from '@/components/ui/text';
 import { SET_TYPE_BADGE, usesDuration, usesReps, usesWeight, type SetType, type TrackingType } from '@/db/enums';
 import type { SessionSet } from '@/db/schema';
@@ -13,7 +14,7 @@ import type { SetValues } from './actions';
 
 /** Larghezza delle colonne fisse: indice a sinistra, spunta a destra. */
 const INDEX_WIDTH = 34;
-const CHECK_WIDTH = 46;
+const CHECK_WIDTH = 56;
 
 export function SetRowHeader({ tracking, effortScale, unit }: { tracking: TrackingType; effortScale: EffortScale; unit: WeightUnit }) {
   const theme = useTheme();
@@ -22,8 +23,8 @@ export function SetRowHeader({ tracking, effortScale, unit }: { tracking: Tracki
       <Text variant="label" tone="faint" style={{ width: INDEX_WIDTH, textAlign: 'center' }}>
         Ser
       </Text>
-      <Text variant="label" tone="faint" style={styles.previousCell}>
-        Prec.
+      <Text variant="label" tone="faint" style={[styles.previousCell, styles.previousEmpty]}>
+        Prec. ⤺
       </Text>
       {usesWeight(tracking) ? (
         <Text variant="label" tone="faint" style={styles.inputCell}>
@@ -174,21 +175,20 @@ export function SetRow({
       style={[
         styles.row,
         {
-          minHeight: 46,
+          minHeight: 56,
           paddingHorizontal: theme.space.md,
           paddingLeft: isChild ? theme.space.md + 14 : theme.space.md,
           gap: theme.space.sm,
-          backgroundColor: done ? theme.colors.accentGlow : 'transparent',
-          borderTopColor: theme.colors.border,
+          backgroundColor: done ? theme.colors.accentTint : 'transparent',
+          borderTopColor: theme.glass.stroke,
         },
         styles.bordered,
       ]}>
       <Pressable
         onPress={onOpenMenu}
-        hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel="Tipo di serie"
-        style={{ width: INDEX_WIDTH, alignItems: 'center' }}>
+        style={{ width: INDEX_WIDTH, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
         {set.setType === 'working' && !isChild ? (
           <Text variant="subtitle" tone={done ? 'accent' : 'dim'} numeric>
             {workingIndex}
@@ -200,15 +200,39 @@ export function SetRow({
         )}
       </Pressable>
 
+      {/* Era testo inerte, e invece è il pulsante che si preme di più:
+          ricopia i valori della volta scorsa. Ora ha una lastra sotto e
+          l'icona che dice cosa fa. */}
       <Pressable
         onPress={copyPrevious}
         disabled={!previous}
         accessibilityRole="button"
         accessibilityLabel="Ricopia la volta precedente"
+        accessibilityHint="Riempie carico e ripetizioni con i valori dell'ultima volta"
         style={styles.previousCell}>
-        <Text variant="caption" tone="faint" numeric numberOfLines={1}>
-          {previousLabel}
-        </Text>
+        {({ pressed }) =>
+          previous ? (
+            <Glass
+              level="mid"
+              radius={theme.radius.sm}
+              sheen={false}
+              pressed={pressed}
+              style={styles.previousBox}>
+              <MaterialCommunityIcons
+                name="content-copy"
+                size={12}
+                color={theme.colors.accentDim}
+              />
+              <Text variant="caption" tone="dim" numeric numberOfLines={1}>
+                {previousLabel}
+              </Text>
+            </Glass>
+          ) : (
+            <Text variant="caption" tone="faint" numeric numberOfLines={1} style={styles.previousEmpty}>
+              {previousLabel}
+            </Text>
+          )
+        }
       </Pressable>
 
       {usesWeight(tracking) ? (
@@ -268,11 +292,11 @@ export function SetRow({
         style={({ pressed }) => [
           styles.check,
           {
-            width: CHECK_WIDTH - 8,
-            height: 36,
+            width: 48,
+            height: 48,
             borderRadius: theme.radius.sm,
-            backgroundColor: done ? theme.colors.accent : theme.colors.surface2,
-            borderColor: done ? theme.colors.accent : theme.colors.borderStrong,
+            backgroundColor: done ? theme.colors.accent : theme.glass.fillMid,
+            borderColor: done ? theme.colors.accent : theme.glass.stroke,
           },
           pressed && { opacity: 0.6 },
         ]}>
@@ -351,7 +375,16 @@ function describePrevious(set: SessionSet, tracking: TrackingType, unit: WeightU
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   bordered: { borderTopWidth: StyleSheet.hairlineWidth },
-  previousCell: { flex: 1.5, justifyContent: 'center' },
+  previousCell: { flex: 1.6, justifyContent: 'center' },
+  previousBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minHeight: 40,
+    paddingHorizontal: 6,
+  },
+  previousEmpty: { textAlign: 'center' },
   inputCell: { flex: 1, textAlign: 'center' },
   effortCell: { width: 46, textAlign: 'center' },
   input: {

@@ -86,7 +86,12 @@ export function RoutineSetEditor({
   const usingRir = settings.effortScale === 'rir';
 
   return (
-    <Sheet visible={set !== null} onClose={onClose} title="Serie prevista">
+    <Sheet
+      visible={set !== null}
+      onClose={onClose}
+      title="Serie prevista"
+      // Il foglio scorre: senza un piede fisso il "Salva" va inseguito.
+      footer={<Button title="Salva" onPress={save} size="lg" fullWidth />}>
       <View style={{ gap: theme.space.sm }}>
         <Text variant="label" tone="dim">
           Tipo di serie
@@ -176,7 +181,6 @@ export function RoutineSetEditor({
         ) : null}
       </View>
 
-      <Button title="Salva" onPress={save} fullWidth />
       <SheetAction label="Elimina serie" destructive onPress={onDelete} />
     </Sheet>
   );

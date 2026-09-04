@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { parseISO } from 'date-fns';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { LineChart } from '@/components/charts/line-chart';
 import { ActionBar } from '@/components/ui/action-bar';

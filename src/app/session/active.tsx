@@ -2,13 +2,17 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
+import { Glass } from '@/components/ui/glass';
+import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Screen } from '@/components/ui/screen';
+import { Screen, useScreenChrome } from '@/components/ui/screen';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
@@ -38,11 +42,13 @@ import {
   updateSessionSet,
 } from '@/db/queries/sessions';
 import type { SessionExercise, SessionSet } from '@/db/schema';
+import { ExerciseRail } from '@/features/session/exercise-rail';
 import { PlateSheet } from '@/features/session/plate-sheet';
 import { abandonSession, completeSet, uncompleteSet, type SetValues } from '@/features/session/actions';
 import { describeRecordHits } from '@/features/session/record-message';
 import { SetRow, SetRowHeader } from '@/features/session/set-row';
 import { RestTimerBar } from '@/features/timer/rest-timer-bar';
+import { useRestCountdown } from '@/features/timer/use-countdown';
 import { tapFeedback, useRestTimer } from '@/features/timer/rest-timer';
 import { formatDuration } from '@/lib/format';
 import { formatVolume } from '@/lib/units';
@@ -54,6 +60,7 @@ export default function ActiveSessionScreen() {
   const { settings } = useSettings();
   const showToast = useToast((s) => s.show);
   const startRest = useRestTimer((s) => s.start);
+  const { running: restRunning } = useRestCountdown();
 
   const { data: sessionRows } = useLiveQuery(activeSessionQuery());
   const session = sessionRows?.[0];
@@ -76,6 +83,13 @@ export default function ActiveSessionScreen() {
   const [menuExercise, setMenuExercise] = useState<SessionExercise | null>(null);
   const [plateFor, setPlateFor] = useState<number | null>(null);
   const [finishOpen, setFinishOpen] = useState(false);
+  const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
+  const [reorderOpen, setReorderOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Posizione verticale di ogni card, per poterci saltare dalla striscia.
+  const offsets = useRef<number[]>([]);
+  const scrollRef = useRef<ScrollView>(null);
 
   // Lo schermo resta acceso per tutta la seduta: fra una serie e l'altra il
   // telefono è appoggiato sulla panca e riaccenderlo ogni volta è un attrito.
@@ -177,6 +191,42 @@ export default function ActiveSessionScreen() {
     startRestFor(set.sessionExerciseId);
   }
 
+  /** Serie fatte su serie previste, esercizio per esercizio: nutre la striscia. */
+  const railItems = items.map((item) => {
+    const sets = (setsByExercise.get(item.sessionExercise.id) ?? []).filter(
+      (set) => set.parentSetId === null,
+    );
+    return {
+      id: item.sessionExercise.id,
+      name: item.exercise.name,
+      done: sets.filter((set) => set.completedAt !== null).length,
+      total: sets.length,
+    };
+  });
+
+  const allDone =
+    railItems.length > 0 && railItems.every((item) => item.total > 0 && item.done >= item.total);
+
+  function jumpTo(index: number) {
+    const y = offsets.current[index];
+    if (y === undefined) return;
+    setActiveIndex(index);
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+  }
+
+  /** Il primo esercizio con ancora qualcosa da fare, altrimenti il successivo. */
+  function jumpToNext() {
+    const pending = railItems.findIndex((item, i) => i > activeIndex && item.done < item.total);
+    const fallback = railItems.findIndex((item) => item.done < item.total);
+    const target = pending >= 0 ? pending : fallback;
+    if (target >= 0) jumpTo(target);
+  }
+
+  function addSetToActive() {
+    const item = items[activeIndex];
+    if (item) addSessionSet(item.sessionExercise.id);
+  }
+
   function confirmFinish() {
     if (totals.totalSets === 0) {
       Alert.alert(
@@ -200,32 +250,81 @@ export default function ActiveSessionScreen() {
   }
 
   return (
-    <Screen padded={false}>
-      <View style={{ paddingHorizontal: theme.space.lg, paddingTop: theme.space.md, gap: theme.space.md }}>
-        <View style={styles.headerRow}>
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Riduci a icona">
-            <MaterialCommunityIcons name="chevron-down" size={28} color={theme.colors.text} />
-          </Pressable>
-          <Text variant="heading" style={{ flex: 1 }} numberOfLines={1}>
-            {session.name}
-          </Text>
-          <Button title="Termina" size="sm" onPress={confirmFinish} />
-        </View>
-
-        <View style={styles.statsRow}>
-          <Stat label="Durata" value={formatDuration(elapsed)} />
-          <Stat label="Volume" value={formatVolume(totals.totalVolume, settings.unit)} />
-          <Stat label="Serie" value={String(totals.totalSets)} />
-        </View>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: theme.space.lg, gap: theme.space.md, paddingBottom: theme.space.xxxl * 2 }}
-        keyboardShouldPersistTaps="handled">
+    <Screen
+      padded={false}
+      header={
+        <SessionHeader
+          name={session.name}
+          elapsed={elapsed}
+          volume={formatVolume(totals.totalVolume, settings.unit)}
+          sets={String(totals.totalSets)}
+          onMenu={() => setSessionMenuOpen(true)}
+          rail={
+            <ExerciseRail
+              items={railItems}
+              activeIndex={activeIndex}
+              onJump={jumpTo}
+              onAdd={() => router.push({ pathname: '/exercise/picker', params: { sessionId } })}
+            />
+          }
+        />
+      }
+      // Una barra sola in fondo, con due stati: mentre il recupero gira mostra
+      // il countdown, altrimenti le azioni. "Termina" non sta più nell'angolo
+      // alto-destro, e diventa l'azione principale quando non resta più nulla
+      // da fare — sotto il pollice esattamente quando serve.
+      actionBar={
+        <ActionBar>
+          {restRunning ? (
+            <RestTimerBar />
+          ) : (
+            <>
+              <IconButton
+                icon="dots-horizontal"
+                label="Opzioni dell'allenamento"
+                surface
+                onPress={() => setSessionMenuOpen(true)}
+              />
+              {items.length > 0 ? (
+                <>
+                  <Button
+                    title="Serie"
+                    variant="secondary"
+                    icon={<MaterialCommunityIcons name="plus" size={18} color={theme.colors.text} />}
+                    onPress={addSetToActive}
+                  />
+                  <View style={{ flex: 1 }}>
+                    {allDone ? (
+                      <Button title="Termina" size="lg" fullWidth onPress={confirmFinish} />
+                    ) : (
+                      <Button
+                        title="Avanti"
+                        variant="secondary"
+                        size="lg"
+                        fullWidth
+                        onPress={jumpToNext}
+                      />
+                    )}
+                  </View>
+                </>
+              ) : (
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="Aggiungi esercizio"
+                    size="lg"
+                    fullWidth
+                    onPress={() => router.push({ pathname: '/exercise/picker', params: { sessionId } })}
+                  />
+                </View>
+              )}
+            </>
+          )}
+        </ActionBar>
+      }>
+      <SessionScroll
+        scrollRef={scrollRef}
+        offsets={offsets}
+        onActiveChange={setActiveIndex}>
         {items.length === 0 ? (
           <EmptyState
             icon="plus-circle-outline"
@@ -248,7 +347,12 @@ export default function ActiveSessionScreen() {
             let previousIndex = 0;
 
             return (
-              <View key={item.sessionExercise.id} style={{ gap: theme.space.sm }}>
+              <View
+                key={item.sessionExercise.id}
+                style={{ gap: theme.space.sm }}
+                onLayout={(e) => {
+                  offsets.current[index] = e.nativeEvent.layout.y;
+                }}>
                 {inSupersetWithPrevious ? (
                   <View style={[styles.supersetLink, { gap: theme.space.sm }]}>
                     <View style={{ width: 2, height: 14, backgroundColor: theme.colors.accent }} />
@@ -274,25 +378,23 @@ export default function ActiveSessionScreen() {
                     </Pressable>
 
                     {PLATE_LOADED_EQUIPMENT.includes(item.exercise.equipment) ? (
-                      <Pressable
+                      <IconButton
+                        icon="circle-slice-8"
+                        label="Calcolatore dischi"
+                        tone="dim"
                         onPress={() => {
                           const reference = topLevel.find((s) => s.weight)?.weight ?? settings.barWeight;
                           setPlateFor(reference);
                         }}
-                        hitSlop={10}
-                        accessibilityRole="button"
-                        accessibilityLabel="Calcolatore dischi">
-                        <MaterialCommunityIcons name="circle-slice-8" size={20} color={theme.colors.textDim} />
-                      </Pressable>
+                      />
                     ) : null}
 
-                    <Pressable
+                    <IconButton
+                      icon="dots-horizontal"
+                      label="Opzioni esercizio"
+                      tone="dim"
                       onPress={() => setMenuExercise(item.sessionExercise)}
-                      hitSlop={10}
-                      accessibilityRole="button"
-                      accessibilityLabel="Opzioni esercizio">
-                      <MaterialCommunityIcons name="dots-horizontal" size={22} color={theme.colors.textDim} />
-                    </Pressable>
+                    />
                   </View>
 
                   <SetRowHeader
@@ -348,8 +450,8 @@ export default function ActiveSessionScreen() {
                     onPress={() => addSessionSet(item.sessionExercise.id)}
                     style={({ pressed }) => [
                       styles.addSet,
-                      { minHeight: 44, borderTopColor: theme.colors.border, gap: theme.space.sm },
-                      pressed && { backgroundColor: theme.colors.surface2 },
+                      { minHeight: 52, borderTopColor: theme.glass.stroke, gap: theme.space.sm },
+                      pressed && { backgroundColor: theme.glass.fillPress },
                     ]}>
                     <MaterialCommunityIcons name="plus" size={16} color={theme.colors.accent} />
                     <Text variant="caption" tone="accent">
@@ -362,17 +464,93 @@ export default function ActiveSessionScreen() {
           })
         )}
 
-        {items.length > 0 ? (
-          <Button
-            title="Aggiungi esercizio"
-            variant="secondary"
-            fullWidth
-            onPress={() => router.push({ pathname: '/exercise/picker', params: { sessionId } })}
-          />
-        ) : null}
-      </ScrollView>
+      </SessionScroll>
 
-      <RestTimerBar />
+      {/* ────────────────────────────────────── opzioni dell'allenamento ── */}
+      <Sheet
+        visible={sessionMenuOpen}
+        onClose={() => setSessionMenuOpen(false)}
+        title={session.name}
+        scrollable={false}>
+        <SheetAction
+          label="Aggiungi esercizio"
+          onPress={() => {
+            setSessionMenuOpen(false);
+            router.push({ pathname: '/exercise/picker', params: { sessionId } });
+          }}
+        />
+        <SheetAction
+          label="Riordina gli esercizi"
+          description="Senza chiudere il foglio a ogni spostamento."
+          onPress={() => {
+            setSessionMenuOpen(false);
+            setReorderOpen(true);
+          }}
+        />
+        <SheetAction
+          label="Riduci a icona"
+          description="L'allenamento resta aperto, la barra in fondo lo riporta qui."
+          onPress={() => {
+            setSessionMenuOpen(false);
+            router.back();
+          }}
+        />
+        <SheetAction
+          label="Termina e salva"
+          onPress={() => {
+            setSessionMenuOpen(false);
+            confirmFinish();
+          }}
+        />
+        <SheetAction
+          label="Scarta l’allenamento"
+          destructive
+          onPress={() => {
+            setSessionMenuOpen(false);
+            Alert.alert('Scartare l’allenamento?', 'Le serie registrate vanno perse.', [
+              { text: 'Annulla', style: 'cancel' },
+              {
+                text: 'Scarta',
+                style: 'destructive',
+                onPress: () => {
+                  abandonSession(sessionId);
+                  router.back();
+                },
+              },
+            ]);
+          }}
+        />
+      </Sheet>
+
+      {/* ──────────────────────────────────────────────────────── riordino ── */}
+      {/* Le frecce non chiudono il foglio: spostare un esercizio di quattro
+          posti costava otto tocchi e quattro aperture di menu. */}
+      <Sheet
+        visible={reorderOpen}
+        onClose={() => setReorderOpen(false)}
+        title="Riordina gli esercizi">
+        {items.map((item, index) => (
+          <View key={item.sessionExercise.id} style={[styles.reorderRow, { gap: theme.space.sm }]}>
+            <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
+              {item.exercise.name}
+            </Text>
+            <IconButton
+              icon="chevron-up"
+              label={`Sposta ${item.exercise.name} in su`}
+              surface
+              disabled={index === 0}
+              onPress={() => moveSessionExercise(sessionId, item.sessionExercise.id, -1)}
+            />
+            <IconButton
+              icon="chevron-down"
+              label={`Sposta ${item.exercise.name} in giù`}
+              surface
+              disabled={index === items.length - 1}
+              onPress={() => moveSessionExercise(sessionId, item.sessionExercise.id, 1)}
+            />
+          </View>
+        ))}
+      </Sheet>
 
       {/* ───────────────────────────────────────────── menu di una serie ── */}
       <Sheet visible={menuSet !== null} onClose={() => setMenuSet(null)} title="Serie">
@@ -485,6 +663,108 @@ export default function ActiveSessionScreen() {
   );
 }
 
+/**
+ * Header della sessione: navigazione, statistiche e striscia degli esercizi
+ * in una lastra sola, ferma sopra il contenuto che scorre.
+ */
+function SessionHeader({
+  name,
+  elapsed,
+  volume,
+  sets,
+  onMenu,
+  rail,
+}: {
+  name: string;
+  elapsed: number;
+  volume: string;
+  sets: string;
+  onMenu: () => void;
+  rail: React.ReactNode;
+}) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Glass
+      level="high"
+      elevation="mid"
+      blur
+      radius={0}
+      sheen={false}
+      style={{
+        paddingTop: insets.top + theme.space.sm,
+        paddingBottom: theme.space.sm,
+        gap: theme.space.sm,
+        borderTopWidth: 0,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+      }}>
+      <View style={[styles.headerRow, { paddingHorizontal: theme.space.lg }]}>
+        <IconButton icon="chevron-down" label="Riduci a icona" size={28} onPress={() => router.back()} />
+        <Text variant="heading" style={{ flex: 1 }} numberOfLines={1}>
+          {name}
+        </Text>
+        <IconButton icon="dots-horizontal" label="Opzioni dell'allenamento" surface onPress={onMenu} />
+      </View>
+
+      <View style={[styles.statsRow, { paddingHorizontal: theme.space.lg }]}>
+        <Stat label="Durata" value={formatDuration(elapsed)} />
+        <Stat label="Volume" value={volume} />
+        <Stat label="Serie" value={sets} />
+      </View>
+
+      {rail}
+    </Glass>
+  );
+}
+
+/**
+ * Lo scroll della sessione.
+ *
+ * Tiene il conto di dove comincia ogni esercizio — serve alla striscia per
+ * saltarci — e di quale sia quello in vista, che è l'esercizio a cui la barra
+ * in fondo aggiunge le serie.
+ */
+function SessionScroll({
+  children,
+  scrollRef,
+  offsets,
+  onActiveChange,
+}: {
+  children: React.ReactNode;
+  scrollRef: React.RefObject<ScrollView | null>;
+  offsets: React.RefObject<number[]>;
+  onActiveChange: (index: number) => void;
+}) {
+  const theme = useTheme();
+  const chrome = useScreenChrome();
+
+  return (
+    <ScrollView
+      ref={scrollRef}
+      keyboardShouldPersistTaps="handled"
+      scrollEventThrottle={100}
+      onScroll={(e) => {
+        const y = e.nativeEvent.contentOffset.y + chrome.top + 24;
+        let index = 0;
+        offsets.current.forEach((offset, i) => {
+          if (offset !== undefined && offset <= y) index = i;
+        });
+        onActiveChange(index);
+      }}
+      contentContainerStyle={{
+        paddingTop: chrome.top + theme.space.md,
+        paddingBottom: chrome.bottom + theme.space.xl,
+        paddingHorizontal: theme.space.lg,
+        gap: theme.space.md,
+      }}
+      scrollIndicatorInsets={{ top: chrome.top, bottom: chrome.bottom }}>
+      {children}
+    </ScrollView>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flex: 1 }}>
@@ -499,6 +779,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  reorderRow: { flexDirection: 'row', alignItems: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   statsRow: { flexDirection: 'row', gap: 12 },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start' },

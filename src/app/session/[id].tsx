@@ -163,7 +163,7 @@ export default function SessionDetailScreen() {
       </ScreenScroll>
 
       {/* L'eliminazione era un cestino nell'angolo alto-destro: un tocco solo,
-          nel punto piu' facile da sfiorare reggendo il telefono. */}
+          nel punto più facile da sfiorare reggendo il telefono. */}
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={session.name} scrollable={false}>
         <SheetAction
           label="Elimina l’allenamento"

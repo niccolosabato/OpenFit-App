@@ -119,9 +119,9 @@ export default function RoutineDayScreen() {
           ]}
         />
       }
-      // L'azione piu' importante della schermata era l'ultimo elemento dello
-      // scroll: con otto esercizi da quattro serie stava due schermate piu' in
-      // basso. Qui e' sempre sotto il pollice.
+      // L'azione più importante della schermata era l'ultimo elemento dello
+      // scroll: con otto esercizi da quattro serie stava due schermate più in
+      // basso. Qui è sempre sotto il pollice.
       actionBar={
         <ActionBar>
           <Button
