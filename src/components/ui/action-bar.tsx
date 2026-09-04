@@ -6,78 +6,64 @@
  * elemento del builder — dopo otto esercizi da quattro serie significava due
  * schermate di scroll per far partire l'allenamento che si ha davanti.
  *
- * Sta sopra il contenuto, non dentro: chi la usa deve lasciare in fondo al
- * proprio scroll uno spazio pari a `actionBarSpace(insets)`, altrimenti la
- * barra copre le ultime righe.
+ * Non si posiziona da sé: va passata a `Screen` come `actionBar`, che la
+ * ancora in basso e ne misura l'altezza perché lo scroll possa lasciarle posto.
  */
 
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
 import { Glass } from './glass';
 
-/** Altezza della barra senza l'area sicura: un bersaglio da 48 più i margini. */
-export const ACTION_BAR_HEIGHT = 48 + 12 * 2;
-
-/**
- * Quanto spazio lasciare in fondo a uno scroll sormontato dalla barra.
- * Va sommato al `paddingBottom` del contenuto, non alla schermata.
- */
-export function actionBarSpace(insets: EdgeInsets): number {
-  return ACTION_BAR_HEIGHT + insets.bottom;
-}
-
 export function ActionBar({
   children,
   /**
-   * La barra galleggia sopra la tab bar quando la schermata ne ha una:
-   * serve a non coprirla.
+   * L'area sicura in fondo. Si disattiva quando sotto c'è già qualcos'altro
+   * che se ne occupa — la tab bar, per esempio.
    */
-  offsetBottom = 0,
+  safeBottom = true,
   style,
 }: {
   children: ReactNode;
-  offsetBottom?: number;
+  safeBottom?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={[styles.root, { bottom: offsetBottom }]}
-      // Il contenitore è trasparente e lascia passare i tocchi ai lati della
-      // barra; solo il vetro li intercetta.
-      pointerEvents="box-none">
-      <Glass
-        level="high"
-        elevation="high"
-        blur
-        radius={0}
-        sheen={false}
-        style={[
-          {
-            paddingTop: theme.space.md,
-            paddingBottom: Math.max(insets.bottom, theme.space.md),
-            paddingHorizontal: theme.space.lg,
-            gap: theme.space.md,
-            flexDirection: 'row',
-            alignItems: 'center',
-            // Il bordo laterale non serve: la barra tocca i due lati dello schermo.
-            borderLeftWidth: 0,
-            borderRightWidth: 0,
-            borderBottomWidth: 0,
-          },
-          style,
-        ]}>
-        {children}
-      </Glass>
-    </View>
+    <Glass
+      level="high"
+      elevation="high"
+      blur
+      radius={0}
+      sheen={false}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: theme.space.md,
+          paddingTop: theme.space.md,
+          paddingHorizontal: theme.space.lg,
+          // Senza questo i pulsanti finiscono sotto la barra dei gesti: è il
+          // difetto che la barra del recupero aveva da sempre.
+          paddingBottom: safeBottom ? Math.max(insets.bottom, theme.space.md) : theme.space.md,
+          // La barra tocca i due lati dello schermo: i bordi laterali e
+          // inferiore non hanno nulla da chiudere.
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+          borderBottomWidth: 0,
+        },
+        style,
+      ]}>
+      {children}
+    </Glass>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { position: 'absolute', left: 0, right: 0 },
-});
+/** Contenitore dell'azione principale: si prende tutto lo spazio che resta. */
+export function ActionBarPrimary({ children }: { children: ReactNode }) {
+  return <View style={{ flex: 1 }}>{children}</View>;
+}

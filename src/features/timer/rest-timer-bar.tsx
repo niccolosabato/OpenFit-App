@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Glass } from '@/components/ui/glass';
 import { Text } from '@/components/ui/text';
 import { formatDuration } from '@/lib/format';
 import { useSettings } from '@/store/settings';
@@ -13,6 +14,10 @@ import { useRestCountdown } from './use-countdown';
  *
  * Il numero è grande perché lo si legge da un metro di distanza, con il
  * telefono appoggiato sulla panca e mentre si respira.
+ *
+ * Non si occupa più dell'area sicura in fondo: sta dentro una `ActionBar`,
+ * che gliela garantisce. Prima la gestiva da sé — e non la applicava, così i
+ * tre pulsanti finivano sotto la barra dei gesti del telefono.
  */
 export function RestTimerBar() {
   const theme = useTheme();
@@ -28,19 +33,8 @@ export function RestTimerBar() {
   const options = { sound: settings.timerSound, notify: settings.timerNotification };
 
   return (
-    <View
-      style={[
-        styles.root,
-        {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.borderStrong,
-          paddingHorizontal: theme.space.lg,
-          paddingTop: theme.space.md,
-          paddingBottom: theme.space.md,
-          gap: theme.space.md,
-        },
-      ]}>
-      <View style={[styles.track, { backgroundColor: theme.colors.surface3 }]}>
+    <View style={[styles.root, { gap: theme.space.md }]}>
+      <View style={[styles.track, { backgroundColor: theme.glass.fillMid }]}>
         <View
           style={[
             styles.fill,
@@ -87,39 +81,42 @@ function TimerButton({
   emphasis?: boolean;
 }) {
   const theme = useTheme();
+  const box = { width: theme.hit, height: theme.hit };
+
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.button,
-        {
-          width: theme.hit,
-          height: theme.hit,
-          borderRadius: theme.radius.md,
-          backgroundColor: emphasis ? theme.colors.accent : theme.colors.surface2,
-          borderColor: emphasis ? theme.colors.accent : theme.colors.border,
-        },
-        pressed && { opacity: 0.6 },
-      ]}>
-      <MaterialCommunityIcons
-        name={icon}
-        size={22}
-        color={emphasis ? theme.colors.onAccent : theme.colors.text}
-      />
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      {({ pressed }) =>
+        emphasis ? (
+          <View
+            style={[
+              styles.button,
+              box,
+              theme.elevation.low,
+              { borderRadius: theme.radius.md, backgroundColor: theme.colors.accent },
+              pressed && styles.pressed,
+            ]}>
+            <MaterialCommunityIcons name={icon} size={22} color={theme.colors.onAccent} />
+          </View>
+        ) : (
+          <Glass
+            level="mid"
+            radius={theme.radius.md}
+            sheen={false}
+            pressed={pressed}
+            style={[styles.button, box]}>
+            <MaterialCommunityIcons name={icon} size={22} color={theme.colors.text} />
+          </Glass>
+        )
+      }
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { borderTopWidth: StyleSheet.hairlineWidth * 2 },
+  root: { flex: 1 },
   track: { height: 4, borderRadius: 2, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 2 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  button: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-  },
+  pressed: { opacity: 0.6 },
+  button: { alignItems: 'center', justifyContent: 'center' },
 });

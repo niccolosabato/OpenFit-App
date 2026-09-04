@@ -1,8 +1,11 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
+import { Glass } from './glass';
+import { IconButton } from './icon-button';
 import { Text } from './text';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -13,7 +16,17 @@ export type HeaderAction = {
   onPress: () => void;
 };
 
-/** Intestazione di schermata: titolo, ritorno indietro, azioni a destra. */
+/**
+ * Intestazione di schermata: titolo, ritorno indietro, azioni a destra.
+ *
+ * È chrome fisso: va passata a `Screen` come `header`, non messa nel flusso.
+ * Il contenuto le scorre sotto e si vede sfocato — è ciò che rende il vetro
+ * riconoscibile invece che una semplice trasparenza.
+ *
+ * Nell'header restano solo navigazione e azioni innocue. Ciò che elimina,
+ * archivia o conclude sta altrove: in fondo, sotto il pollice, dove lo si
+ * raggiunge di proposito e non per sbaglio con la mano che regge il telefono.
+ */
 export function ScreenHeader({
   title,
   subtitle,
@@ -26,27 +39,29 @@ export function ScreenHeader({
   actions?: HeaderAction[];
 }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View
+    <Glass
+      level="high"
+      elevation="mid"
+      blur
+      radius={0}
+      sheen={false}
       style={[
         styles.root,
         {
+          paddingTop: insets.top + theme.space.sm,
+          paddingBottom: theme.space.md,
           paddingHorizontal: theme.space.lg,
-          paddingTop: theme.space.md,
-          paddingBottom: theme.space.lg,
-          gap: theme.space.md,
+          gap: theme.space.sm,
+          borderTopWidth: 0,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
         },
       ]}>
       {showBack ? (
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Indietro"
-          style={({ pressed }) => pressed && { opacity: 0.6 }}>
-          <MaterialCommunityIcons name="chevron-left" size={30} color={theme.colors.text} />
-        </Pressable>
+        <IconButton icon="chevron-left" label="Indietro" size={30} onPress={() => router.back()} />
       ) : null}
 
       <View style={styles.titles}>
@@ -61,36 +76,19 @@ export function ScreenHeader({
       </View>
 
       {actions.map((action) => (
-        <Pressable
+        <IconButton
           key={action.label}
+          icon={action.icon}
+          label={action.label}
           onPress={action.onPress}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={action.label}
-          style={({ pressed }) => [
-            styles.action,
-            {
-              backgroundColor: theme.colors.surface2,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.md,
-            },
-            pressed && { opacity: 0.6 },
-          ]}>
-          <MaterialCommunityIcons name={action.icon} size={20} color={theme.colors.text} />
-        </Pressable>
+          surface
+        />
       ))}
-    </View>
+    </Glass>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flexDirection: 'row', alignItems: 'center' },
   titles: { flex: 1, gap: 2 },
-  action: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-  },
 });

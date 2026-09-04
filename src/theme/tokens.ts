@@ -85,34 +85,21 @@ export const glass = {
  *
  * L'app non ne aveva nessuna: la gerarchia era tutta nei bordi. Col vetro
  * l'ombra diventa il modo principale per dire cosa sta sopra cosa.
- * `elevation` è per Android, il resto per iOS: vanno tenuti insieme.
+ *
+ * Si usa `boxShadow` (React Native 0.76+ con la New Architecture, che questo
+ * progetto ha) invece delle vecchie `shadow*`: quelle su Android non fanno
+ * nulla, e `elevation` da sola disegna un'ombra che segue l'outline della
+ * vista — su una superficie traslucida viene sporca. `elevation` resta come
+ * rete di sicurezza per i casi in cui `boxShadow` non venisse applicata.
  */
 export const elevation = {
   none: {},
   /** Card. */
-  low: {
-    shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
+  low: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.38)', elevation: 3 },
   /** Elementi flottanti: barre di azioni, chip attivi. */
-  mid: {
-    shadowColor: '#000',
-    shadowOpacity: 0.45,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
-  },
+  mid: { boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.46)', elevation: 8 },
   /** Fogli e chrome: stacca dal contenuto che ci scorre sotto. */
-  high: {
-    shadowColor: '#000',
-    shadowOpacity: 0.55,
-    shadowRadius: 34,
-    shadowOffset: { width: 0, height: 18 },
-    elevation: 16,
-  },
+  high: { boxShadow: '0px 14px 34px rgba(0, 0, 0, 0.55)', elevation: 16 },
 } as const;
 
 export type ElevationKey = keyof typeof elevation;

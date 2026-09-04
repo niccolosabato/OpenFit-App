@@ -2,6 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { useTheme } from '@/theme';
+import { Glass } from './glass';
 import { Text } from './text';
 
 /** Contenitore di una sezione di impostazioni, con titolo. */
@@ -27,16 +28,9 @@ export function SettingsSection({
           </Text>
         ) : null}
       </View>
-      <View
-        style={{
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
-          borderWidth: StyleSheet.hairlineWidth * 2,
-          borderRadius: theme.radius.lg,
-          overflow: 'hidden',
-        }}>
+      <Glass level="low" elevation="low" sheen={false}>
         {children}
-      </View>
+      </Glass>
     </View>
   );
 }
@@ -57,7 +51,7 @@ export function SwitchRow({
 }) {
   const theme = useTheme();
   return (
-    <View style={[styles.row, { minHeight: theme.hit + 6, paddingHorizontal: theme.space.lg, gap: theme.space.md, borderTopColor: theme.colors.border }]}>
+    <View style={[styles.row, { minHeight: theme.hit + 6, paddingHorizontal: theme.space.lg, gap: theme.space.md, borderTopColor: theme.glass.stroke }]}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="body" tone={disabled ? 'faint' : 'default'}>
           {label}
@@ -106,9 +100,9 @@ export function NavRow({
           minHeight: theme.hit + 6,
           paddingHorizontal: theme.space.lg,
           gap: theme.space.md,
-          borderTopColor: theme.colors.border,
+          borderTopColor: theme.glass.stroke,
         },
-        pressed && { backgroundColor: theme.colors.surface2 },
+        pressed && { backgroundColor: theme.glass.fillPress },
       ]}>
       {icon ? (
         <MaterialCommunityIcons

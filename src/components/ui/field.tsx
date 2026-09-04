@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
 import { useTheme } from '@/theme';
 import { Chip } from './chip';
+import { Glass } from './glass';
 import { Text } from './text';
 
 /** Campo di testo etichettato. */
@@ -25,35 +27,39 @@ export function TextField({
   hint?: string;
 }) {
   const theme = useTheme();
+  // Il campo a fuoco si vela d'accento invece di cambiare bordo: sul vetro un
+  // bordo netto stona, un velo no.
+  const [focused, setFocused] = useState(false);
 
   return (
     <View style={{ gap: theme.space.sm }}>
       <Text variant="label" tone="dim">
         {label}
       </Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={theme.colors.textFaint}
-        multiline={multiline}
-        keyboardType={keyboardType}
-        autoFocus={autoFocus}
-        style={[
-          styles.input,
-          {
-            minHeight: multiline ? 96 : theme.hit,
-            backgroundColor: theme.colors.surface2,
-            borderColor: theme.colors.border,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.space.md,
-            paddingVertical: multiline ? theme.space.md : 0,
-            color: theme.colors.text,
-            fontSize: theme.font.size.md,
-            textAlignVertical: multiline ? 'top' : 'center',
-          },
-        ]}
-      />
+      <Glass level="mid" radius={theme.radius.md} sheen={false} tinted={focused}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={placeholder}
+          placeholderTextColor={theme.colors.textFaint}
+          multiline={multiline}
+          keyboardType={keyboardType}
+          autoFocus={autoFocus}
+          style={[
+            styles.input,
+            {
+              minHeight: multiline ? 96 : theme.hit,
+              paddingHorizontal: theme.space.md,
+              paddingVertical: multiline ? theme.space.md : 0,
+              color: theme.colors.text,
+              fontSize: theme.font.size.md,
+              textAlignVertical: multiline ? 'top' : 'center',
+            },
+          ]}
+        />
+      </Glass>
       {hint ? (
         <Text variant="caption" tone="faint">
           {hint}
@@ -66,6 +72,9 @@ export function TextField({
 /**
  * Scelta fra poche opzioni, resa come pillole invece che come menu a tendina:
  * un tap invece di due, e si vede tutto insieme.
+ *
+ * Le pillole sono a grandezza piena, non compatte: qui non sono filtri da
+ * sfogliare ma la risposta a una domanda, e vanno prese al primo colpo.
  */
 export function OptionField<T extends string>({
   label,
@@ -94,7 +103,6 @@ export function OptionField<T extends string>({
           <Chip
             key={option}
             label={labels[option]}
-            compact
             selected={value === option}
             onPress={() => onChange(option)}
           />
@@ -110,6 +118,6 @@ export function OptionField<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  input: { borderWidth: StyleSheet.hairlineWidth * 2, includeFontPadding: false },
+  input: { includeFontPadding: false },
   options: { flexDirection: 'row', flexWrap: 'wrap' },
 });

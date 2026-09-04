@@ -1,7 +1,8 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput } from 'react-native';
 
 import { useTheme } from '@/theme';
+import { Glass } from './glass';
 
 export function SearchInput({
   value,
@@ -17,17 +18,13 @@ export function SearchInput({
   const theme = useTheme();
 
   return (
-    <View
+    <Glass
+      level="mid"
+      radius={theme.radius.pill}
+      sheen={false}
       style={[
         styles.root,
-        {
-          height: theme.hit,
-          backgroundColor: theme.colors.surface2,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.md,
-          paddingHorizontal: theme.space.md,
-          gap: theme.space.sm,
-        },
+        { height: theme.hit, paddingLeft: theme.space.md, paddingRight: theme.space.sm, gap: theme.space.sm },
       ]}>
       <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.textFaint} />
       <TextInput
@@ -43,17 +40,19 @@ export function SearchInput({
       {value.length > 0 ? (
         <Pressable
           onPress={() => onChangeText('')}
-          hitSlop={12}
+          hitSlop={14}
           accessibilityRole="button"
-          accessibilityLabel="Cancella la ricerca">
-          <MaterialCommunityIcons name="close-circle" size={18} color={theme.colors.textFaint} />
+          accessibilityLabel="Cancella la ricerca"
+          style={({ pressed }) => [styles.clear, pressed && { opacity: 0.6 }]}>
+          <MaterialCommunityIcons name="close-circle" size={20} color={theme.colors.textFaint} />
         </Pressable>
       ) : null}
-    </View>
+    </Glass>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: 'row', alignItems: 'center', borderWidth: StyleSheet.hairlineWidth * 2 },
+  root: { flexDirection: 'row', alignItems: 'center' },
   input: { flex: 1, padding: 0, includeFontPadding: false },
+  clear: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
 });

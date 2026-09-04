@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/theme';
 import { formatNumber } from '@/lib/units';
+import { Glass } from './glass';
 import { Text } from './text';
 
 /**
@@ -57,22 +58,13 @@ export function NumberStepper({
         </Text>
       ) : null}
 
-      <View
-        style={[
-          styles.row,
-          {
-            height: theme.hit,
-            backgroundColor: theme.colors.surface2,
-            borderColor: theme.colors.border,
-            borderRadius: theme.radius.md,
-          },
-        ]}>
+      <Glass level="mid" radius={theme.radius.md} sheen={false} style={[styles.row, { height: theme.hit }]}>
         <Pressable
           onPress={() => bump(-1)}
           accessibilityRole="button"
           accessibilityLabel={`Diminuisci ${label ?? ''}`}
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.5 }]}>
-          <MaterialCommunityIcons name="minus" size={20} color={theme.colors.text} />
+          <MaterialCommunityIcons name="minus" size={22} color={theme.colors.text} />
         </Pressable>
 
         <View style={styles.valueBox}>
@@ -108,16 +100,17 @@ export function NumberStepper({
           accessibilityRole="button"
           accessibilityLabel={`Aumenta ${label ?? ''}`}
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.5 }]}>
-          <MaterialCommunityIcons name="plus" size={20} color={theme.colors.text} />
+          <MaterialCommunityIcons name="plus" size={22} color={theme.colors.text} />
         </Pressable>
-      </View>
+      </Glass>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', borderWidth: StyleSheet.hairlineWidth * 2 },
-  button: { width: 46, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  // 48 pieni: è il bersaglio che si preme di più in tutta l'app.
+  button: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
   valueBox: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   input: { textAlign: 'center', minWidth: 50, padding: 0, includeFontPadding: false, fontWeight: '700' },
 });

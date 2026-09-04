@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Pressable, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme';
+import { Glass } from './glass';
 
 /**
- * Superficie standard: fondo carbone e bordo netto.
- * Se riceve `onPress` diventa toccabile e reagisce alla pressione.
+ * Superficie standard: una lastra di vetro sul fondo scuro.
+ * Se riceve `onPress` diventa toccabile e il vetro si schiarisce alla pressione.
  */
 export function Card({
   children,
@@ -13,33 +14,35 @@ export function Card({
   onLongPress,
   style,
   padded = true,
+  /** Vela la card con l'accento: usarla per ciò che è selezionato o in corso. */
+  tinted = false,
 }: {
   children: ReactNode;
   onPress?: () => void;
   onLongPress?: () => void;
   style?: ViewStyle;
   padded?: boolean;
+  tinted?: boolean;
 }) {
   const theme = useTheme();
 
-  const base: ViewStyle = {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderRadius: theme.radius.lg,
-    padding: padded ? theme.space.lg : 0,
-  };
+  const padding: ViewStyle = { padding: padded ? theme.space.lg : 0 };
 
   if (!onPress && !onLongPress) {
-    return <View style={[base, style]}>{children}</View>;
+    return (
+      <Glass level="low" elevation="low" tinted={tinted} style={[padding, style]}>
+        {children}
+      </Glass>
+    );
   }
 
   return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      style={({ pressed }) => [base, pressed && { backgroundColor: theme.colors.surface2 }, style]}>
-      {children}
+    <Pressable onPress={onPress} onLongPress={onLongPress}>
+      {({ pressed }) => (
+        <Glass level="low" elevation="low" tinted={tinted} pressed={pressed} style={[padding, style]}>
+          {children}
+        </Glass>
+      )}
     </Pressable>
   );
 }
