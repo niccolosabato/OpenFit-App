@@ -10,15 +10,17 @@
  *
  * 2. **Una notifica locale è schedulata sull'istante di fine.** È l'unico modo
  *    perché il recupero suoni a schermo bloccato: il JavaScript non gira.
- *    Se l'utente torna prima, la notifica viene annullata.
+ *    Se l'utente torna prima, la notifica viene annullata. Dove le notifiche
+ *    non esistono (Expo Go su Android) il timer resta valido in primo piano —
+ *    vedi `local-notifications.ts`.
  */
 
 import * as Haptics from 'expo-haptics';
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 import { create } from 'zustand';
 
-export const REST_NOTIFICATION_CHANNEL = 'rest-timer';
+import { cancelScheduled, scheduleRestEnd } from './local-notifications';
+
+export { NOTIFICATIONS_AVAILABLE, requestNotificationPermission } from './local-notifications';
 
 /** Di quanto aggiustano i tasti +/− sul countdown. */
 export const REST_ADJUST_STEP = 15;
@@ -43,66 +45,8 @@ export type TimerOptions = {
   notify: boolean;
 };
 
-/** Su Android una notifica deve appartenere a un canale per poter suonare. */
-export async function ensureNotificationChannel(): Promise<void> {
-  if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(REST_NOTIFICATION_CHANNEL, {
-    name: 'Timer di recupero',
-    importance: Notifications.AndroidImportance.HIGH,
-    vibrationPattern: [0, 250, 150, 250],
-    sound: 'default',
-    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-  });
-}
-
-/**
- * Chiede il permesso alle notifiche.
- *
- * Si chiama alla prima partenza del timer e non all'avvio dell'app: il
- * permesso ha senso solo quando si capisce a cosa serve.
- */
-export async function requestNotificationPermission(): Promise<boolean> {
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted) return true;
-  if (!current.canAskAgain) return false;
-  const asked = await Notifications.requestPermissionsAsync();
-  return asked.granted;
-}
-
-async function scheduleEndNotification(
-  seconds: number,
-  label: string | null,
-  sound: boolean,
-): Promise<string | null> {
-  if (seconds <= 0) return null;
-  try {
-    const granted = await requestNotificationPermission();
-    if (!granted) return null;
-    await ensureNotificationChannel();
-
-    return await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Recupero finito',
-        body: label ? `Torna sotto: ${label}` : 'Torna sotto.',
-        sound,
-        vibrate: [0, 250, 150, 250],
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds,
-        channelId: REST_NOTIFICATION_CHANNEL,
-      },
-    });
-  } catch {
-    // Notifiche non disponibili (permesso negato, Expo Go limitato): il timer
-    // resta comunque valido finché l'app è in primo piano.
-    return null;
-  }
-}
-
 function cancel(notificationId: string | null): void {
-  if (!notificationId) return;
-  Notifications.cancelScheduledNotificationAsync(notificationId).catch(() => {});
+  cancelScheduled(notificationId);
 }
 
 export const useRestTimer = create<RestTimerState>((set, get) => ({
@@ -122,7 +66,7 @@ export const useRestTimer = create<RestTimerState>((set, get) => ({
     set({ endsAt: Date.now() + seconds * 1000, duration: seconds, label, notificationId: null });
 
     if (options.notify) {
-      scheduleEndNotification(seconds, label, options.sound).then((id) => {
+      scheduleRestEnd(seconds, label, options.sound).then((id) => {
         // Se nel frattempo il recupero è stato saltato, la notifica non serve più.
         if (get().endsAt === null) cancel(id);
         else set({ notificationId: id });
@@ -151,7 +95,7 @@ export const useRestTimer = create<RestTimerState>((set, get) => ({
     });
 
     if (options.notify) {
-      scheduleEndNotification(remaining, label, options.sound).then((id) => {
+      scheduleRestEnd(remaining, label, options.sound).then((id) => {
         if (get().endsAt === null) cancel(id);
         else set({ notificationId: id });
       });

@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/toast';
 import { EFFORT_SCALE_LABELS, type EffortScale, type WeightUnit } from '@/db/enums';
 import { wipeAllData } from '@/db/queries/backup';
 import { pickAndRestoreBackup, shareBackup } from '@/features/settings/backup-actions';
+import { NOTIFICATIONS_AVAILABLE } from '@/features/timer/rest-timer';
 import { formatRest } from '@/lib/format';
 import { formatWeight, UNIT_LABEL, WEIGHT_STEP } from '@/lib/units';
 import { useSettings } from '@/store/settings';
@@ -186,15 +187,20 @@ export default function ProfileScreen() {
           />
           <SwitchRow
             label="Notifica a fine recupero"
-            description="Fa suonare il telefono anche a schermo bloccato."
-            value={settings.timerNotification}
+            description={
+              NOTIFICATIONS_AVAILABLE
+                ? 'Fa suonare il telefono anche a schermo bloccato.'
+                : 'Non disponibile in Expo Go: serve l’app installata. Il timer funziona lo stesso finché resta aperta.'
+            }
+            value={settings.timerNotification && NOTIFICATIONS_AVAILABLE}
             onChange={(timerNotification) => update({ timerNotification })}
+            disabled={!NOTIFICATIONS_AVAILABLE}
           />
           <SwitchRow
             label="Suono"
             value={settings.timerSound}
             onChange={(timerSound) => update({ timerSound })}
-            disabled={!settings.timerNotification}
+            disabled={!settings.timerNotification || !NOTIFICATIONS_AVAILABLE}
           />
           <SwitchRow
             label="Vibrazione"
