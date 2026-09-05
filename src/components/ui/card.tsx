@@ -2,11 +2,11 @@ import type { ReactNode } from 'react';
 import { Pressable, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 
 /**
- * Superficie standard: una lastra di vetro sul fondo scuro.
- * Se riceve `onPress` diventa toccabile e il vetro si schiarisce alla pressione.
+ * Superficie standard: fondo carbone e bordo netto.
+ * Se riceve `onPress` diventa toccabile e reagisce alla pressione.
  */
 export function Card({
   children,
@@ -30,18 +30,18 @@ export function Card({
 
   if (!onPress && !onLongPress) {
     return (
-      <Glass level="low" elevation="low" tinted={tinted} style={[padding, style]}>
+      <Surface level="low" tinted={tinted} style={[padding, style]}>
         {children}
-      </Glass>
+      </Surface>
     );
   }
 
   return (
     <Pressable onPress={onPress} onLongPress={onLongPress}>
       {({ pressed }) => (
-        <Glass level="low" elevation="low" tinted={tinted} pressed={pressed} style={[padding, style]}>
+        <Surface level="low" tinted={tinted} pressed={pressed} style={[padding, style]}>
           {children}
-        </Glass>
+        </Surface>
       )}
     </Pressable>
   );

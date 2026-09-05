@@ -15,7 +15,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/theme';
 
@@ -72,10 +72,9 @@ export function ExerciseRail({
               offsets.current[index] = e.nativeEvent.layout.x;
             }}>
             {({ pressed }) => (
-              <Glass
+              <Surface
                 level="mid"
                 radius={theme.radius.pill}
-                sheen={false}
                 tinted={active}
                 pressed={pressed}
                 style={[styles.pill, { paddingHorizontal: theme.space.md, gap: theme.space.sm }]}>
@@ -93,7 +92,7 @@ export function ExerciseRail({
                     {item.done}/{item.total}
                   </Text>
                 )}
-              </Glass>
+              </Surface>
             )}
           </Pressable>
         );
@@ -101,14 +100,13 @@ export function ExerciseRail({
 
       <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Aggiungi esercizio">
         {({ pressed }) => (
-          <Glass
+          <Surface
             level="mid"
             radius={theme.radius.pill}
-            sheen={false}
             pressed={pressed}
             style={[styles.pill, { paddingHorizontal: theme.space.md }]}>
             <MaterialCommunityIcons name="plus" size={18} color={theme.colors.accent} />
-          </Glass>
+          </Surface>
         )}
       </Pressable>
     </ScrollView>

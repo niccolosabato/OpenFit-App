@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 
 type ToastTone = 'info' | 'record';
@@ -85,19 +85,20 @@ export function ToastHost() {
           ],
         },
       ]}>
-      <Glass
+      <Surface
         level="high"
-        elevation="high"
         radius={theme.radius.lg}
         style={[
           styles.body,
           {
             padding: theme.space.md,
             gap: theme.space.md,
+            // Più chiaro delle card: l'avviso deve staccare da quello che c'è
+            // sotto, non confondercisi.
+            backgroundColor: theme.colors.surface3,
             // Il record si annuncia con il proprio colore anche sul bordo:
             // è l'unico avviso che vale la pena guardare a metà serie.
-            borderColor: isRecord ? theme.colors.record : theme.glass.stroke,
-            borderTopColor: isRecord ? theme.colors.record : theme.glass.strokeTop,
+            borderColor: isRecord ? theme.colors.record : theme.colors.borderStrong,
           },
         ]}>
         <MaterialCommunityIcons
@@ -115,7 +116,7 @@ export function ToastHost() {
             </Text>
           ) : null}
         </Animated.View>
-      </Glass>
+      </Surface>
     </Animated.View>
   );
 }

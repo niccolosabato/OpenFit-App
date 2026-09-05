@@ -185,7 +185,7 @@ export default function RoutineDayScreen() {
                   </Text>
                 </Pressable>
 
-                <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.glass.stroke }}>
+                <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border }}>
                   {sets.map((set) => {
                     if (set.setType === 'working') workingIndex += 1;
                     const badge = SET_TYPE_BADGE[set.setType];
@@ -202,10 +202,10 @@ export default function RoutineDayScreen() {
                           {
                             minHeight: 52,
                             paddingHorizontal: theme.space.lg,
-                            borderTopColor: theme.glass.stroke,
+                            borderTopColor: theme.colors.border,
                             gap: theme.space.md,
                           },
-                          pressed && { backgroundColor: theme.glass.fillPress },
+                          pressed && { backgroundColor: theme.colors.surface3 },
                         ]}>
                         <View style={styles.setIndex}>
                           {set.setType === 'working' ? (
@@ -232,10 +232,10 @@ export default function RoutineDayScreen() {
                       styles.addSet,
                       {
                         minHeight: 52,
-                        borderTopColor: theme.glass.stroke,
+                        borderTopColor: theme.colors.border,
                         gap: theme.space.sm,
                       },
-                      pressed && { backgroundColor: theme.glass.fillPress },
+                      pressed && { backgroundColor: theme.colors.surface3 },
                     ]}>
                     <MaterialCommunityIcons name="plus" size={16} color={theme.colors.accent} />
                     <Text variant="caption" tone="accent">

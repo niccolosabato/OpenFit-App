@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-nat
 
 import { useTheme } from '@/theme';
 import { Chip } from './chip';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 
 /** Campo di testo etichettato. */
@@ -27,8 +27,8 @@ export function TextField({
   hint?: string;
 }) {
   const theme = useTheme();
-  // Il campo a fuoco si vela d'accento invece di cambiare bordo: sul vetro un
-  // bordo netto stona, un velo no.
+  // Il campo a fuoco si tinge d'accento: si vede da lontano dove si sta
+  // scrivendo, anche con il telefono appoggiato sulla panca.
   const [focused, setFocused] = useState(false);
 
   return (
@@ -36,7 +36,7 @@ export function TextField({
       <Text variant="label" tone="dim">
         {label}
       </Text>
-      <Glass level="mid" radius={theme.radius.md} sheen={false} tinted={focused}>
+      <Surface level="mid" radius={theme.radius.md} tinted={focused}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -59,7 +59,7 @@ export function TextField({
             },
           ]}
         />
-      </Glass>
+      </Surface>
       {hint ? (
         <Text variant="caption" tone="faint">
           {hint}

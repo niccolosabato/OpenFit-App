@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { IconButton } from '@/components/ui/icon-button';
 import { Text } from '@/components/ui/text';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, type Equipment } from '@/db/enums';
@@ -54,17 +54,17 @@ export function ExerciseRow({
           paddingHorizontal: theme.space.lg,
           paddingVertical: theme.space.md,
           gap: theme.space.md,
-          borderBottomColor: theme.glass.stroke,
+          borderBottomColor: theme.colors.border,
         },
-        pressed && { backgroundColor: theme.glass.fillLow },
+        pressed && { backgroundColor: theme.colors.surface },
       ]}>
-      <Glass level="mid" radius={theme.radius.md} sheen={false} tinted={selected} style={styles.icon}>
+      <Surface level="mid" radius={theme.radius.md} tinted={selected} style={styles.icon}>
         <MaterialCommunityIcons
           name={selected ? 'check' : EQUIPMENT_ICON[exercise.equipment]}
           size={20}
           color={selected ? theme.colors.accent : theme.colors.textDim}
         />
-      </Glass>
+      </Surface>
 
       <View style={styles.body}>
         <Text variant="subtitle" numberOfLines={1}>

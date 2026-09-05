@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { formatDuration } from '@/lib/format';
 import { useSettings } from '@/store/settings';
@@ -34,7 +34,7 @@ export function RestTimerBar() {
 
   return (
     <View style={[styles.root, { gap: theme.space.md }]}>
-      <View style={[styles.track, { backgroundColor: theme.glass.fillMid }]}>
+      <View style={[styles.track, { backgroundColor: theme.colors.surface2 }]}>
         <View
           style={[
             styles.fill,
@@ -91,21 +91,19 @@ function TimerButton({
             style={[
               styles.button,
               box,
-              theme.elevation.low,
               { borderRadius: theme.radius.md, backgroundColor: theme.colors.accent },
               pressed && styles.pressed,
             ]}>
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.onAccent} />
           </View>
         ) : (
-          <Glass
+          <Surface
             level="mid"
             radius={theme.radius.md}
-            sheen={false}
             pressed={pressed}
             style={[styles.button, box]}>
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.text} />
-          </Glass>
+          </Surface>
         )
       }
     </Pressable>

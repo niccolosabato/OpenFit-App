@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { IconButton } from '@/components/ui/icon-button';
 import { Text } from '@/components/ui/text';
 import { activeSessionQuery } from '@/db/queries/sessions';
@@ -21,8 +21,8 @@ import { useTheme } from '@/theme';
  * barra tornare indietro sarebbe un rompicapo. Mostra anche il recupero, così
  * il countdown resta visibile ovunque nell'app.
  *
- * Quando il recupero gira la barra si vela d'accento invece di riempirsene:
- * sul vetro una tinta piena spegnerebbe la profondità di tutto il chrome.
+ * Quando il recupero gira la barra si tinge d'accento: il countdown si trova
+ * con la coda dell'occhio da qualunque schermata.
  */
 export function ActiveSessionBar() {
   const theme = useTheme();
@@ -50,11 +50,9 @@ export function ActiveSessionBar() {
       accessibilityRole="button"
       accessibilityLabel="Torna all’allenamento in corso">
       {({ pressed }) => (
-        <Glass
+        <Surface
           level="high"
-          blur
           radius={0}
-          sheen={false}
           tinted={running}
           pressed={pressed}
           style={[
@@ -92,7 +90,7 @@ export function ActiveSessionBar() {
             />
           ) : null}
           <MaterialCommunityIcons name="chevron-up" size={22} color={theme.colors.textDim} />
-        </Glass>
+        </Surface>
       )}
     </Pressable>
   );

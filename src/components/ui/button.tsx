@@ -1,13 +1,13 @@
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 
 export type ButtonVariant =
   /** Azione principale della schermata: pieno, colore accento. */
   | 'primary'
-  /** Azione secondaria: vetro con bordo. */
+  /** Azione secondaria: superficie con bordo. */
   | 'secondary'
   /** Terziaria: solo testo. */
   | 'ghost'
@@ -91,14 +91,13 @@ export function Button({
       style={[fullWidth && styles.fullWidth, isDisabled && styles.disabled, style]}>
       {({ pressed }) => {
         // Il primario resta una tinta piena: è l'unico elemento che deve
-        // "bucare" il vetro e farsi trovare senza cercarlo.
+        // farsi trovare senza cercarlo.
         if (variant === 'primary') {
           return (
             <View
               style={[
                 styles.base,
                 box,
-                theme.elevation.low,
                 { backgroundColor: theme.colors.accent },
                 pressed && styles.pressed,
               ]}>
@@ -114,15 +113,14 @@ export function Button({
         }
 
         return (
-          <Glass
+          <Surface
             level="mid"
-            elevation="low"
             radius={radius}
             danger={variant === 'danger'}
             pressed={pressed}
             style={[styles.base, box]}>
             {content}
-          </Glass>
+          </Surface>
         );
       }}
     </Pressable>

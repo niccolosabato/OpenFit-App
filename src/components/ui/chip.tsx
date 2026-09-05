@@ -1,13 +1,13 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 
 /**
  * Pillola selezionabile: filtri, tipi di set, gruppi muscolari.
  *
- * Selezionata si riempie d'accento; a riposo è vetro. Le altezze minime
+ * Selezionata si riempie d'accento, a riposo resta una superficie. Le altezze minime
  * (44, o 36 in versione compatta) tengono i filtri toccabili anche di fretta:
  * prima erano alti quanto il testo che contenevano.
  */
@@ -38,7 +38,6 @@ export function Chip({
             style={[
               styles.chip,
               box,
-              theme.elevation.low,
               {
                 borderRadius: theme.radius.pill,
                 backgroundColor: theme.colors.accent,
@@ -51,16 +50,15 @@ export function Chip({
             </Text>
           </View>
         ) : (
-          <Glass
+          <Surface
             level="mid"
             radius={theme.radius.pill}
-            sheen={false}
             pressed={pressed}
             style={[styles.chip, box]}>
             <Text variant="caption" tone="dim" style={styles.label} numberOfLines={1}>
               {label}
             </Text>
-          </Glass>
+          </Surface>
         )
       }
     </Pressable>
@@ -89,8 +87,8 @@ export function Tag({ label, color }: { label: string; color?: string }) {
         styles.tag,
         {
           borderRadius: theme.radius.sm,
-          borderColor: color ?? theme.glass.stroke,
-          backgroundColor: theme.glass.fillMid,
+          borderColor: color ?? theme.colors.border,
+          backgroundColor: theme.colors.surface2,
         },
       ]}>
       <Text variant="label" style={[styles.tagLabel, { color: color ?? theme.colors.textDim }]}>

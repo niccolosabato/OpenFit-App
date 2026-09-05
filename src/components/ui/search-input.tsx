@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 
 export function SearchInput({
   value,
@@ -18,10 +18,9 @@ export function SearchInput({
   const theme = useTheme();
 
   return (
-    <Glass
+    <Surface
       level="mid"
       radius={theme.radius.pill}
-      sheen={false}
       style={[
         styles.root,
         { height: theme.hit, paddingLeft: theme.space.md, paddingRight: theme.space.sm, gap: theme.space.sm },
@@ -47,7 +46,7 @@ export function SearchInput({
           <MaterialCommunityIcons name="close-circle" size={20} color={theme.colors.textFaint} />
         </Pressable>
       ) : null}
-    </Glass>
+    </Surface>
   );
 }
 

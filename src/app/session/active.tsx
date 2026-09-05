@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -450,8 +450,8 @@ export default function ActiveSessionScreen() {
                     onPress={() => addSessionSet(item.sessionExercise.id)}
                     style={({ pressed }) => [
                       styles.addSet,
-                      { minHeight: 52, borderTopColor: theme.glass.stroke, gap: theme.space.sm },
-                      pressed && { backgroundColor: theme.glass.fillPress },
+                      { minHeight: 52, borderTopColor: theme.colors.border, gap: theme.space.sm },
+                      pressed && { backgroundColor: theme.colors.surface3 },
                     ]}>
                     <MaterialCommunityIcons name="plus" size={16} color={theme.colors.accent} />
                     <Text variant="caption" tone="accent">
@@ -665,7 +665,7 @@ export default function ActiveSessionScreen() {
 
 /**
  * Header della sessione: navigazione, statistiche e striscia degli esercizi
- * in una lastra sola, ferma sopra il contenuto che scorre.
+ * in un blocco solo, fermo sopra il contenuto che scorre.
  */
 function SessionHeader({
   name,
@@ -686,12 +686,9 @@ function SessionHeader({
   const insets = useSafeAreaInsets();
 
   return (
-    <Glass
+    <Surface
       level="high"
-      elevation="mid"
-      blur
       radius={0}
-      sheen={false}
       style={{
         paddingTop: insets.top + theme.space.sm,
         paddingBottom: theme.space.sm,
@@ -715,7 +712,7 @@ function SessionHeader({
       </View>
 
       {rail}
-    </Glass>
+    </Surface>
   );
 }
 

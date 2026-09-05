@@ -15,7 +15,7 @@ import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 
 export function ActionBar({
   children,
@@ -34,12 +34,9 @@ export function ActionBar({
   const insets = useSafeAreaInsets();
 
   return (
-    <Glass
+    <Surface
       level="high"
-      elevation="high"
-      blur
       radius={0}
-      sheen={false}
       style={[
         {
           flexDirection: 'row',
@@ -59,7 +56,7 @@ export function ActionBar({
         style,
       ]}>
       {children}
-    </Glass>
+    </Surface>
   );
 }
 

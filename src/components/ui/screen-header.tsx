@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { IconButton } from './icon-button';
 import { Text } from './text';
 
@@ -21,8 +21,8 @@ export type HeaderAction = {
  * Intestazione di schermata: titolo, ritorno indietro, azioni a destra.
  *
  * È chrome fisso: va passata a `Screen` come `header`, non messa nel flusso.
- * Il contenuto le scorre sotto e si vede sfocato — è ciò che rende il vetro
- * riconoscibile invece che una semplice trasparenza.
+ * Così resta ferma mentre il contenuto scorre, e le azioni non se ne vanno
+ * insieme alla lista.
  *
  * Nell'header restano solo navigazione e azioni innocue. Ciò che elimina,
  * archivia o conclude sta altrove: in fondo, sotto il pollice, dove lo si
@@ -40,7 +40,7 @@ export function ScreenHeader({
   showBack?: boolean;
   actions?: HeaderAction[];
   /**
-   * Riga agganciata sotto il titolo, dentro la stessa lastra: filtri, periodo,
+   * Riga agganciata sotto il titolo, dentro la stessa barra: filtri, periodo,
    * ricerca. Sta qui e non in cima allo scroll perché è roba che si cambia
    * dopo aver guardato il contenuto, e inseguirla scorrendo all'insù è assurdo.
    */
@@ -50,12 +50,9 @@ export function ScreenHeader({
   const insets = useSafeAreaInsets();
 
   return (
-    <Glass
+    <Surface
       level="high"
-      elevation="mid"
-      blur
       radius={0}
-      sheen={false}
       style={[
         styles.root,
         {
@@ -95,7 +92,7 @@ export function ScreenHeader({
       </View>
 
       {below ? <View style={{ paddingBottom: theme.space.xs }}>{below}</View> : null}
-    </Glass>
+    </Surface>
   );
 }
 

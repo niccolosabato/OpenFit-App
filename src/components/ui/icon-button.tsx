@@ -12,7 +12,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -26,9 +26,9 @@ export function IconButton({
   /** Dimensione del glifo. L'area toccabile resta 48 comunque. */
   size = 22,
   tone = 'default',
-  /** Disegna la lastra di vetro sotto l'icona: serve a farla trovare. */
+  /** Disegna la superficie sotto l'icona: serve a farla trovare. */
   surface = false,
-  /** Vela la lastra d'accento: lo stato attivo. */
+  /** Tinge d'accento: lo stato attivo. */
   active = false,
   disabled = false,
 }: {
@@ -62,15 +62,14 @@ export function IconButton({
       style={disabled && styles.disabled}>
       {({ pressed }) =>
         surface ? (
-          <Glass
+          <Surface
             level="mid"
             radius={theme.radius.md}
-            sheen={false}
             tinted={active}
             pressed={pressed}
             style={styles.box}>
             <MaterialCommunityIcons name={icon} size={size} color={color} />
-          </Glass>
+          </Surface>
         ) : (
           <MaterialCommunityIcons
             name={icon}

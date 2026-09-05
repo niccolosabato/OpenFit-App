@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 
 /** Contenitore di una sezione di impostazioni, con titolo. */
@@ -28,9 +28,9 @@ export function SettingsSection({
           </Text>
         ) : null}
       </View>
-      <Glass level="low" elevation="low" sheen={false}>
+      <Surface level="low">
         {children}
-      </Glass>
+      </Surface>
     </View>
   );
 }
@@ -51,7 +51,7 @@ export function SwitchRow({
 }) {
   const theme = useTheme();
   return (
-    <View style={[styles.row, { minHeight: theme.hit + 6, paddingHorizontal: theme.space.lg, gap: theme.space.md, borderTopColor: theme.glass.stroke }]}>
+    <View style={[styles.row, { minHeight: theme.hit + 6, paddingHorizontal: theme.space.lg, gap: theme.space.md, borderTopColor: theme.colors.border }]}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="body" tone={disabled ? 'faint' : 'default'}>
           {label}
@@ -100,9 +100,9 @@ export function NavRow({
           minHeight: theme.hit + 6,
           paddingHorizontal: theme.space.lg,
           gap: theme.space.md,
-          borderTopColor: theme.glass.stroke,
+          borderTopColor: theme.colors.border,
         },
-        pressed && { backgroundColor: theme.glass.fillPress },
+        pressed && { backgroundColor: theme.colors.surface3 },
       ]}>
       {icon ? (
         <MaterialCommunityIcons

@@ -5,10 +5,6 @@
  * solo un pannello che compare, e restare senza dipendenze significa una cosa
  * in meno che si rompe agli aggiornamenti di Reanimated.
  *
- * Il pannello usa il vetro *simulato*, non il blur: il rapporto fra `BlurView`
- * e `BlurTargetView` non attraversa i confini di un `Modal` (vedi
- * `blur-target.tsx`). Sul fondo scurito la differenza non si vede.
- *
  * Il contenuto sta in basso perché è dove arriva il pollice: durante una serie
  * si tiene il telefono con una mano sola.
  */
@@ -18,7 +14,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 
 export function Sheet({
@@ -52,24 +48,23 @@ export function Sheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <Pressable
-        style={[styles.backdrop, { backgroundColor: theme.glass.backdrop }]}
+        style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
         onPress={onClose}
         accessibilityLabel="Chiudi"
       />
-      <Glass
+      <Surface
         level="high"
-        elevation="high"
         radius={0}
         style={[
           styles.panel,
           {
-            backgroundColor: theme.glass.panel,
+            backgroundColor: theme.colors.surface,
             borderTopLeftRadius: theme.radius.xl,
             borderTopRightRadius: theme.radius.xl,
             paddingBottom: footer ? 0 : insets.bottom + theme.space.md,
           },
         ]}>
-        <View style={[styles.grabber, { backgroundColor: theme.glass.strokeTop }]} />
+        <View style={[styles.grabber, { backgroundColor: theme.colors.borderStrong }]} />
 
         {title ? (
           <View style={{ paddingHorizontal: theme.space.lg, paddingBottom: theme.space.sm, gap: 2 }}>
@@ -95,7 +90,7 @@ export function Sheet({
             style={[
               styles.footer,
               {
-                borderTopColor: theme.glass.stroke,
+                borderTopColor: theme.colors.border,
                 paddingHorizontal: theme.space.lg,
                 paddingTop: theme.space.md,
                 paddingBottom: insets.bottom + theme.space.md,
@@ -105,7 +100,7 @@ export function Sheet({
             {footer}
           </View>
         ) : null}
-      </Glass>
+      </Surface>
     </Modal>
   );
 }
@@ -129,10 +124,9 @@ export function SheetAction({
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: Boolean(selected) }}>
       {({ pressed }) => (
-        <Glass
+        <Surface
           level={selected ? 'mid' : 'low'}
           radius={theme.radius.md}
-          sheen={false}
           tinted={selected}
           danger={destructive}
           pressed={pressed}
@@ -152,7 +146,7 @@ export function SheetAction({
               {description}
             </Text>
           ) : null}
-        </Glass>
+        </Surface>
       )}
     </Pressable>
   );

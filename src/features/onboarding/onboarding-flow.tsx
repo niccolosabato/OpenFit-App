@@ -20,7 +20,7 @@ import { StyleSheet, View } from 'react-native';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/field';
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { NumberStepper } from '@/components/ui/number-stepper';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
@@ -94,7 +94,7 @@ export function OnboardingFlow() {
               style={[
                 styles.tick,
                 {
-                  backgroundColor: i <= step ? theme.colors.accent : theme.glass.fillMid,
+                  backgroundColor: i <= step ? theme.colors.accent : theme.colors.surface2,
                   borderRadius: 2,
                 },
               ]}
@@ -206,9 +206,9 @@ function Step({
   return (
     <View style={{ gap: theme.space.lg }}>
       {icon ? (
-        <Glass level="mid" elevation="low" radius={48} style={styles.badge}>
+        <Surface level="mid" radius={48} style={styles.badge}>
           <MaterialCommunityIcons name={icon} size={40} color={theme.colors.accent} />
-        </Glass>
+        </Surface>
       ) : null}
       <View style={{ gap: theme.space.sm }}>
         <Text variant="title">{title}</Text>
@@ -245,7 +245,7 @@ function AccentSwatch({
           <View
             style={[
               styles.dot,
-              { backgroundColor: accent.base, borderColor: theme.glass.strokeTop },
+              { backgroundColor: accent.base, borderColor: theme.colors.borderStrong },
             ]}
           />
         }

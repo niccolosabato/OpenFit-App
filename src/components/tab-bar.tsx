@@ -2,13 +2,14 @@
  * Tab bar dell'app.
  *
  * Scritta a mano invece di usare quella di sistema per due ragioni: deve
- * rispettare i token del tema (vetro, accento configurabile) e ogni voce deve
+ * rispettare i token del tema (fondo carbone, bordo netto, accento
+ * configurabile) e ogni voce deve
  * essere alta almeno `theme.hit`, perché la si tocca anche a mani sudate fra
  * una serie e l'altra.
  *
- * È l'elemento in cui il vetro si vede meglio: il contenuto delle schermate le
- * scorre sotto e si intravede sfocato, invece di fermarsi contro una fascia
- * opaca. La voce attiva è una pastiglia d'accento, non solo un colore diverso.
+ * Sta sopra il contenuto invece che nel flusso, così resta ferma mentre le
+ * schermate scorrono. La voce attiva è una pastiglia d'accento, non solo un
+ * colore diverso.
  */
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -16,7 +17,7 @@ import { router, useSegments } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/theme';
 
@@ -29,7 +30,7 @@ type Tab = { name: string; href: Href; label: string; icon: IconName; iconActive
 /**
  * Le voci, in ordine. Sono dichiarate qui e non ricavate dallo stato del
  * navigatore perché la barra vive *fuori* da `<Tabs>`: deve stare sopra le
- * schermate per poterle sfocare, e da lì lo stato del navigatore non arriva.
+ * schermate, e da lì lo stato del navigatore non arriva.
  * La rotta attiva si legge dai segmenti del router.
  */
 const TABS: Tab[] = [
@@ -50,12 +51,9 @@ export function TabBar() {
   const current = segments[0] === '(tabs)' ? (segments[1] ?? 'index') : 'index';
 
   return (
-    <Glass
+    <Surface
       level="high"
-      elevation="high"
-      blur
       radius={0}
-      sheen={false}
       style={[
         styles.bar,
         {
@@ -86,7 +84,7 @@ export function TabBar() {
                 {
                   borderRadius: theme.radius.pill,
                   paddingHorizontal: theme.space.md,
-                  backgroundColor: isFocused ? theme.colors.accentTint : 'transparent',
+                  backgroundColor: isFocused ? theme.colors.accentGlow : 'transparent',
                 },
               ]}>
               <MaterialCommunityIcons
@@ -105,7 +103,7 @@ export function TabBar() {
           </Pressable>
         );
       })}
-    </Glass>
+    </Surface>
   );
 }
 

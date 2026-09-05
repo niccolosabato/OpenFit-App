@@ -1,11 +1,11 @@
 /**
  * Contenitore di schermata: fondo del tema, aree sicure e chrome fisso.
  *
- * Il vetro si vede solo se qualcosa gli scorre sotto. Per questo header e
- * barra delle azioni non stanno nel flusso ma *sopra* il contenuto, che passa
- * loro sotto e si intravede sfocato. Chi scorre non deve però finire con le
- * prime e le ultime righe nascoste: `Screen` misura il chrome e lo pubblica in
- * un contesto, e `ScreenScroll` lo trasforma nei margini giusti.
+ * Header e barra delle azioni non stanno nel flusso ma *sopra* il contenuto:
+ * restano fermi mentre la lista scorre, e l'azione principale non se ne va
+ * insieme a essa. Chi scorre non deve però finire con le prime e le ultime
+ * righe nascoste: `Screen` misura il chrome e lo pubblica in un contesto, e
+ * `ScreenScroll` lo trasforma nei margini giusti.
  *
  * Le schermate che non passano `header` né `actionBar` si comportano come
  * prima, con il contenuto nel flusso.
@@ -16,7 +16,6 @@ import { ScrollView, StyleSheet, View, type ScrollViewProps, type ViewStyle } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
-import { BlurTargetProvider } from './blur-target';
 
 export type ScreenChrome = {
   /** Altezza occupata dall'header, area sicura inclusa. */
@@ -92,9 +91,10 @@ export function Screen({
   return (
     <ScreenChromeContext.Provider value={{ top: topHeight, bottom: bottomHeight + outerBottom }}>
       <View style={[styles.root, root, style]}>
-        {/* Il contenuto è il bersaglio del blur; il chrome gli sta sopra come
-            fratello, mai come figlio: una vista non può sfocare sé stessa. */}
-        <BlurTargetProvider style={styles.fill}>{children}</BlurTargetProvider>
+        {/* Il chrome sta sopra il contenuto e ne copre le prime e le ultime
+            righe: per questo `Screen` ne misura l'altezza e `ScreenScroll` la
+            trasforma nei margini dello scroll. */}
+        <View style={styles.fill}>{children}</View>
 
         {header ? (
           <View
@@ -124,7 +124,7 @@ export function Screen({
  *
  * Aggiunge da sé il margine per non finire sotto header e barra azioni: è
  * l'unico modo per non doverselo ricordare in quindici rotte, e per non
- * scoprire l'errore solo quando un pulsante non risponde perché ha il vetro
+ * scoprire l'errore solo quando un pulsante non risponde perché ha la barra
  * davanti.
  */
 export function ScreenScroll({

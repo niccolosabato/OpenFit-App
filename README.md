@@ -4,9 +4,9 @@ Diario di allenamento per la sala pesi. App Android nativa: si registra ogni
 serie mentre la si fa, il recupero è cronometrato e i carichi della volta
 precedente sono sempre sotto gli occhi.
 
-L'interfaccia è scura e in vetro, con le azioni ancorate in fondo allo
-schermo: durante una seduta il telefono si tiene con una mano sola, e ciò che
-si tocca fra una serie e l'altra non deve essere inseguito scorrendo.
+L'interfaccia è scura, con le azioni ancorate in fondo allo schermo: durante
+una seduta il telefono si tiene con una mano sola, e ciò che si tocca fra una
+serie e l'altra non deve essere inseguito scorrendo.
 
 I dati restano **sul telefono**. Nessun account, nessun server, nessuna
 sincronizzazione: il backup si fa esportando un file JSON.

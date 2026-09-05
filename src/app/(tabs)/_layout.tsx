@@ -4,20 +4,19 @@ import { StyleSheet, View } from 'react-native';
 
 import { ActiveSessionBar } from '@/components/active-session-bar';
 import { TabBar } from '@/components/tab-bar';
-import { BlurTargetProvider } from '@/components/ui/blur-target';
 import { OuterChromeProvider } from '@/components/ui/screen';
 
 /**
  * Il chrome delle tab sta *sopra* le schermate, non sotto.
  *
- * È la condizione perché il vetro sia vetro: la barra deve avere qualcosa da
- * sfocare, e quel qualcosa è il contenuto che le scorre sotto. Per questo
- * `<Tabs>` è avvolto in un `BlurTargetProvider` e la barra è un suo fratello
- * sovrapposto — mai un discendente, o dovrebbe sfocare sé stessa.
+ * Così la barra dell'allenamento in corso e le tab restano ferme mentre il
+ * contenuto scorre, e le schermate possono ancorare le proprie azioni appena
+ * sopra di loro. L'altezza è misurata e passata alle schermate, che la usano
+ * per non finire coperte.
  *
- * Da qui viene anche il fatto che `TabBar` non riceva più le props del
- * navigatore: fuori da `<Tabs>` non arrivano, e la rotta attiva se la legge
- * dai segmenti del router.
+ * Da qui viene anche il fatto che `TabBar` non riceva le props del navigatore:
+ * fuori da `<Tabs>` non arrivano, e la rotta attiva se la legge dai segmenti
+ * del router.
  */
 export default function TabsLayout() {
   // Misurato invece che calcolato: l'altezza cambia con l'area sicura del
@@ -27,7 +26,7 @@ export default function TabsLayout() {
   return (
     <View style={styles.root}>
       <OuterChromeProvider height={chromeHeight}>
-        <BlurTargetProvider style={styles.root}>
+        <View style={styles.root}>
           <Tabs
             screenOptions={{ headerShown: false }}
             // La barra vera è fuori: qui serve solo che il navigatore non ne
@@ -39,7 +38,7 @@ export default function TabsLayout() {
             <Tabs.Screen name="history" options={{ title: 'Storico' }} />
             <Tabs.Screen name="stats" options={{ title: 'Statistiche' }} />
           </Tabs>
-        </BlurTargetProvider>
+        </View>
       </OuterChromeProvider>
 
       <View

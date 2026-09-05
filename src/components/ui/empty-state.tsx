@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from './button';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 import { useTheme } from '@/theme';
 
@@ -26,9 +26,9 @@ export function EmptyState({
 
   return (
     <View style={[styles.root, { gap: theme.space.md, padding: theme.space.xl }]}>
-      <Glass level="mid" elevation="low" radius={48} style={styles.badge}>
+      <Surface level="mid" radius={48} style={styles.badge}>
         <MaterialCommunityIcons name={icon} size={40} color={theme.colors.textFaint} />
-      </Glass>
+      </Surface>
       <Text variant="heading" style={styles.center}>
         {title}
       </Text>

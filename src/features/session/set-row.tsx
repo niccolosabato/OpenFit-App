@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Glass } from '@/components/ui/glass';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { SET_TYPE_BADGE, usesDuration, usesReps, usesWeight, type SetType, type TrackingType } from '@/db/enums';
 import type { SessionSet } from '@/db/schema';
@@ -179,8 +179,8 @@ export function SetRow({
           paddingHorizontal: theme.space.md,
           paddingLeft: isChild ? theme.space.md + 14 : theme.space.md,
           gap: theme.space.sm,
-          backgroundColor: done ? theme.colors.accentTint : 'transparent',
-          borderTopColor: theme.glass.stroke,
+          backgroundColor: done ? theme.colors.accentGlow : 'transparent',
+          borderTopColor: theme.colors.border,
         },
         styles.bordered,
       ]}>
@@ -201,7 +201,7 @@ export function SetRow({
       </Pressable>
 
       {/* Era testo inerte, e invece è il pulsante che si preme di più:
-          ricopia i valori della volta scorsa. Ora ha una lastra sotto e
+          ricopia i valori della volta scorsa. Ora ha una superficie sotto e
           l'icona che dice cosa fa. */}
       <Pressable
         onPress={copyPrevious}
@@ -212,10 +212,9 @@ export function SetRow({
         style={styles.previousCell}>
         {({ pressed }) =>
           previous ? (
-            <Glass
+            <Surface
               level="mid"
               radius={theme.radius.sm}
-              sheen={false}
               pressed={pressed}
               style={styles.previousBox}>
               <MaterialCommunityIcons
@@ -226,7 +225,7 @@ export function SetRow({
               <Text variant="caption" tone="dim" numeric numberOfLines={1}>
                 {previousLabel}
               </Text>
-            </Glass>
+            </Surface>
           ) : (
             <Text variant="caption" tone="faint" numeric numberOfLines={1} style={styles.previousEmpty}>
               {previousLabel}
@@ -295,8 +294,8 @@ export function SetRow({
             width: 48,
             height: 48,
             borderRadius: theme.radius.sm,
-            backgroundColor: done ? theme.colors.accent : theme.glass.fillMid,
-            borderColor: done ? theme.colors.accent : theme.glass.stroke,
+            backgroundColor: done ? theme.colors.accent : theme.colors.surface2,
+            borderColor: done ? theme.colors.accent : theme.colors.border,
           },
           pressed && { opacity: 0.6 },
         ]}>

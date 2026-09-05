@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/theme';
 import { formatNumber } from '@/lib/units';
-import { Glass } from './glass';
+import { Surface } from './surface';
 import { Text } from './text';
 
 /**
@@ -58,7 +58,7 @@ export function NumberStepper({
         </Text>
       ) : null}
 
-      <Glass level="mid" radius={theme.radius.md} sheen={false} style={[styles.row, { height: theme.hit }]}>
+      <Surface level="mid" radius={theme.radius.md} style={[styles.row, { height: theme.hit }]}>
         <Pressable
           onPress={() => bump(-1)}
           accessibilityRole="button"
@@ -102,7 +102,7 @@ export function NumberStepper({
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.5 }]}>
           <MaterialCommunityIcons name="plus" size={22} color={theme.colors.text} />
         </Pressable>
-      </Glass>
+      </Surface>
     </View>
   );
 }
