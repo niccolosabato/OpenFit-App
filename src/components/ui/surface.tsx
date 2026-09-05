@@ -13,12 +13,18 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useTheme, type ElevationKey } from '@/theme';
 
+/**
+ * I tre livelli sono una scala: ogni gradino è più chiaro del precedente, e
+ * serve a far vedere cosa sta sopra cosa. Vanno usati in ordine — un controllo
+ * dentro un contenitore prende sempre il livello successivo, altrimenti i due
+ * hanno lo stesso colore e il controllo sparisce.
+ */
 export type SurfaceLevel =
-  /** Card e liste, appoggiate sul fondo dell'app. */
+  /** Card, liste e barre: appoggiate sul fondo dell'app. */
   | 'low'
-  /** Elementi sopra una card: input, righe di set, pillole. */
+  /** Ciò che sta sopra a quelle: input, pillole, bersagli icona. */
   | 'mid'
-  /** Chrome fisso e pannelli dei fogli. */
+  /** Pannelli dei fogli e avvisi: sopra tutto il resto. */
   | 'high';
 
 export type SurfaceProps = {
@@ -50,7 +56,7 @@ export function Surface({
   const background = {
     low: theme.colors.surface,
     mid: theme.colors.surface2,
-    high: theme.colors.surface,
+    high: theme.colors.surface3,
   }[level];
 
   const backgroundColor = pressed

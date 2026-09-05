@@ -36,7 +36,7 @@ export function TextField({
       <Text variant="label" tone="dim">
         {label}
       </Text>
-      <Surface level="mid" radius={theme.radius.md} tinted={focused}>
+      <Surface level="mid" radius={theme.radius.lg} tinted={focused}>
         <TextInput
           value={value}
           onChangeText={onChangeText}

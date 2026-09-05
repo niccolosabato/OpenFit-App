@@ -64,7 +64,7 @@ export function ScreenHeader({
         },
       ]}>
       <Surface
-        level="mid"
+        level="low"
         elevation="float"
         radius={theme.radius.xl}
         style={{ paddingVertical: below ? theme.space.sm : theme.space.xs }}>

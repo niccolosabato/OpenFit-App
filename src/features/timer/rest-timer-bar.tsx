@@ -91,7 +91,7 @@ function TimerButton({
             style={[
               styles.button,
               box,
-              { borderRadius: theme.radius.md, backgroundColor: theme.colors.accent },
+              { borderRadius: theme.radius.pill, backgroundColor: theme.colors.accent },
               pressed && styles.pressed,
             ]}>
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.onAccent} />
@@ -99,7 +99,7 @@ function TimerButton({
         ) : (
           <Surface
             level="mid"
-            radius={theme.radius.md}
+            radius={theme.radius.pill}
             pressed={pressed}
             style={[styles.button, box]}>
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.text} />

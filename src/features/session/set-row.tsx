@@ -214,7 +214,7 @@ export function SetRow({
           previous ? (
             <Surface
               level="mid"
-              radius={theme.radius.sm}
+              radius={theme.radius.md}
               pressed={pressed}
               style={styles.previousBox}>
               <MaterialCommunityIcons
@@ -293,7 +293,7 @@ export function SetRow({
           {
             width: 48,
             height: 48,
-            borderRadius: theme.radius.sm,
+            borderRadius: theme.radius.md,
             backgroundColor: done ? theme.colors.accent : theme.colors.surface2,
             borderColor: done ? theme.colors.accent : theme.colors.border,
           },
@@ -348,7 +348,7 @@ function Cell({
         styles.input,
         {
           height: 36,
-          borderRadius: theme.radius.sm,
+          borderRadius: theme.radius.md,
           backgroundColor: done ? 'transparent' : theme.colors.surface2,
           borderColor: done ? 'transparent' : theme.colors.border,
           color: theme.colors.text,

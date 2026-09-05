@@ -28,6 +28,8 @@ export const neutral = {
   textFaint: '#63636E',
   /** Testo su superficie accento. */
   onAccentDark: '#0B0B0D',
+  /** Velo che oscura il contenuto dietro un foglio aperto. */
+  scrim: 'rgba(0, 0, 0, 0.62)',
 } as const;
 
 /** Colori semantici, indipendenti dall'accento scelto dall'utente. */
@@ -88,6 +90,16 @@ export const space = {
   xxxl: 48,
 } as const;
 
+/**
+ * Raggi, per ruolo e non per gusto. Ogni elemento sceglie in base a cosa *è*,
+ * così due cose che fanno la stessa cosa non finiscono con angoli diversi:
+ *
+ * - `pill`  ciò che si tocca ed è autonomo: bottoni, chip, bersagli icona
+ * - `xl`    ciò che galleggia sopra il contenuto: barre, fogli, avvisi
+ * - `lg`    le superfici nel flusso: card, sezioni, campi di testo
+ * - `md`    i controlli dentro una card: celle, spunte
+ * - `sm`    i segni minuti: tag, badge, quadratini di legenda
+ */
 export const radius = {
   sm: 8,
   md: 12,

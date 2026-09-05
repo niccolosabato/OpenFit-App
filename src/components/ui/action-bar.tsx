@@ -46,7 +46,7 @@ export function ActionBar({
         paddingBottom: safeBottom ? Math.max(insets.bottom, theme.floatInset) : theme.floatInset,
       }}>
       <Surface
-        level="mid"
+        level="low"
         elevation="float"
         radius={theme.radius.xl}
         style={[

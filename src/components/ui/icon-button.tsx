@@ -64,7 +64,7 @@ export function IconButton({
         surface ? (
           <Surface
             level="mid"
-            radius={theme.radius.md}
+            radius={theme.radius.pill}
             tinted={active}
             pressed={pressed}
             style={styles.box}>

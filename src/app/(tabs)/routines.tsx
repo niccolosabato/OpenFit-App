@@ -10,7 +10,7 @@ import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
-import { Sheet, SheetAction } from '@/components/ui/sheet';
+import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/field';
 import { createRoutine, routineListQuery } from '@/db/queries/routines';
@@ -111,7 +111,22 @@ export default function RoutinesScreen() {
         ))}
       </Sheet>
 
-      <Sheet visible={newOpen} onClose={() => setNewOpen(false)} title="Nuova scheda" scrollable={false}>
+      <Sheet
+        visible={newOpen}
+        onClose={() => setNewOpen(false)}
+        title="Nuova scheda"
+        scrollable={false}
+        // Conferma e annullamento stanno nel piede, sulla stessa riga: prima
+        // "Annulla" era una voce di menu allineata a sinistra sotto un pulsante
+        // centrato, e si vedeva che erano due cose diverse messe vicine.
+        footer={
+          <View style={[styles.sheetActions, { gap: theme.space.sm }]}>
+            <Button title="Annulla" variant="ghost" onPress={() => setNewOpen(false)} />
+            <View style={{ flex: 1 }}>
+              <Button title="Crea" onPress={confirmCreate} fullWidth />
+            </View>
+          </View>
+        }>
         <TextField
           label="Nome"
           value={newName}
@@ -119,13 +134,12 @@ export default function RoutinesScreen() {
           placeholder="Es. Push Pull Legs — autunno"
           autoFocus
         />
-        <Button title="Crea" onPress={confirmCreate} fullWidth />
-        <SheetAction label="Annulla" onPress={() => setNewOpen(false)} />
       </Sheet>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  sheetActions: { flexDirection: 'row', alignItems: 'center' },
   templateHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
 });

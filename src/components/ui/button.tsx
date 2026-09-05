@@ -48,7 +48,7 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const height = HEIGHT[size];
-  const radius = theme.radius.md;
+  const radius = theme.radius.pill;
 
   const labelTone = {
     primary: 'onAccent',

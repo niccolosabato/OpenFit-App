@@ -76,7 +76,7 @@ export function NumberStepper({
         </Text>
       ) : null}
 
-      <Surface level="mid" radius={theme.radius.md} style={[styles.row, { height: theme.hit }]}>
+      <Surface level="mid" radius={theme.radius.lg} style={[styles.row, { height: theme.hit }]}>
         <Pressable
           onPress={() => bump(-1)}
           accessibilityRole="button"

@@ -51,7 +51,7 @@ export default function TodayScreen() {
       padded={false}
       header={
         <ScreenHeader
-          title={settings.userName ? `Ciao, ${settings.userName}` : 'Pronto ad allenarti?'}
+          title={settings.userName ? `OpenFit - ${settings.userName}` : 'Pronto ad allenarti?'}
           actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
         />
       }

@@ -59,7 +59,7 @@ export function ActiveSessionBar() {
         accessibilityLabel="Torna all’allenamento in corso">
         {({ pressed }) => (
           <Surface
-            level="mid"
+            level="low"
             elevation="float"
             radius={theme.radius.xl}
             tinted={running}

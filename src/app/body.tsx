@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import { NumberStepper } from '@/components/ui/number-stepper';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
-import { Sheet, SheetAction } from '@/components/ui/sheet';
+import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { bodyMeasurementsQuery, deleteMeasurement, saveMeasurement } from '@/db/queries/body';
 import { formatDayKey, formatSessionDate } from '@/lib/format';
@@ -139,7 +139,14 @@ export default function BodyScreen() {
         visible={open}
         onClose={() => setOpen(false)}
         title="Misurazione di oggi"
-        footer={<Button title="Salva" size="lg" fullWidth onPress={save} />}>
+        footer={
+          <View style={[styles.sheetActions, { gap: theme.space.sm }]}>
+            <Button title="Annulla" variant="ghost" onPress={() => setOpen(false)} />
+            <View style={{ flex: 1 }}>
+              <Button title="Salva" size="lg" fullWidth onPress={save} />
+            </View>
+          </View>
+        }>
         <NumberStepper
           label="Peso"
           value={weight}
@@ -177,12 +184,12 @@ export default function BodyScreen() {
           />
         ))}
 
-        <SheetAction label="Annulla" onPress={() => setOpen(false)} />
       </Sheet>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  sheetActions: { flexDirection: 'row', alignItems: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 });

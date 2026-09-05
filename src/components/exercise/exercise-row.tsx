@@ -58,7 +58,7 @@ export function ExerciseRow({
         },
         pressed && { backgroundColor: theme.colors.surface },
       ]}>
-      <Surface level="mid" radius={theme.radius.md} tinted={selected} style={styles.icon}>
+      <Surface level="mid" radius={theme.radius.pill} tinted={selected} style={styles.icon}>
         <MaterialCommunityIcons
           name={selected ? 'check' : EQUIPMENT_ICON[exercise.equipment]}
           size={20}

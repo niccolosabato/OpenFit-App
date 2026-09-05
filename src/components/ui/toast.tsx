@@ -94,9 +94,6 @@ export function ToastHost() {
           {
             padding: theme.space.md,
             gap: theme.space.md,
-            // Più chiaro delle card: l'avviso deve staccare da quello che c'è
-            // sotto, non confondercisi.
-            backgroundColor: theme.colors.surface3,
             // Il record si annuncia con il proprio colore anche sul bordo:
             // è l'unico avviso che vale la pena guardare a metà serie.
             borderColor: isRecord ? theme.colors.record : theme.colors.borderStrong,

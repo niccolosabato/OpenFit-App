@@ -59,7 +59,7 @@ export function TabBar() {
         paddingBottom: Math.max(insets.bottom, theme.floatInset),
       }}>
       <Surface
-        level="mid"
+        level="low"
         elevation="float"
         radius={theme.radius.xl}
         style={[styles.bar, { paddingVertical: theme.space.sm }]}>
@@ -83,7 +83,7 @@ export function TabBar() {
                   styles.pill,
                   {
                     borderRadius: theme.radius.pill,
-                    paddingHorizontal: theme.space.md,
+                    paddingHorizontal: theme.space.lg,
                     backgroundColor: isFocused ? theme.colors.accentGlow : 'transparent',
                   },
                 ]}>
@@ -111,7 +111,7 @@ export function TabBar() {
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row' },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  pill: { paddingVertical: 3, alignItems: 'center', justifyContent: 'center' },
+  pill: { paddingVertical: 6, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.6 },
   label: { fontSize: 10, letterSpacing: 0.4 },
 });
