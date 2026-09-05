@@ -17,7 +17,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 
 export type RailItem = {
   id: string;
@@ -74,7 +74,7 @@ export function ExerciseRail({
             {({ pressed }) => (
               <Surface
                 level="mid"
-                radius={theme.radius.pill}
+                radius={capsule(RAIL_HEIGHT)}
                 tinted={active}
                 pressed={pressed}
                 style={[styles.pill, { paddingHorizontal: theme.space.md, gap: theme.space.sm }]}>
@@ -102,7 +102,7 @@ export function ExerciseRail({
         {({ pressed }) => (
           <Surface
             level="mid"
-            radius={theme.radius.pill}
+            radius={capsule(RAIL_HEIGHT)}
             pressed={pressed}
             style={[styles.pill, { paddingHorizontal: theme.space.md }]}>
             <MaterialCommunityIcons name="plus" size={18} color={theme.colors.accent} />
@@ -113,7 +113,10 @@ export function ExerciseRail({
   );
 }
 
+/** Altezza delle pastiglie della striscia; il raggio ne è la metà. */
+const RAIL_HEIGHT = 40;
+
 const styles = StyleSheet.create({
-  pill: { minHeight: 40, flexDirection: 'row', alignItems: 'center' },
+  pill: { height: RAIL_HEIGHT, flexDirection: 'row', alignItems: 'center' },
   name: { fontWeight: '600', maxWidth: 140 },
 });

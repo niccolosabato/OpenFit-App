@@ -5,7 +5,7 @@ import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { formatDuration } from '@/lib/format';
 import { useSettings } from '@/store/settings';
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 import { REST_ADJUST_STEP, useRestTimer } from './rest-timer';
 import { useRestCountdown } from './use-countdown';
 
@@ -91,7 +91,7 @@ function TimerButton({
             style={[
               styles.button,
               box,
-              { borderRadius: theme.radius.pill, backgroundColor: theme.colors.accent },
+              { borderRadius: capsule(theme.hit), backgroundColor: theme.colors.accent },
               pressed && styles.pressed,
             ]}>
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.onAccent} />
@@ -99,7 +99,7 @@ function TimerButton({
         ) : (
           <Surface
             level="mid"
-            radius={theme.radius.pill}
+            radius={capsule(theme.hit)}
             pressed={pressed}
             style={[styles.button, box]}>
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.text} />

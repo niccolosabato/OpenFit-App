@@ -94,18 +94,19 @@ export const space = {
  * Raggi, per ruolo e non per gusto. Ogni elemento sceglie in base a cosa *è*,
  * così due cose che fanno la stessa cosa non finiscono con angoli diversi:
  *
- * - `pill`  ciò che si tocca ed è autonomo: bottoni, chip, bersagli icona
  * - `xl`    ciò che galleggia sopra il contenuto: barre, fogli, avvisi
  * - `lg`    le superfici nel flusso: card, sezioni, campi di testo
  * - `md`    i controlli dentro una card: celle, spunte
  * - `sm`    i segni minuti: tag, badge, quadratini di legenda
+ *
+ * Per le capsule — bottoni, chip, bersagli icona — non c'è un valore: si usa
+ * `capsule(altezza)`, che il raggio se lo calcola.
  */
 export const radius = {
   sm: 8,
   md: 12,
   lg: 18,
   xl: 26,
-  pill: 999,
 } as const;
 
 /**
@@ -136,6 +137,19 @@ export type ElevationKey = keyof typeof elevation;
  * vede che sono due sistemi diversi.
  */
 export const FLOAT_INSET = space.lg;
+
+/**
+ * Raggio di una capsula, data l'altezza dell'elemento.
+ *
+ * Va usato al posto di `radius.pill` ogni volta che l'altezza si conosce.
+ * Un raggio enorme si affida al ritaglio automatico a metà altezza, e su
+ * Android quel ritaglio non è affidabile: viene fuori un rettangolo appena
+ * smussato invece di una capsula, e nella stessa schermata finiscono forme
+ * diverse per elementi che dovrebbero essere identici.
+ */
+export function capsule(height: number): number {
+  return height / 2;
+}
 
 /**
  * Altezza minima di un elemento toccabile.

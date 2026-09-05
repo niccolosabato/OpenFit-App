@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
 
 export function SearchInput({
@@ -20,7 +20,7 @@ export function SearchInput({
   return (
     <Surface
       level="mid"
-      radius={theme.radius.pill}
+      radius={capsule(theme.hit)}
       style={[
         styles.root,
         { height: theme.hit, paddingLeft: theme.space.md, paddingRight: theme.space.sm, gap: theme.space.sm },

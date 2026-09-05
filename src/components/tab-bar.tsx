@@ -19,11 +19,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 
 import type { Href } from 'expo-router';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+/** Altezza della pastiglia dietro la voce attiva; il raggio è la sua metà. */
+const PILL_HEIGHT = 34;
 
 type Tab = { name: string; href: Href; label: string; icon: IconName; iconActive: IconName };
 
@@ -81,11 +84,7 @@ export function TabBar() {
               <View
                 style={[
                   styles.pill,
-                  {
-                    borderRadius: theme.radius.pill,
-                    paddingHorizontal: theme.space.lg,
-                    backgroundColor: isFocused ? theme.colors.accentGlow : 'transparent',
-                  },
+                  { backgroundColor: isFocused ? theme.colors.accentGlow : 'transparent' },
                 ]}>
                 <MaterialCommunityIcons
                   name={isFocused ? config.iconActive : config.icon}
@@ -111,7 +110,15 @@ export function TabBar() {
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row' },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  pill: { paddingVertical: 6, alignItems: 'center', justifyContent: 'center' },
+  /** La pastiglia dietro la voce attiva. */
+  pill: {
+    height: PILL_HEIGHT,
+    minWidth: 64,
+    borderRadius: capsule(PILL_HEIGHT),
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pressed: { opacity: 0.6 },
   label: { fontSize: 10, letterSpacing: 0.4 },
 });

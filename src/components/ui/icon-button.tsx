@@ -11,7 +11,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -64,7 +64,7 @@ export function IconButton({
         surface ? (
           <Surface
             level="mid"
-            radius={theme.radius.pill}
+            radius={capsule(HIT_TARGET)}
             tinted={active}
             pressed={pressed}
             style={styles.box}>
@@ -83,9 +83,12 @@ export function IconButton({
   );
 }
 
+/** Il bersaglio: 48 in ogni direzione, e il raggio ne è la metà. */
+const HIT_TARGET = 48;
+
 const styles = StyleSheet.create({
   /** 48×48: la soglia sotto cui non si scende. */
-  box: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  box: { width: HIT_TARGET, height: HIT_TARGET, alignItems: 'center', justifyContent: 'center' },
   bare: {
     width: 48,
     height: 48,

@@ -6,7 +6,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Text } from '@/components/ui/text';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, type Equipment } from '@/db/enums';
 import type { Exercise } from '@/db/schema';
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 
 /** Icona che riassume l'attrezzo, per riconoscere la riga senza leggerla. */
 const EQUIPMENT_ICON: Record<Equipment, keyof typeof MaterialCommunityIcons.glyphMap> = {
@@ -58,7 +58,7 @@ export function ExerciseRow({
         },
         pressed && { backgroundColor: theme.colors.surface },
       ]}>
-      <Surface level="mid" radius={theme.radius.pill} tinted={selected} style={styles.icon}>
+      <Surface level="mid" radius={capsule(ICON_SIZE)} tinted={selected} style={styles.icon}>
         <MaterialCommunityIcons
           name={selected ? 'check' : EQUIPMENT_ICON[exercise.equipment]}
           size={20}
@@ -96,8 +96,11 @@ export function ExerciseRow({
   );
 }
 
+/** L'icona dell'attrezzo: cerchio, quindi raggio a metà. */
+const ICON_SIZE = 40;
+
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
-  icon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: ICON_SIZE, height: ICON_SIZE, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, gap: 2 },
 });

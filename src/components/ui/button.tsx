@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
 import { Text } from './text';
 
@@ -48,7 +48,7 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const height = HEIGHT[size];
-  const radius = theme.radius.pill;
+  const radius = capsule(height);
 
   const labelTone = {
     primary: 'onAccent',

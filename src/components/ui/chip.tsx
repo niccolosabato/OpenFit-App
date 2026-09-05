@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
 import { Text } from './text';
 
@@ -24,10 +24,10 @@ export function Chip({
 }) {
   const theme = useTheme();
 
+  const height = compact ? 36 : 44;
   const box = {
-    paddingVertical: compact ? 6 : 10,
+    height,
     paddingHorizontal: compact ? theme.space.md : theme.space.lg,
-    minHeight: compact ? 36 : 44,
   };
 
   return (
@@ -39,7 +39,7 @@ export function Chip({
               styles.chip,
               box,
               {
-                borderRadius: theme.radius.pill,
+                borderRadius: capsule(height),
                 backgroundColor: theme.colors.accent,
                 borderColor: theme.colors.accent,
               },
@@ -52,7 +52,7 @@ export function Chip({
         ) : (
           <Surface
             level="mid"
-            radius={theme.radius.pill}
+            radius={capsule(height)}
             pressed={pressed}
             style={[styles.chip, box]}>
             <Text variant="caption" tone="dim" style={styles.label} numberOfLines={1}>
