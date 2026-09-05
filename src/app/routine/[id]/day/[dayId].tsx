@@ -1,11 +1,14 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import Sortable from 'react-native-sortables';
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
+import { confirm } from '@/components/ui/confirm';
 import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
 import { Tag } from '@/components/ui/chip';
@@ -25,6 +28,7 @@ import {
   deleteRoutineSet,
   moveRoutineExercise,
   removeRoutineExercise,
+  reorderRoutineExercises,
   routineDayQuery,
   toggleSupersetWithPrevious,
   updateDay,
@@ -43,6 +47,10 @@ export default function RoutineDayScreen() {
   const theme = useTheme();
   const { settings } = useSettings();
   const { id, dayId } = useLocalSearchParams<{ id: string; dayId: string }>();
+
+  // Lo scroll va passato al riordino, che deve poterlo far scorrere da sé
+  // mentre il dito sta contro un bordo.
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
 
   const { data: dayRows } = useLiveQuery(useMemo(() => routineDayQuery(dayId), [dayId]), [dayId]);
   const { data: exerciseRows } = useLiveQuery(useMemo(() => dayExercisesQuery(dayId), [dayId]), [dayId]);
@@ -85,18 +93,23 @@ export default function RoutineDayScreen() {
 
   const totalSets = setRows?.length ?? 0;
 
+  function openExercise(exerciseId: string) {
+    router.push({ pathname: '/exercise/[id]', params: { id: exerciseId } });
+  }
+
   function confirmDeleteDay() {
-    Alert.alert('Eliminare il giorno?', 'Sparisce con tutti i suoi esercizi.', [
-      { text: 'Annulla', style: 'cancel' },
-      {
-        text: 'Elimina',
-        style: 'destructive',
+    confirm({
+      title: 'Eliminare il giorno?',
+      message: 'Sparisce con tutti i suoi esercizi.',
+      action: {
+        label: 'Elimina',
+        destructive: true,
         onPress: () => {
           deleteDay(dayId);
           router.back();
         },
       },
-    ]);
+    });
   }
 
   return (
@@ -142,112 +155,143 @@ export default function RoutineDayScreen() {
           ) : null}
         </ActionBar>
       }>
-      <ScreenScroll gap={theme.space.md}>
-        {items.map((item, index) => {
-          const sets = setsByExercise.get(item.routineExercise.id) ?? [];
-          const previous = items[index - 1];
-          const inSupersetWithPrevious =
-            item.routineExercise.supersetGroup !== null &&
-            item.routineExercise.supersetGroup === previous?.routineExercise.supersetGroup;
+      <ScreenScroll scrollRef={scrollRef}>
+        <Sortable.Grid
+          columns={1}
+          data={items}
+          keyExtractor={(item) => item.routineExercise.id}
+          rowGap={theme.space.md}
+          // Si prende dalla testata: le righe delle serie restano toccabili e
+          // lo scorrimento della lista parte da dove capita.
+          customHandle
+          scrollableRef={scrollRef}
+          hapticsEnabled={settings.timerVibration}
+          dragActivationDelay={250}
+          activeItemScale={1.02}
+          onDragEnd={({ data }) =>
+            reorderRoutineExercises(
+              dayId,
+              data.map((entry) => entry.routineExercise.id),
+            )
+          }
+          renderItem={({ item, index }) => {
+            const sets = setsByExercise.get(item.routineExercise.id) ?? [];
+            const previous = items[index - 1];
+            const inSupersetWithPrevious =
+              item.routineExercise.supersetGroup !== null &&
+              item.routineExercise.supersetGroup === previous?.routineExercise.supersetGroup;
 
-          let workingIndex = 0;
+            let workingIndex = 0;
 
-          return (
-            <View key={item.routineExercise.id} style={{ gap: theme.space.sm }}>
-              {inSupersetWithPrevious ? (
-                <View style={[styles.supersetLink, { gap: theme.space.sm }]}>
-                  <View style={{ width: 2, height: 14, backgroundColor: theme.colors.accent }} />
-                  <Text variant="label" tone="accent">
-                    in superset
-                  </Text>
-                </View>
-              ) : null}
-
-              <Card padded={false}>
-                <Pressable
-                  onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.exercise.id } })}
-                  onLongPress={() => setMenuFor(item.routineExercise)}
-                  style={{ padding: theme.space.lg, gap: 4 }}>
-                  <View style={styles.cardHead}>
-                    <Text variant="heading" style={{ flex: 1 }} numberOfLines={2}>
-                      {item.exercise.name}
+            return (
+              <View style={{ gap: theme.space.sm }}>
+                {inSupersetWithPrevious ? (
+                  <View style={[styles.supersetLink, { gap: theme.space.sm }]}>
+                    <View style={{ width: 2, height: 14, backgroundColor: theme.colors.accent }} />
+                    <Text variant="label" tone="accent">
+                      in superset
                     </Text>
-                    <IconButton
-                      icon="dots-horizontal"
-                      label="Opzioni esercizio"
-                      tone="dim"
-                      onPress={() => setMenuFor(item.routineExercise)}
-                    />
                   </View>
-                  <Text variant="caption" tone="faint">
-                    Recupero {formatRest(item.routineExercise.restSeconds ?? settings.defaultRestSeconds)}
-                    {item.routineExercise.notes ? ` · ${item.routineExercise.notes}` : ''}
-                  </Text>
-                </Pressable>
+                ) : null}
 
-                <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border }}>
-                  {sets.map((set) => {
-                    if (set.setType === 'working') workingIndex += 1;
-                    const badge = SET_TYPE_BADGE[set.setType];
+                <Card padded={false}>
+                  <View style={{ padding: theme.space.lg }}>
+                    <View style={styles.cardHead}>
+                      {/* La presa sta sulla testata, e il tasto delle opzioni le
+                          resta fuori: sotto, le righe delle serie non vengono
+                          toccate dal gesto. */}
+                      <Sortable.Handle style={{ flex: 1 }}>
+                        <Sortable.Touchable
+                          // È insieme la presa e il tocco che apre l'esercizio:
+                          // sotto i 48dp non si azzecca con una mano sola.
+                          style={{
+                            gap: theme.space.xs,
+                            minHeight: theme.hit,
+                            justifyContent: 'center',
+                          }}
+                          onTap={() => openExercise(item.exercise.id)}>
+                          <Text variant="heading" numberOfLines={2}>
+                            {item.exercise.name}
+                          </Text>
+                          <Text variant="caption" tone="faint">
+                            Recupero{' '}
+                            {formatRest(item.routineExercise.restSeconds ?? settings.defaultRestSeconds)}
+                            {item.routineExercise.notes ? ` · ${item.routineExercise.notes}` : ''}
+                          </Text>
+                        </Sortable.Touchable>
+                      </Sortable.Handle>
+                      <IconButton
+                        icon="dots-horizontal"
+                        label="Opzioni esercizio"
+                        tone="dim"
+                        onPress={() => setMenuFor(item.routineExercise)}
+                      />
+                    </View>
+                  </View>
 
-                    return (
-                      <Pressable
-                        key={set.id}
-                        onPress={() => {
-                          setEditingTracking(item.exercise.trackingType);
-                          setEditingSet(set);
-                        }}
-                        style={({ pressed }) => [
-                          styles.setRow,
-                          {
-                            minHeight: 52,
-                            paddingHorizontal: theme.space.lg,
-                            borderTopColor: theme.colors.border,
-                            gap: theme.space.md,
-                          },
-                          pressed && { backgroundColor: theme.colors.surface3 },
-                        ]}>
-                        <View style={styles.setIndex}>
-                          {set.setType === 'working' ? (
-                            <Text variant="caption" tone="dim" numeric>
-                              {workingIndex}
-                            </Text>
-                          ) : (
-                            <Tag label={badge} />
-                          )}
-                        </View>
+                  <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border }}>
+                    {sets.map((set) => {
+                      if (set.setType === 'working') workingIndex += 1;
+                      const badge = SET_TYPE_BADGE[set.setType];
 
-                        <Text variant="body" numeric style={{ flex: 1 }}>
-                          {describeRoutineSet(set, item.exercise.trackingType, settings.effortScale, settings.unit)}
-                        </Text>
+                      return (
+                        <Pressable
+                          key={set.id}
+                          onPress={() => {
+                            setEditingTracking(item.exercise.trackingType);
+                            setEditingSet(set);
+                          }}
+                          style={({ pressed }) => [
+                            styles.setRow,
+                            {
+                              minHeight: 52,
+                              paddingHorizontal: theme.space.lg,
+                              borderTopColor: theme.colors.border,
+                              gap: theme.space.md,
+                            },
+                            pressed && { backgroundColor: theme.colors.surface3 },
+                          ]}>
+                          <View style={styles.setIndex}>
+                            {set.setType === 'working' ? (
+                              <Text variant="caption" tone="dim" numeric>
+                                {workingIndex}
+                              </Text>
+                            ) : (
+                              <Tag label={badge} />
+                            )}
+                          </View>
 
-                        {set.technique ? <Tag label={TECHNIQUE_LABELS[set.technique]} color={theme.colors.accent} /> : null}
-                      </Pressable>
-                    );
-                  })}
+                          <Text variant="body" numeric style={{ flex: 1 }}>
+                            {describeRoutineSet(set, item.exercise.trackingType, settings.effortScale, settings.unit)}
+                          </Text>
 
-                  <Pressable
-                    onPress={() => addRoutineSet(item.routineExercise.id)}
-                    style={({ pressed }) => [
-                      styles.addSet,
-                      {
-                        minHeight: 52,
-                        borderTopColor: theme.colors.border,
-                        gap: theme.space.sm,
-                      },
-                      pressed && { backgroundColor: theme.colors.surface3 },
-                    ]}>
-                    <MaterialCommunityIcons name="plus" size={16} color={theme.colors.accent} />
-                    <Text variant="caption" tone="accent">
-                      Aggiungi serie
-                    </Text>
-                  </Pressable>
-                </View>
-              </Card>
-            </View>
-          );
-        })}
+                          {set.technique ? <Tag label={TECHNIQUE_LABELS[set.technique]} color={theme.colors.accent} /> : null}
+                        </Pressable>
+                      );
+                    })}
 
+                    <Pressable
+                      onPress={() => addRoutineSet(item.routineExercise.id)}
+                      style={({ pressed }) => [
+                        styles.addSet,
+                        {
+                          minHeight: 52,
+                          borderTopColor: theme.colors.border,
+                          gap: theme.space.sm,
+                        },
+                        pressed && { backgroundColor: theme.colors.surface3 },
+                      ]}>
+                      <MaterialCommunityIcons name="plus" size={16} color={theme.colors.accent} />
+                      <Text variant="caption" tone="accent">
+                        Aggiungi serie
+                      </Text>
+                    </Pressable>
+                  </View>
+                </Card>
+              </View>
+            );
+          }}
+        />
       </ScreenScroll>
 
       {/* ──────────────────────────────────────────────── opzioni del giorno ── */}
@@ -396,7 +440,7 @@ export default function RoutineDayScreen() {
 }
 
 const styles = StyleSheet.create({
-  cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   supersetLink: { flexDirection: 'row', alignItems: 'center', paddingLeft: 4 },
   setRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   setIndex: { width: 30, alignItems: 'center' },

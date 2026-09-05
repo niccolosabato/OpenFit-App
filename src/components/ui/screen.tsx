@@ -12,7 +12,8 @@
  */
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type ScrollViewProps, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type ScrollViewProps, type ViewStyle } from 'react-native';
+import Animated, { type AnimatedRef } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
@@ -126,19 +127,30 @@ export function Screen({
  * l'unico modo per non doverselo ricordare in quindici rotte, e per non
  * scoprire l'errore solo quando un pulsante non risponde perché ha la barra
  * davanti.
+ *
+ * È una `ScrollView` di Reanimated: identica a quella di React Native, ma
+ * indirizzabile da un `useAnimatedRef` — serve a chi deve farla scorrere da
+ * sola, come il riordino a trascinamento della schermata del giorno.
  */
 export function ScreenScroll({
   children,
   contentContainerStyle,
   gap,
   padded = true,
+  scrollRef,
   ...rest
-}: ScrollViewProps & { children: ReactNode; gap?: number; padded?: boolean }) {
+}: ScrollViewProps & {
+  children: ReactNode;
+  gap?: number;
+  padded?: boolean;
+  scrollRef?: AnimatedRef<Animated.ScrollView>;
+}) {
   const theme = useTheme();
   const chrome = useScreenChrome();
 
   return (
-    <ScrollView
+    <Animated.ScrollView
+      ref={scrollRef}
       {...rest}
       contentContainerStyle={[
         {
@@ -151,7 +163,7 @@ export function ScreenScroll({
       ]}
       scrollIndicatorInsets={{ top: chrome.top, bottom: chrome.bottom }}>
       {children}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

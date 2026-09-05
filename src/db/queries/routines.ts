@@ -1,6 +1,7 @@
 import { asc, eq, isNull, max, sql } from 'drizzle-orm';
 
 import { newId } from '@/lib/ids';
+import { moveItem, supersetsToClear } from '@/lib/reorder';
 import { db } from '../client';
 import {
   exercises,
@@ -160,39 +161,77 @@ export function removeRoutineExercise(id: string): void {
 }
 
 /**
- * Sposta un esercizio di una posizione scambiandolo con il vicino.
- * Il riordino è a frecce e non a trascinamento: funziona anche con una mano
- * sola e non richiede una libreria di gesture.
+ * Riscrive in blocco l'ordine degli esercizi di un giorno.
+ *
+ * È il punto unico da cui passa ogni riordino — il trascinamento e le frecce
+ * del foglio — perché insieme all'ordine va sempre rimessa a posto la stessa
+ * cosa: i superset, che sono un fatto di contiguità e non sopravvivono a un
+ * esercizio portato altrove.
+ *
+ * Gli `orderIndex` vengono riscritti 0..n-1: prima erano quello che avevano
+ * lasciato inserimenti e cancellazioni, con buchi e senza partire da zero.
  */
-export function moveRoutineExercise(dayId: string, id: string, direction: -1 | 1): void {
-  const list = db
+export function reorderRoutineExercises(dayId: string, orderedIds: string[]): void {
+  const list = dayExercisesInOrder(dayId);
+  const byId = new Map(list.map((e) => [e.id, e]));
+  const ordered = orderedIds.map((id) => byId.get(id)).filter((e) => e !== undefined);
+
+  // Se la lista arrivata non copre esattamente il giorno è vecchia: meglio non
+  // scrivere niente che lasciare fuori un esercizio.
+  if (ordered.length !== list.length) return;
+
+  writeOrder(ordered);
+}
+
+function dayExercisesInOrder(dayId: string): RoutineExercise[] {
+  return db
     .select()
     .from(routineExercises)
     .where(eq(routineExercises.dayId, dayId))
     .orderBy(asc(routineExercises.orderIndex))
     .all();
+}
+
+/** Fissa una sequenza già verificata: indici 0..n-1 e superset ricuciti. */
+function writeOrder(ordered: RoutineExercise[]): void {
+  const toClear = new Set(supersetsToClear(ordered));
+
+  db.transaction((tx) => {
+    ordered.forEach((exercise, index) => {
+      const supersetGroup = toClear.has(exercise.id) ? null : exercise.supersetGroup;
+      if (exercise.orderIndex === index && exercise.supersetGroup === supersetGroup) return;
+
+      tx.update(routineExercises)
+        .set({ orderIndex: index, supersetGroup })
+        .where(eq(routineExercises.id, exercise.id))
+        .run();
+    });
+  });
+}
+
+/**
+ * Sposta un esercizio di una posizione. Resta accanto al trascinamento come
+ * ripiego preciso: un posto solo, senza mirare.
+ */
+export function moveRoutineExercise(dayId: string, id: string, direction: -1 | 1): void {
+  const list = dayExercisesInOrder(dayId);
 
   const index = list.findIndex((e) => e.id === id);
   const target = index + direction;
   if (index < 0 || target < 0 || target >= list.length) return;
 
-  db.transaction((tx) => {
-    tx.update(routineExercises)
-      .set({ orderIndex: list[target].orderIndex })
-      .where(eq(routineExercises.id, list[index].id))
-      .run();
-    tx.update(routineExercises)
-      .set({ orderIndex: list[index].orderIndex })
-      .where(eq(routineExercises.id, list[target].id))
-      .run();
-  });
+  // Sposta e scrive direttamente: la sequenza è già quella del giorno, non c'è
+  // niente da rileggere per verificarla.
+  writeOrder(moveItem(list, index, target));
 }
 
 /**
  * Unisce un esercizio al precedente in un superset, o lo stacca se già unito.
  *
- * Il gruppo è identificato dall'`orderIndex` del primo esercizio della serie:
- * un numero qualsiasi purché condiviso, e questo è stabile e già disponibile.
+ * Il gruppo è un numero qualsiasi purché condiviso e mai riusato nel giorno:
+ * `max + 1`. Prima era l'`orderIndex` del primo esercizio della serie, che
+ * sembrava comodo — è già lì — ma cambia sotto al gruppo appena si riordina,
+ * e due gruppi diversi finivano per ritrovarsi con lo stesso numero.
  */
 export function toggleSupersetWithPrevious(dayId: string, id: string): void {
   const list = db
@@ -228,7 +267,9 @@ export function toggleSupersetWithPrevious(dayId: string, id: string): void {
     return;
   }
 
-  const group = previous.supersetGroup ?? previous.orderIndex;
+  const group =
+    previous.supersetGroup ??
+    Math.max(0, ...list.map((e) => e.supersetGroup ?? 0)) + 1;
   db.transaction((tx) => {
     tx.update(routineExercises)
       .set({ supersetGroup: group })
