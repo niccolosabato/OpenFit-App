@@ -1,29 +1,19 @@
-import { and, asc, eq, inArray, isNull, like, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, isNull, like, or, sql, type SQL } from 'drizzle-orm';
 
 import { newId } from '@/lib/ids';
 import { db } from '../client';
-import {
-  MUSCLE_TO_GROUP,
-  type Equipment,
-  type MuscleGroup,
-  type Muscle,
-} from '../enums';
+import { type Equipment, type Muscle } from '../enums';
 import { exercises, type Exercise, type NewExercise } from '../schema';
 
 export type ExerciseFilters = {
   search?: string;
-  /** `null` = tutti i gruppi. */
-  group?: MuscleGroup | null;
+  /** `null` = tutti i muscoli. */
+  muscle?: Muscle | null;
   equipment?: Equipment | null;
   favoritesOnly?: boolean;
   /** Mostra anche gli esercizi archiviati (di norma nascosti). */
   includeArchived?: boolean;
 };
-
-/** Muscoli che ricadono in un gruppo, derivati dalla mappa in `enums.ts`. */
-function musclesOfGroup(group: MuscleGroup): Muscle[] {
-  return (Object.keys(MUSCLE_TO_GROUP) as Muscle[]).filter((m) => MUSCLE_TO_GROUP[m] === group);
-}
 
 /**
  * Query della libreria, pronta per `useLiveQuery`.
@@ -49,8 +39,8 @@ export function exerciseListQuery(filters: ExerciseFilters = {}) {
     );
   }
 
-  if (filters.group) {
-    conditions.push(inArray(exercises.primaryMuscle, musclesOfGroup(filters.group)));
+  if (filters.muscle) {
+    conditions.push(eq(exercises.primaryMuscle, filters.muscle));
   }
 
   if (filters.equipment) {
