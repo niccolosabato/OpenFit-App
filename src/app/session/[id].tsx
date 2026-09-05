@@ -2,12 +2,13 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tag } from '@/components/ui/chip';
+import { confirm } from '@/components/ui/confirm';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
@@ -61,21 +62,19 @@ export default function SessionDetailScreen() {
   }
 
   function confirmDelete() {
-    Alert.alert(
-      'Eliminare l’allenamento?',
-      'Sparisce dallo storico e dalle statistiche. I record che dipendono da questa seduta vengono ricalcolati.',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: () => {
-            removeSession(id);
-            router.back();
-          },
+    confirm({
+      title: 'Eliminare l’allenamento?',
+      message:
+        'Sparisce dallo storico e dalle statistiche. I record che dipendono da questa seduta vengono ricalcolati.',
+      action: {
+        label: 'Elimina',
+        destructive: true,
+        onPress: () => {
+          removeSession(id);
+          router.back();
         },
-      ],
-    );
+      },
+    });
   }
 
   return (

@@ -1,12 +1,13 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { parseISO } from 'date-fns';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { LineChart } from '@/components/charts/line-chart';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { confirm } from '@/components/ui/confirm';
 import { NumberStepper } from '@/components/ui/number-stepper';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
@@ -69,10 +70,10 @@ export default function BodyScreen() {
   }
 
   function confirmDelete(id: string) {
-    Alert.alert('Eliminare la misurazione?', undefined, [
-      { text: 'Annulla', style: 'cancel' },
-      { text: 'Elimina', style: 'destructive', onPress: () => deleteMeasurement(id) },
-    ]);
+    confirm({
+      title: 'Eliminare la misurazione?',
+      action: { label: 'Elimina', destructive: true, onPress: () => deleteMeasurement(id) },
+    });
   }
 
   return (

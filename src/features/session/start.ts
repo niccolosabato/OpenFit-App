@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
 
+import { confirm } from '@/components/ui/confirm';
 import { getActiveSession } from '@/db/queries/sessions';
 import { abandonSession } from './actions';
 
@@ -20,24 +20,21 @@ export function startWorkout(begin: () => string): void {
     return;
   }
 
-  Alert.alert(
-    'C’è già un allenamento in corso',
-    `"${active.name}" è ancora aperto. Vuoi riprenderlo o scartarlo e cominciarne uno nuovo?`,
-    [
-      { text: 'Annulla', style: 'cancel' },
-      {
-        text: 'Riprendi',
-        onPress: () => router.push('/session/active'),
+  confirm({
+    title: 'C’è già un allenamento in corso',
+    message: `"${active.name}" è ancora aperto. Vuoi riprenderlo o scartarlo e cominciarne uno nuovo?`,
+    action: {
+      label: 'Riprendi',
+      onPress: () => router.push('/session/active'),
+    },
+    alternative: {
+      label: 'Scarta e ricomincia',
+      destructive: true,
+      onPress: () => {
+        abandonSession(active.id);
+        begin();
+        router.push('/session/active');
       },
-      {
-        text: 'Scarta e ricomincia',
-        style: 'destructive',
-        onPress: () => {
-          abandonSession(active.id);
-          begin();
-          router.push('/session/active');
-        },
-      },
-    ],
-  );
+    },
+  });
 }

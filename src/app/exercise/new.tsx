@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
+import { notify } from '@/components/ui/confirm';
 import { OptionField, TextField } from '@/components/ui/field';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
@@ -41,7 +42,7 @@ export default function NewExerciseScreen() {
   function save() {
     const trimmed = name.trim();
     if (!trimmed) {
-      Alert.alert('Manca il nome', 'Dai un nome all’esercizio per salvarlo.');
+      notify('Manca il nome', 'Dai un nome all’esercizio per salvarlo.');
       return;
     }
 

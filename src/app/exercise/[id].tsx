@@ -1,9 +1,10 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/ui/card';
+import { confirm } from '@/components/ui/confirm';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
@@ -39,21 +40,19 @@ export default function ExerciseDetailScreen() {
   }
 
   function confirmArchive() {
-    Alert.alert(
-      'Archiviare l’esercizio?',
-      'Sparisce dalla libreria ma resta nelle sessioni già registrate, così lo storico non si rompe.',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Archivia',
-          style: 'destructive',
-          onPress: () => {
-            archiveExercise(exercise!.id);
-            router.back();
-          },
+    confirm({
+      title: 'Archiviare l’esercizio?',
+      message:
+        'Sparisce dalla libreria ma resta nelle sessioni già registrate, così lo storico non si rompe.',
+      action: {
+        label: 'Archivia',
+        destructive: true,
+        onPress: () => {
+          archiveExercise(exercise!.id);
+          router.back();
         },
-      ],
-    );
+      },
+    });
   }
 
   const facts: { label: string; value: string }[] = [
@@ -127,7 +126,12 @@ export default function ExerciseDetailScreen() {
             <Text variant="label" tone="dim">
               Note tecniche
             </Text>
-            <Text variant="body" style={{ marginTop: theme.space.sm, lineHeight: 22 }}>
+            <Text
+              variant="body"
+              style={{
+                marginTop: theme.space.sm,
+                lineHeight: theme.font.size.md * theme.font.lineHeight.normal,
+              }}>
               {exercise.instructions}
             </Text>
           </Card>

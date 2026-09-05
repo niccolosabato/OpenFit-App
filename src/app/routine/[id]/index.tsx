@@ -1,11 +1,12 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { confirm } from '@/components/ui/confirm';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TextField } from '@/components/ui/field';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
@@ -53,21 +54,19 @@ export default function RoutineScreen() {
 
   function confirmDelete() {
     setMenuOpen(false);
-    Alert.alert(
-      'Eliminare la scheda?',
-      'Sparisce con tutti i suoi giorni ed esercizi. Le sessioni già registrate restano nello storico.',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: () => {
-            deleteRoutine(id);
-            router.back();
-          },
+    confirm({
+      title: 'Eliminare la scheda?',
+      message:
+        'Sparisce con tutti i suoi giorni ed esercizi. Le sessioni già registrate restano nello storico.',
+      action: {
+        label: 'Elimina',
+        destructive: true,
+        onPress: () => {
+          deleteRoutine(id);
+          router.back();
         },
-      ],
-    );
+      },
+    });
   }
 
   return (
@@ -104,7 +103,7 @@ export default function RoutineScreen() {
                 <Text variant="label" tone="accent">
                   {String(index + 1).padStart(2, '0')}
                 </Text>
-                <View style={{ flex: 1, gap: 2 }}>
+                <View style={{ flex: 1, gap: theme.space.xs }}>
                   <Text variant="heading" numberOfLines={1}>
                     {day.name}
                   </Text>

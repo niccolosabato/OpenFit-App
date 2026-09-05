@@ -1,10 +1,11 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
+import { confirm, notify } from '@/components/ui/confirm';
 import { TextField } from '@/components/ui/field';
 import { NumberStepper } from '@/components/ui/number-stepper';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
@@ -43,22 +44,21 @@ export default function ProfileScreen() {
     try {
       await shareBackup();
     } catch (error) {
-      Alert.alert('Backup non riuscito', error instanceof Error ? error.message : String(error));
+      notify('Backup non riuscito', error instanceof Error ? error.message : String(error));
     } finally {
       setBusy(false);
     }
   }
 
   function onImport() {
-    Alert.alert(
-      'Ripristinare un backup?',
-      'Tutti i dati attuali — schede, storico, record — verranno sostituiti da quelli del file. Esporta prima un backup se vuoi poter tornare indietro.',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Scegli il file',
-          style: 'destructive',
-          onPress: async () => {
+    confirm({
+      title: 'Ripristinare un backup?',
+      message:
+        'Tutti i dati attuali — schede, storico, record — verranno sostituiti da quelli del file. Esporta prima un backup se vuoi poter tornare indietro.',
+      action: {
+        label: 'Scegli il file',
+        destructive: true,
+        onPress: async () => {
             setBusy(true);
             try {
               const result = await pickAndRestoreBackup();
@@ -67,35 +67,29 @@ export default function ProfileScreen() {
                 detail: `${result.summary.sessions} allenamenti, ${result.summary.routines} schede, ${result.summary.exercises} esercizi.`,
               });
             } catch (error) {
-              Alert.alert(
-                'Ripristino non riuscito',
-                error instanceof Error ? error.message : String(error),
-              );
+              notify('Ripristino non riuscito', error instanceof Error ? error.message : String(error));
             } finally {
               setBusy(false);
             }
-          },
         },
-      ],
-    );
+      },
+    });
   }
 
   function onReset() {
-    Alert.alert(
-      'Cancellare tutto?',
-      'Schede, allenamenti, record e misurazioni verranno eliminati definitivamente. La libreria esercizi verrà ricaricata al prossimo avvio.',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Cancella tutto',
-          style: 'destructive',
-          onPress: () => {
-            wipeAllData();
-            showToast('Dati cancellati', { detail: 'Riavvia l’app per ricaricare la libreria.' });
-          },
+    confirm({
+      title: 'Cancellare tutto?',
+      message:
+        'Schede, allenamenti, record e misurazioni verranno eliminati definitivamente. La libreria esercizi verrà ricaricata al prossimo avvio.',
+      action: {
+        label: 'Cancella tutto',
+        destructive: true,
+        onPress: () => {
+          wipeAllData();
+          showToast('Dati cancellati', { detail: 'Riavvia l’app per ricaricare la libreria.' });
         },
-      ],
-    );
+      },
+    });
   }
 
   return (
@@ -207,7 +201,7 @@ export default function ProfileScreen() {
           />
           <SwitchRow
             label="Vibrazione"
-            description="Alla spunta di una serie e a fine recupero."
+            description="Alla spunta di una serie, a fine recupero e quando si prende un esercizio per spostarlo."
             value={settings.timerVibration}
             onChange={(timerVibration) => update({ timerVibration })}
           />

@@ -11,6 +11,7 @@ import { BootErrorScreen, BootScreen } from '@/components/boot-screen';
 import { bootstrapDatabase } from '@/db/bootstrap';
 import { db } from '@/db/client';
 import { ToastHost } from '@/components/ui/toast';
+import { ConfirmHost } from '@/components/ui/confirm';
 import { OnboardingFlow } from '@/features/onboarding/onboarding-flow';
 import { SettingsProvider, useSettings } from '@/store/settings';
 import { ThemeProvider } from '@/theme';
@@ -127,6 +128,7 @@ export default function RootLayout() {
             <ThemeProvider>
               <AppRoutes />
               <ToastHost />
+              <ConfirmHost />
             </ThemeProvider>
           </SettingsProvider>
         )}
