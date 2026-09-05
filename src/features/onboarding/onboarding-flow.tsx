@@ -91,12 +91,11 @@ export function OnboardingFlow() {
           {Array.from({ length: STEPS }, (_, i) => (
             <View
               key={i}
+              // Il colore è fisso e cambia solo l'opacità: cambiare il fondo
+              // di una vista arrotondata su Android le fa perdere il raggio.
               style={[
                 styles.tick,
-                {
-                  backgroundColor: i <= step ? theme.colors.accent : theme.colors.surface2,
-                  borderRadius: 2,
-                },
+                { backgroundColor: theme.colors.accent, opacity: i <= step ? 1 : 0.18 },
               ]}
             />
           ))}
@@ -263,7 +262,7 @@ function AccentSwatch({
 
 const styles = StyleSheet.create({
   progress: { flexDirection: 'row' },
-  tick: { flex: 1, height: 3 },
+  tick: { flex: 1, height: 3, borderRadius: 2 },
   badge: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center' },
   units: { flexDirection: 'row' },
   accents: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },

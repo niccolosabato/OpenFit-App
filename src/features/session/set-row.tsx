@@ -288,22 +288,33 @@ export function SetRow({
         accessibilityRole="checkbox"
         accessibilityState={{ checked: done }}
         accessibilityLabel={done ? 'Annulla la serie' : 'Segna la serie come fatta'}
-        style={({ pressed }) => [
-          styles.check,
-          {
-            width: 48,
-            height: 48,
-            borderRadius: theme.radius.md,
-            backgroundColor: done ? theme.colors.accent : theme.colors.surface2,
-            borderColor: done ? theme.colors.accent : theme.colors.border,
-          },
-          pressed && { opacity: 0.6 },
-        ]}>
-        <MaterialCommunityIcons
-          name="check"
-          size={20}
-          color={done ? theme.colors.onAccent : theme.colors.textFaint}
-        />
+        style={({ pressed }) => pressed && { opacity: 0.6 }}>
+        {/* Il pieno d'accento è un velo sopra, non il fondo della vista:
+            cambiare il fondo di una vista arrotondata su Android le fa perdere
+            il raggio, e la spunta tornava quadrata appena si spuntava. */}
+        <View
+          style={[
+            styles.check,
+            {
+              width: 48,
+              height: 48,
+              borderRadius: theme.radius.md,
+              backgroundColor: theme.colors.surface2,
+              borderColor: theme.colors.border,
+            },
+          ]}>
+          {done ? (
+            <View
+              pointerEvents="none"
+              style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.accent }]}
+            />
+          ) : null}
+          <MaterialCommunityIcons
+            name="check"
+            size={20}
+            color={done ? theme.colors.onAccent : theme.colors.textFaint}
+          />
+        </View>
       </Pressable>
 
       {set.isPr ? (
@@ -349,8 +360,8 @@ function Cell({
         {
           height: 36,
           borderRadius: theme.radius.md,
-          backgroundColor: done ? 'transparent' : theme.colors.surface2,
-          borderColor: done ? 'transparent' : theme.colors.border,
+          backgroundColor: theme.colors.surface2,
+          borderColor: theme.colors.border,
           color: theme.colors.text,
           fontSize: theme.font.size.md,
         },
@@ -393,6 +404,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
-  check: { alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth * 2 },
+  check: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    overflow: 'hidden',
+  },
   prBadge: { position: 'absolute', right: 2, top: 2 },
 });

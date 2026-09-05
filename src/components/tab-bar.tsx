@@ -81,11 +81,23 @@ export function TabBar() {
               accessibilityLabel={config.label}
               onPress={onPress}
               style={({ pressed }) => [styles.tab, { minHeight: theme.hit }, pressed && styles.pressed]}>
-              <View
-                style={[
-                  styles.pill,
-                  { backgroundColor: isFocused ? theme.colors.accentGlow : 'transparent' },
-                ]}>
+              <View style={styles.pill}>
+                {/* Il fondo è una vista a sé e cambia solo di opacità.
+                    Cambiare il `backgroundColor` di una vista arrotondata fa
+                    ricostruire ad Android il suo sfondo, che si ridisegna
+                    senza raggio: era il motivo per cui la pastiglia tornava
+                    quadrata appena si cambiava scheda. L'opacità non tocca lo
+                    sfondo, quindi il raggio resta. */}
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: theme.colors.accent,
+                      borderRadius: capsule(PILL_HEIGHT),
+                      opacity: isFocused ? 0.16 : 0,
+                    },
+                  ]}
+                />
                 <MaterialCommunityIcons
                   name={isFocused ? config.iconActive : config.icon}
                   size={24}
@@ -115,6 +127,8 @@ const styles = StyleSheet.create({
     height: PILL_HEIGHT,
     minWidth: 64,
     borderRadius: capsule(PILL_HEIGHT),
+    // Ritaglia il fondo sulla forma arrotondata, qualunque cosa faccia.
+    overflow: 'hidden',
     paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
