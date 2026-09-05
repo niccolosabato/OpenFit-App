@@ -9,7 +9,21 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
 import { useSettings } from '@/store/settings';
-import { ACCENTS, DEFAULT_ACCENT, font, HIT, MONO, neutral, radius, semantic, space, type Accent, type AccentKey } from './tokens';
+import {
+  ACCENTS,
+  DEFAULT_ACCENT,
+  elevation,
+  FLOAT_INSET,
+  font,
+  HIT,
+  MONO,
+  neutral,
+  radius,
+  semantic,
+  space,
+  type Accent,
+  type AccentKey,
+} from './tokens';
 
 export type ThemeColors = typeof neutral &
   typeof semantic & {
@@ -25,6 +39,9 @@ export type Theme = {
   space: typeof space;
   radius: typeof radius;
   font: typeof font;
+  elevation: typeof elevation;
+  /** Distacco delle barre flottanti dai bordi dello schermo. */
+  floatInset: number;
   mono: string;
   hit: number;
 };
@@ -44,6 +61,8 @@ function buildTheme(accentKey: AccentKey): Theme {
     space,
     radius,
     font,
+    elevation,
+    floatInset: FLOAT_INSET,
     mono: MONO,
     hit: HIT,
   };

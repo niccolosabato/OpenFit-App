@@ -45,54 +45,68 @@ export function ActiveSessionBar() {
   if (!session) return null;
 
   return (
-    <Pressable
-      onPress={() => router.push('/session/active')}
-      accessibilityRole="button"
-      accessibilityLabel="Torna all’allenamento in corso">
-      {({ pressed }) => (
-        <Surface
-          level="high"
-          radius={0}
-          tinted={running}
-          pressed={pressed}
-          style={[
-            styles.root,
-            {
-              paddingHorizontal: theme.space.lg,
-              paddingVertical: theme.space.sm,
-              gap: theme.space.md,
-              borderLeftWidth: 0,
-              borderRightWidth: 0,
-              borderBottomWidth: 0,
-            },
-          ]}>
-          <MaterialCommunityIcons
-            name={running ? 'timer-sand' : 'dumbbell'}
-            size={22}
-            color={theme.colors.accent}
-          />
-          <View style={{ flex: 1 }}>
-            <Text variant="label" tone={running ? 'accent' : 'dim'} numberOfLines={1}>
-              {running ? 'Recupero' : 'Allenamento in corso'}
-            </Text>
-            <Text variant="subtitle" numeric numberOfLines={1}>
-              {running ? formatDuration(remaining) : `${session.name} · ${formatDuration(elapsed)}`}
-            </Text>
-          </View>
-          {/* Saltare il recupero senza rientrare in sessione: durante una
-              seduta è la ragione principale per cui si tornava indietro. */}
-          {running ? (
-            <IconButton
-              icon="skip-next"
-              label="Salta il recupero"
-              tone="accent"
-              onPress={stopRest}
+    // Sopra la tab bar, con lo stesso distacco dai bordi: le due barre si
+    // leggono come una pila di elementi appoggiati, non come una fascia unica.
+    <View
+      style={{
+        backgroundColor: theme.colors.bg,
+        paddingHorizontal: theme.floatInset,
+        paddingTop: theme.floatInset,
+      }}>
+      <Pressable
+        onPress={() => router.push('/session/active')}
+        accessibilityRole="button"
+        accessibilityLabel="Torna all’allenamento in corso">
+        {({ pressed }) => (
+          <Surface
+            level="mid"
+            elevation="float"
+            radius={theme.radius.xl}
+            tinted={running}
+            pressed={pressed}
+            style={[
+              styles.root,
+              {
+                paddingLeft: theme.space.lg,
+                paddingRight: theme.space.sm,
+                paddingVertical: theme.space.sm,
+                gap: theme.space.md,
+              },
+            ]}>
+            <MaterialCommunityIcons
+              name={running ? 'timer-sand' : 'dumbbell'}
+              size={22}
+              color={theme.colors.accent}
             />
-          ) : null}
-          <MaterialCommunityIcons name="chevron-up" size={22} color={theme.colors.textDim} />
-        </Surface>
-      )}
-    </Pressable>
+            <View style={{ flex: 1 }}>
+              <Text variant="label" tone={running ? 'accent' : 'dim'} numberOfLines={1}>
+                {running ? 'Recupero' : 'Allenamento in corso'}
+              </Text>
+              <Text variant="subtitle" numeric numberOfLines={1}>
+                {running ? formatDuration(remaining) : `${session.name} · ${formatDuration(elapsed)}`}
+              </Text>
+            </View>
+            {/* Saltare il recupero senza rientrare in sessione: durante una
+                seduta è la ragione principale per cui si tornava indietro. */}
+            {running ? (
+              <IconButton
+                icon="skip-next"
+                label="Salta il recupero"
+                tone="accent"
+                onPress={stopRest}
+              />
+            ) : (
+              <IconButton
+                icon="chevron-up"
+                label="Riapri l’allenamento"
+                tone="dim"
+                onPress={() => router.push('/session/active')}
+              />
+            )}
+          </Surface>
+        )}
+      </Pressable>
+    </View>
   );
 }
 

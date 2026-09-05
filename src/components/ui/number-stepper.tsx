@@ -1,4 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/theme';
@@ -37,6 +38,17 @@ export function NumberStepper({
 }) {
   const theme = useTheme();
 
+  /**
+   * Quello che c'è scritto nel campo mentre lo si sta scrivendo.
+   *
+   * `null` = non lo sta scrivendo nessuno, comanda `value`. Serve perché i
+   * limiti non possono valere a metà digitazione: con `min` a 100, battere la
+   * prima cifra di "175" darebbe `1`, che risalirebbe subito a `100` e
+   * renderebbe il campo impossibile da compilare. I limiti si applicano
+   * quando si esce dal campo, come per i valori della sessione.
+   */
+  const [draft, setDraft] = useState<string | null>(null);
+
   function clamp(next: number): number {
     let result = next;
     if (min !== undefined) result = Math.max(min, result);
@@ -47,7 +59,13 @@ export function NumberStepper({
 
   function bump(direction: -1 | 1) {
     const base = value ?? min ?? 0;
+    setDraft(null);
     onChange(clamp(base + direction * step));
+  }
+
+  function commit() {
+    setDraft(null);
+    if (value !== null) onChange(clamp(value));
   }
 
   return (
@@ -69,16 +87,20 @@ export function NumberStepper({
 
         <View style={styles.valueBox}>
           <TextInput
-            value={value === null ? '' : formatNumber(value)}
+            value={draft ?? (value === null ? '' : formatNumber(value))}
             onChangeText={(raw) => {
+              setDraft(raw);
               const cleaned = raw.replace(',', '.').trim();
               if (cleaned === '') {
                 onChange(allowEmpty ? null : min ?? 0);
                 return;
               }
               const parsed = Number.parseFloat(cleaned);
-              if (Number.isFinite(parsed)) onChange(clamp(parsed));
+              // Niente `clamp` qui: solo l'arrotondamento. Vedi `draft`.
+              if (Number.isFinite(parsed)) onChange(Number(parsed.toFixed(3)));
             }}
+            onBlur={commit}
+            onSubmitEditing={commit}
             placeholder={placeholder}
             placeholderTextColor={theme.colors.textFaint}
             keyboardType="decimal-pad"

@@ -143,7 +143,7 @@ export function OnboardingFlow() {
 
         {step === 3 ? (
           <Step title="Scegli un colore" body="Tocca per vedere subito come cambia l'app.">
-            <View style={[styles.accents, { gap: theme.space.sm }]}>
+            <View style={[styles.accents, { rowGap: theme.space.sm }]}>
               {(Object.keys(ACCENTS) as AccentKey[]).map((key) => (
                 <AccentSwatch
                   key={key}
@@ -161,7 +161,7 @@ export function OnboardingFlow() {
         {step === 4 ? (
           <Step
             title="Peso e altezza"
-            body="Servono solo ai grafici dell'andamento. Puoi saltare e metterli dopo.">
+            body="Servono solo ai grafici dell'andamento. Lasciali vuoti se preferisci: si mettono anche dopo, dal profilo.">
             <NumberStepper
               label="Peso"
               value={weight}
@@ -184,7 +184,14 @@ export function OnboardingFlow() {
           </Step>
         ) : null}
 
-        <Button title="Salta la presentazione" variant="ghost" onPress={skip} />
+        {/* Non all'ultimo passo: lì "Comincia" salva quello che si è scritto e
+            "Salta" lo butterebbe via, che a un passo dalla fine è solo un modo
+            per perdere il lavoro appena fatto. */}
+        {!isLast ? (
+          <View style={{ alignItems: 'center', paddingTop: theme.space.sm }}>
+            <Button title="Salta la presentazione" variant="ghost" onPress={skip} />
+          </View>
+        ) : null}
       </ScreenScroll>
     </Screen>
   );
@@ -259,7 +266,9 @@ const styles = StyleSheet.create({
   tick: { flex: 1, height: 3 },
   badge: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center' },
   units: { flexDirection: 'row' },
-  accents: { flexDirection: 'row', flexWrap: 'wrap' },
-  swatchCell: { minWidth: '46%', flexGrow: 1 },
+  accents: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  // Due colonne esatte: con `flexGrow` l'ultima riga si allargava e i colori
+  // non stavano più incolonnati con quelli sopra.
+  swatchCell: { width: '48%' },
   dot: { width: 14, height: 14, borderRadius: 7, borderWidth: StyleSheet.hairlineWidth * 2 },
 });

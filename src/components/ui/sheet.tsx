@@ -52,16 +52,18 @@ export function Sheet({
         onPress={onClose}
         accessibilityLabel="Chiudi"
       />
+      {/* Il pannello non è incollato al bordo: galleggia, con lo stesso
+          distacco delle barre. */}
       <Surface
         level="high"
-        radius={0}
+        elevation="sheet"
+        radius={theme.radius.xl}
         style={[
           styles.panel,
           {
-            backgroundColor: theme.colors.surface,
-            borderTopLeftRadius: theme.radius.xl,
-            borderTopRightRadius: theme.radius.xl,
-            paddingBottom: footer ? 0 : insets.bottom + theme.space.md,
+            marginHorizontal: theme.floatInset,
+            marginBottom: Math.max(insets.bottom, theme.floatInset),
+            paddingBottom: footer ? 0 : theme.space.md,
           },
         ]}>
         <View style={[styles.grabber, { backgroundColor: theme.colors.borderStrong }]} />
@@ -154,7 +156,7 @@ export function SheetAction({
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1 },
-  panel: { maxHeight: '85%', borderBottomWidth: 0 },
+  panel: { maxHeight: '85%' },
   grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginVertical: 10 },
   scroll: { flexGrow: 0 },
   action: { justifyContent: 'center', gap: 2 },

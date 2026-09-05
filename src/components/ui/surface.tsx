@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { useTheme, type ElevationKey } from '@/theme';
 
 export type SurfaceLevel =
   /** Card e liste, appoggiate sul fondo dell'app. */
@@ -30,6 +30,8 @@ export type SurfaceProps = {
   /** Azioni distruttive. */
   danger?: boolean;
   pressed?: boolean;
+  /** Stacca la superficie dal fondo. Solo per ciò che galleggia sopra il contenuto. */
+  elevation?: ElevationKey;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -40,6 +42,7 @@ export function Surface({
   tinted = false,
   danger = false,
   pressed = false,
+  elevation = 'none',
   style,
 }: SurfaceProps) {
   const theme = useTheme();
@@ -61,6 +64,7 @@ export function Surface({
   return (
     <View
       style={[
+        theme.elevation[elevation],
         {
           backgroundColor,
           borderRadius: radius ?? theme.radius.lg,

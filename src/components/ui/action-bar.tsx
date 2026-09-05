@@ -34,29 +34,33 @@ export function ActionBar({
   const insets = useSafeAreaInsets();
 
   return (
-    <Surface
-      level="high"
-      radius={0}
-      style={[
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: theme.space.md,
-          paddingTop: theme.space.md,
-          paddingHorizontal: theme.space.lg,
-          // Senza questo i pulsanti finiscono sotto la barra dei gesti: è il
-          // difetto che la barra del recupero aveva da sempre.
-          paddingBottom: safeBottom ? Math.max(insets.bottom, theme.space.md) : theme.space.md,
-          // La barra tocca i due lati dello schermo: i bordi laterali e
-          // inferiore non hanno nulla da chiudere.
-          borderLeftWidth: 0,
-          borderRightWidth: 0,
-          borderBottomWidth: 0,
-        },
-        style,
-      ]}>
-      {children}
-    </Surface>
+    // Fascia opaca che nasconde il contenuto che le scorre sotto, e dentro la
+    // barra vera: arrotondata e staccata dai bordi dello schermo.
+    <View
+      style={{
+        backgroundColor: theme.colors.bg,
+        paddingHorizontal: theme.floatInset,
+        paddingTop: theme.floatInset,
+        // Senza questo i pulsanti finiscono sotto la barra dei gesti: è il
+        // difetto che la barra del recupero aveva da sempre.
+        paddingBottom: safeBottom ? Math.max(insets.bottom, theme.floatInset) : theme.floatInset,
+      }}>
+      <Surface
+        level="mid"
+        elevation="float"
+        radius={theme.radius.xl}
+        style={[
+          {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.space.sm,
+            padding: theme.space.sm,
+          },
+          style,
+        ]}>
+        {children}
+      </Surface>
+    </View>
   );
 }
 

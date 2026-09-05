@@ -72,7 +72,9 @@ export function ChipRow({ children }: { children: React.ReactNode }) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: theme.space.sm, paddingHorizontal: theme.space.lg }}>
+      // Il margine è piccolo perché la riga vive dentro l'header, che ha
+      // già il proprio.
+      contentContainerStyle={{ gap: theme.space.sm, paddingHorizontal: theme.space.sm }}>
       {children}
     </ScrollView>
   );

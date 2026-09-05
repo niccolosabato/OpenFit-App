@@ -89,12 +89,41 @@ export const space = {
 } as const;
 
 export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 20,
+  sm: 8,
+  md: 12,
+  lg: 18,
+  xl: 26,
   pill: 999,
 } as const;
+
+/**
+ * Ombre.
+ *
+ * Servono a una cosa sola: staccare dal fondo le barre che galleggiano sopra
+ * il contenuto. Le superfici che stanno *nel* flusso — card, righe, input —
+ * non le usano: lì la gerarchia resta quella dei bordi.
+ *
+ * `boxShadow` è per la resa (React Native 0.76+ con la New Architecture, che
+ * questo progetto usa), `elevation` è la rete di sicurezza di Android.
+ */
+export const elevation = {
+  none: {},
+  /** Barra appoggiata: tab bar, barra delle azioni. */
+  float: { boxShadow: '0px 6px 18px rgba(0, 0, 0, 0.45)', elevation: 8 },
+  /** Foglio sopra tutto il resto. */
+  sheet: { boxShadow: '0px 12px 28px rgba(0, 0, 0, 0.55)', elevation: 16 },
+} as const;
+
+export type ElevationKey = keyof typeof elevation;
+
+/**
+ * Quanto le barre flottanti stanno staccate dai bordi dello schermo.
+ *
+ * È lo stesso `space.lg` che gli scroll usano come margine orizzontale: barre
+ * e contenuto devono allinearsi sullo stesso filo verticale, altrimenti si
+ * vede che sono due sistemi diversi.
+ */
+export const FLOAT_INSET = space.lg;
 
 /**
  * Altezza minima di un elemento toccabile.

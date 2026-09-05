@@ -51,64 +51,65 @@ export function TabBar() {
   const current = segments[0] === '(tabs)' ? (segments[1] ?? 'index') : 'index';
 
   return (
-    <Surface
-      level="high"
-      radius={0}
-      style={[
-        styles.bar,
-        {
-          paddingBottom: Math.max(insets.bottom, theme.space.sm),
-          borderLeftWidth: 0,
-          borderRightWidth: 0,
-          borderBottomWidth: 0,
-        },
-      ]}>
-      {TABS.map((config) => {
-        const isFocused = current === config.name;
+    <View
+      style={{
+        backgroundColor: theme.colors.bg,
+        paddingHorizontal: theme.floatInset,
+        paddingTop: theme.floatInset,
+        paddingBottom: Math.max(insets.bottom, theme.floatInset),
+      }}>
+      <Surface
+        level="mid"
+        elevation="float"
+        radius={theme.radius.xl}
+        style={[styles.bar, { paddingVertical: theme.space.sm }]}>
+        {TABS.map((config) => {
+          const isFocused = current === config.name;
 
-        const onPress = () => {
-          if (!isFocused) router.navigate(config.href);
-        };
+          const onPress = () => {
+            if (!isFocused) router.navigate(config.href);
+          };
 
-        return (
-          <Pressable
-            key={config.name}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={config.label}
-            onPress={onPress}
-            style={({ pressed }) => [styles.tab, { minHeight: theme.hit }, pressed && styles.pressed]}>
-            <View
-              style={[
-                styles.pill,
-                {
-                  borderRadius: theme.radius.pill,
-                  paddingHorizontal: theme.space.md,
-                  backgroundColor: isFocused ? theme.colors.accentGlow : 'transparent',
-                },
-              ]}>
-              <MaterialCommunityIcons
-                name={isFocused ? config.iconActive : config.icon}
-                size={24}
-                color={isFocused ? theme.colors.accent : theme.colors.textFaint}
-              />
-            </View>
-            <Text
-              variant="label"
-              tone={isFocused ? 'accent' : 'faint'}
-              style={styles.label}
-              numberOfLines={1}>
-              {config.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </Surface>
+          return (
+            <Pressable
+              key={config.name}
+              accessibilityRole="button"
+              accessibilityState={isFocused ? { selected: true } : {}}
+              accessibilityLabel={config.label}
+              onPress={onPress}
+              style={({ pressed }) => [styles.tab, { minHeight: theme.hit }, pressed && styles.pressed]}>
+              <View
+                style={[
+                  styles.pill,
+                  {
+                    borderRadius: theme.radius.pill,
+                    paddingHorizontal: theme.space.md,
+                    backgroundColor: isFocused ? theme.colors.accentGlow : 'transparent',
+                  },
+                ]}>
+                <MaterialCommunityIcons
+                  name={isFocused ? config.iconActive : config.icon}
+                  size={24}
+                  color={isFocused ? theme.colors.accent : theme.colors.textFaint}
+                />
+              </View>
+              <Text
+                variant="label"
+                tone={isFocused ? 'accent' : 'faint'}
+                style={styles.label}
+                numberOfLines={1}>
+                {config.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </Surface>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', paddingTop: 8 },
+  bar: { flexDirection: 'row' },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
   pill: { paddingVertical: 3, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.6 },

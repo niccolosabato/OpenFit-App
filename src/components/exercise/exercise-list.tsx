@@ -92,7 +92,7 @@ export function ExerciseList({
 
   const filters = (
     <View style={{ gap: theme.space.sm }}>
-      <View style={{ paddingHorizontal: theme.space.lg }}>
+      <View style={{ paddingHorizontal: theme.space.sm }}>
         <SearchInput value={search} onChangeText={setSearch} placeholder="Cerca esercizio o alias…" />
       </View>
       <ChipRow>

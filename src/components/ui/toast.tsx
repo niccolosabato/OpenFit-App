@@ -75,8 +75,8 @@ export function ToastHost() {
       style={[
         styles.root,
         {
-          top: insets.top + theme.space.sm,
-          marginHorizontal: theme.space.lg,
+          top: insets.top + theme.floatInset,
+          marginHorizontal: theme.floatInset,
           opacity: progress,
           transform: [
             {
@@ -87,7 +87,8 @@ export function ToastHost() {
       ]}>
       <Surface
         level="high"
-        radius={theme.radius.lg}
+        elevation="float"
+        radius={theme.radius.xl}
         style={[
           styles.body,
           {

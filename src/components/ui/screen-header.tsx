@@ -50,54 +50,59 @@ export function ScreenHeader({
   const insets = useSafeAreaInsets();
 
   return (
-    <Surface
-      level="high"
-      radius={0}
+    // Due strati: una fascia opaca del colore del fondo, che copre il
+    // contenuto che le scorre sotto, e dentro la barra vera, arrotondata e
+    // staccata dai bordi.
+    <View
       style={[
-        styles.root,
+        styles.band,
         {
-          paddingTop: insets.top + theme.space.sm,
-          paddingBottom: below ? theme.space.sm : theme.space.md,
-          gap: theme.space.sm,
-          borderTopWidth: 0,
-          borderLeftWidth: 0,
-          borderRightWidth: 0,
+          backgroundColor: theme.colors.bg,
+          paddingTop: insets.top + theme.floatInset,
+          paddingHorizontal: theme.floatInset,
+          paddingBottom: theme.floatInset,
         },
       ]}>
-      <View style={[styles.bar, { paddingHorizontal: theme.space.lg, gap: theme.space.sm }]}>
-        {showBack ? (
-          <IconButton icon="chevron-left" label="Indietro" size={30} onPress={() => router.back()} />
-        ) : null}
-
-        <View style={styles.titles}>
-          <Text variant="title" numberOfLines={1}>
-            {title}
-          </Text>
-          {subtitle ? (
-            <Text variant="caption" tone="dim" numberOfLines={1}>
-              {subtitle}
-            </Text>
+      <Surface
+        level="mid"
+        elevation="float"
+        radius={theme.radius.xl}
+        style={{ paddingVertical: below ? theme.space.sm : theme.space.xs }}>
+        <View style={[styles.bar, { paddingHorizontal: theme.space.sm, gap: theme.space.sm }]}>
+          {showBack ? (
+            <IconButton icon="chevron-left" label="Indietro" size={30} onPress={() => router.back()} />
           ) : null}
+
+          <View style={[styles.titles, !showBack && { paddingLeft: theme.space.sm }]}>
+            <Text variant="title" numberOfLines={1}>
+              {title}
+            </Text>
+            {subtitle ? (
+              <Text variant="caption" tone="dim" numberOfLines={1}>
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
+
+          {actions.map((action) => (
+            <IconButton
+              key={action.label}
+              icon={action.icon}
+              label={action.label}
+              onPress={action.onPress}
+              surface
+            />
+          ))}
         </View>
 
-        {actions.map((action) => (
-          <IconButton
-            key={action.label}
-            icon={action.icon}
-            label={action.label}
-            onPress={action.onPress}
-            surface
-          />
-        ))}
-      </View>
-
-      {below ? <View style={{ paddingBottom: theme.space.xs }}>{below}</View> : null}
-    </Surface>
+        {below ? <View style={{ paddingTop: theme.space.sm }}>{below}</View> : null}
+      </Surface>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: 'column' },
+  band: { flexDirection: 'column' },
   bar: { flexDirection: 'row', alignItems: 'center' },
   titles: { flex: 1, gap: 2 },
 });
