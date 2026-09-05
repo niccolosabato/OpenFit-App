@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button } from './button';
 import { Surface } from './surface';
 import { Text } from './text';
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -26,7 +26,7 @@ export function EmptyState({
 
   return (
     <View style={[styles.root, { gap: theme.space.md, padding: theme.space.xl }]}>
-      <Surface level="mid" radius={48} style={styles.badge}>
+      <Surface level="mid" radius={capsule(BADGE)} style={styles.badge}>
         <MaterialCommunityIcons name={icon} size={40} color={theme.colors.textFaint} />
       </Surface>
       <Text variant="heading" style={styles.center}>
@@ -44,8 +44,11 @@ export function EmptyState({
   );
 }
 
+/** Il disco dell'icona: misura e raggio da un numero solo, o si sfasano. */
+const BADGE = 96;
+
 const styles = StyleSheet.create({
   root: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  badge: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: BADGE, height: BADGE, alignItems: 'center', justifyContent: 'center' },
   center: { textAlign: 'center' },
 });

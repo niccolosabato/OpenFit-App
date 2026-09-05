@@ -104,5 +104,5 @@ export function ScreenHeader({
 const styles = StyleSheet.create({
   band: { flexDirection: 'column' },
   bar: { flexDirection: 'row', alignItems: 'center' },
-  titles: { flex: 1, gap: 2 },
+  titles: { flex: 1, gap: 4 },
 });

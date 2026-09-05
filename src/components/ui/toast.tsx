@@ -104,7 +104,7 @@ export function ToastHost() {
           size={22}
           color={isRecord ? theme.colors.record : theme.colors.textDim}
         />
-        <Animated.View style={{ flex: 1, gap: 2 }}>
+        <Animated.View style={{ flex: 1, gap: theme.space.xs }}>
           <Text variant="subtitle" tone={isRecord ? 'record' : 'default'}>
             {message}
           </Text>

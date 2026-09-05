@@ -102,5 +102,5 @@ const ICON_SIZE = 40;
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
   icon: { width: ICON_SIZE, height: ICON_SIZE, alignItems: 'center', justifyContent: 'center' },
-  body: { flex: 1, gap: 2 },
+  body: { flex: 1, gap: 4 },
 });

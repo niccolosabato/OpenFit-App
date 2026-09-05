@@ -45,8 +45,10 @@ export function LineChart({
 
   if (data.length < 2) {
     return (
-      <View onLayout={onLayout} style={{ height: HEIGHT, justifyContent: 'center' }}>
-        <Text variant="caption" tone="faint">
+      <View
+        onLayout={onLayout}
+        style={{ height: HEIGHT, alignItems: 'center', justifyContent: 'center' }}>
+        <Text variant="caption" tone="faint" style={{ textAlign: 'center' }}>
           {emptyLabel}
         </Text>
       </View>

@@ -30,7 +30,7 @@ import type { WeightUnit } from '@/db/enums';
 import { formatDayKey } from '@/lib/format';
 import { toKg, UNIT_LABEL, WEIGHT_STEP } from '@/lib/units';
 import { useSettings } from '@/store/settings';
-import { ACCENTS, ACCENT_LABELS, useTheme, type AccentKey } from '@/theme';
+import { ACCENTS, ACCENT_LABELS, capsule, useTheme, type AccentKey } from '@/theme';
 
 const STEPS = 5;
 
@@ -87,7 +87,7 @@ export function OnboardingFlow() {
         </ActionBar>
       }>
       <ScreenScroll gap={theme.space.xl} keyboardShouldPersistTaps="handled">
-        <View style={[styles.progress, { gap: 6, marginBottom: theme.space.sm }]}>
+        <View style={[styles.progress, { gap: theme.space.xs, marginBottom: theme.space.sm }]}>
           {Array.from({ length: STEPS }, (_, i) => (
             <View
               key={i}
@@ -212,13 +212,16 @@ function Step({
   return (
     <View style={{ gap: theme.space.lg }}>
       {icon ? (
-        <Surface level="mid" radius={48} style={styles.badge}>
+        <Surface level="mid" radius={capsule(BADGE)} style={styles.badge}>
           <MaterialCommunityIcons name={icon} size={40} color={theme.colors.accent} />
         </Surface>
       ) : null}
       <View style={{ gap: theme.space.sm }}>
         <Text variant="title">{title}</Text>
-        <Text variant="body" tone="dim" style={{ lineHeight: 22 }}>
+        <Text
+          variant="body"
+          tone="dim"
+          style={{ lineHeight: theme.font.size.md * theme.font.lineHeight.normal }}>
           {body}
         </Text>
       </View>
@@ -260,10 +263,15 @@ function AccentSwatch({
   );
 }
 
+/** Il disco dell'icona: misura e raggio da un numero solo, o si sfasano. */
+const BADGE = 96;
+/** Spessore di un segmento della barra di avanzamento. */
+const TICK = 3;
+
 const styles = StyleSheet.create({
   progress: { flexDirection: 'row' },
-  tick: { flex: 1, height: 3, borderRadius: 2 },
-  badge: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center' },
+  tick: { flex: 1, height: TICK, borderRadius: capsule(TICK) },
+  badge: { width: BADGE, height: BADGE, alignItems: 'center', justifyContent: 'center' },
   units: { flexDirection: 'row' },
   accents: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   // Due colonne esatte: con `flexGrow` l'ultima riga si allargava e i colori

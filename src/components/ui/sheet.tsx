@@ -80,7 +80,7 @@ export function Sheet({
               style={{
                 paddingHorizontal: theme.space.lg,
                 paddingBottom: theme.space.sm,
-                gap: 2,
+                gap: theme.space.xs,
                 alignItems: 'center',
               }}>
               <Text variant="heading" style={styles.centered}>
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   panel: { maxHeight: '85%' },
   grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginVertical: 10 },
   scroll: { flexGrow: 0 },
-  action: { alignItems: 'center', justifyContent: 'center', gap: 2 },
+  action: { alignItems: 'center', justifyContent: 'center', gap: 4 },
   centered: { textAlign: 'center' },
   footer: { borderTopWidth: StyleSheet.hairlineWidth * 2 },
 });

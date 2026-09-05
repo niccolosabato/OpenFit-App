@@ -121,7 +121,7 @@ export function TabBar() {
 
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row' },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   /** La pastiglia dietro la voce attiva. */
   pill: {
     height: PILL_HEIGHT,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: capsule(PILL_HEIGHT),
     // Ritaglia il fondo sulla forma arrotondata, qualunque cosa faccia.
     overflow: 'hidden',
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },

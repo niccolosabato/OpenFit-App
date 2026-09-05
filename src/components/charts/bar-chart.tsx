@@ -35,10 +35,15 @@ export function BarChart({
   const theme = useTheme();
 
   if (data.length === 0) {
+    // Stesso trattamento del grafico a linee: un messaggio che sostituisce un
+    // disegno sta al centro di dove sarebbe stato il disegno, non appoggiato a
+    // sinistra come fosse una didascalia.
     return (
-      <Text variant="caption" tone="faint">
-        {emptyLabel}
-      </Text>
+      <View style={{ alignItems: 'center', justifyContent: 'center', padding: theme.space.lg }}>
+        <Text variant="caption" tone="faint" style={{ textAlign: 'center' }}>
+          {emptyLabel}
+        </Text>
+      </View>
     );
   }
 

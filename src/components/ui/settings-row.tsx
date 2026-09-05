@@ -18,7 +18,7 @@ export function SettingsSection({
   const theme = useTheme();
   return (
     <View style={{ gap: theme.space.sm }}>
-      <View style={{ paddingHorizontal: theme.space.xs, gap: 2 }}>
+      <View style={{ paddingHorizontal: theme.space.xs, gap: theme.space.xs }}>
         <Text variant="label" tone="dim">
           {title}
         </Text>
@@ -52,7 +52,7 @@ export function SwitchRow({
   const theme = useTheme();
   return (
     <View style={[styles.row, { minHeight: theme.hit + 6, paddingHorizontal: theme.space.lg, gap: theme.space.md, borderTopColor: theme.colors.border }]}>
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: theme.space.xs }}>
         <Text variant="body" tone={disabled ? 'faint' : 'default'}>
           {label}
         </Text>
@@ -111,7 +111,7 @@ export function NavRow({
           color={destructive ? theme.colors.danger : theme.colors.textDim}
         />
       ) : null}
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: theme.space.xs }}>
         <Text variant="body" tone={destructive ? 'danger' : 'default'}>
           {label}
         </Text>
