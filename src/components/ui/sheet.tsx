@@ -76,10 +76,18 @@ export function Sheet({
           <View style={[styles.grabber, { backgroundColor: theme.colors.borderStrong }]} />
 
           {title ? (
-            <View style={{ paddingHorizontal: theme.space.lg, paddingBottom: theme.space.sm, gap: 2 }}>
-              <Text variant="heading">{title}</Text>
+            <View
+              style={{
+                paddingHorizontal: theme.space.lg,
+                paddingBottom: theme.space.sm,
+                gap: 2,
+                alignItems: 'center',
+              }}>
+              <Text variant="heading" style={styles.centered}>
+                {title}
+              </Text>
               {subtitle ? (
-                <Text variant="caption" tone="dim">
+                <Text variant="caption" tone="dim" style={styles.centered}>
                   {subtitle}
                 </Text>
               ) : null}
@@ -114,7 +122,13 @@ export function Sheet({
   );
 }
 
-/** Voce di menu dentro un foglio: un'azione, una riga, area toccabile piena. */
+/**
+ * Voce di menu dentro un foglio: un'azione, una riga, area toccabile piena.
+ *
+ * Il contenuto è centrato come in ogni altra azione dell'app. Allineato a
+ * sinistra sembrava sbilanciato, soprattutto accanto ai pulsanti del piede,
+ * che invece sono centrati: nello stesso foglio convivevano due allineamenti.
+ */
 export function SheetAction({
   label,
   description,
@@ -134,8 +148,8 @@ export function SheetAction({
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: Boolean(selected) }}>
       {({ pressed }) => (
         <Surface
-          level={selected ? 'mid' : 'low'}
-          radius={theme.radius.md}
+          level="low"
+          radius={theme.radius.lg}
           tinted={selected}
           danger={destructive}
           pressed={pressed}
@@ -147,11 +161,14 @@ export function SheetAction({
               paddingVertical: theme.space.sm,
             },
           ]}>
-          <Text variant="subtitle" tone={destructive ? 'danger' : selected ? 'accent' : 'default'}>
+          <Text
+            variant="subtitle"
+            tone={destructive ? 'danger' : selected ? 'accent' : 'default'}
+            style={styles.centered}>
             {label}
           </Text>
           {description ? (
-            <Text variant="caption" tone="faint">
+            <Text variant="caption" tone="faint" style={styles.centered}>
               {description}
             </Text>
           ) : null}
@@ -167,6 +184,7 @@ const styles = StyleSheet.create({
   panel: { maxHeight: '85%' },
   grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginVertical: 10 },
   scroll: { flexGrow: 0 },
-  action: { justifyContent: 'center', gap: 2 },
+  action: { alignItems: 'center', justifyContent: 'center', gap: 2 },
+  centered: { textAlign: 'center' },
   footer: { borderTopWidth: StyleSheet.hairlineWidth * 2 },
 });
