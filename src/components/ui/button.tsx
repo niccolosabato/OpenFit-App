@@ -118,7 +118,9 @@ export function Button({
             radius={radius}
             danger={variant === 'danger'}
             pressed={pressed}
-            style={[styles.base, box]}>
+            // Bordo marcato: un bottone deve leggersi come tale anche appoggiato
+            // su una card, che ha lo stesso fondo.
+            style={[styles.base, box, variant !== 'danger' && { borderColor: theme.colors.borderStrong }]}>
             {content}
           </Surface>
         );
