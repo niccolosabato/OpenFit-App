@@ -11,6 +11,7 @@
     "primaryColor": "#C6F432",
     "android": {
       "package": "com.niccolosabato.openfit",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B0D",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -41,7 +42,17 @@
           "defaultChannel": "rest-timer"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": ["arm64-v8a"],
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
