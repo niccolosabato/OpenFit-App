@@ -9,7 +9,7 @@
  */
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
@@ -71,12 +71,9 @@ export function IconButton({
             <MaterialCommunityIcons name={icon} size={size} color={color} />
           </Surface>
         ) : (
-          <MaterialCommunityIcons
-            name={icon}
-            size={size}
-            color={color}
-            style={[styles.bare, pressed && styles.pressed]}
-          />
+          <View style={[styles.box, pressed && styles.pressed]}>
+            <MaterialCommunityIcons name={icon} size={size} color={color} />
+          </View>
         )
       }
     </Pressable>
@@ -89,12 +86,6 @@ const HIT_TARGET = 48;
 const styles = StyleSheet.create({
   /** 48×48: la soglia sotto cui non si scende. */
   box: { width: HIT_TARGET, height: HIT_TARGET, alignItems: 'center', justifyContent: 'center' },
-  bare: {
-    width: 48,
-    height: 48,
-    lineHeight: 48,
-    textAlign: 'center',
-  },
   pressed: { opacity: 0.6 },
   disabled: { opacity: 0.4 },
 });

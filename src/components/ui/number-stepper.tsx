@@ -134,5 +134,12 @@ const styles = StyleSheet.create({
   // 48 pieni: è il bersaglio che si preme di più in tutta l'app.
   button: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
   valueBox: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  input: { textAlign: 'center', minWidth: 50, padding: 0, includeFontPadding: false, fontWeight: '700' },
+  input: {
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    minWidth: 50,
+    padding: 0,
+    includeFontPadding: false,
+    fontWeight: '700',
+  },
 });

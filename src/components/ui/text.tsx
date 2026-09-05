@@ -84,5 +84,11 @@ export function Text({ variant = 'body', tone = 'default', numeric, style, ...re
 }
 
 const styles = StyleSheet.create({
-  base: { includeFontPadding: false },
+  /**
+   * `includeFontPadding: false` toglie il padding che il font si porta dietro,
+   * ma su Android da solo scentra il testo in verticale: dentro un contenitore
+   * centrato le scritte finiscono un po' più in alto del centro vero. Serve
+   * dirgli esplicitamente di centrarsi.
+   */
+  base: { includeFontPadding: false, textAlignVertical: 'center' },
 });

@@ -134,5 +134,7 @@ const styles = StyleSheet.create({
   fullWidth: { alignSelf: 'stretch' },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.4 },
-  label: { fontWeight: '700' },
+  // Senza `flexShrink` un'etichetta più larga del bottone non si accorcia:
+  // deborda da un lato e sembra spostata invece che troncata.
+  label: { fontWeight: '700', flexShrink: 1 },
 });

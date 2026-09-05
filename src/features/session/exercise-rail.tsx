@@ -118,5 +118,5 @@ const RAIL_HEIGHT = 40;
 
 const styles = StyleSheet.create({
   pill: { height: RAIL_HEIGHT, flexDirection: 'row', alignItems: 'center' },
-  name: { fontWeight: '600', maxWidth: 140 },
+  name: { fontWeight: '600', maxWidth: 140, flexShrink: 1 },
 });

@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pressed: { opacity: 0.7 },
-  label: { fontWeight: '600' },
+  label: { fontWeight: '600', flexShrink: 1 },
   tag: { borderWidth: StyleSheet.hairlineWidth * 2, paddingHorizontal: 6, paddingVertical: 2 },
   tagLabel: { fontSize: 9, letterSpacing: 0.6 },
 });

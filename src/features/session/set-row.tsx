@@ -401,6 +401,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
     padding: 0,
     includeFontPadding: false,
+    textAlignVertical: 'center',
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
