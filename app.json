@@ -40,7 +40,8 @@
           "color": "#C6F432",
           "defaultChannel": "rest-timer"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -49,6 +50,13 @@
     "platforms": [
       "android",
       "ios"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "755b2178-7f2d-4911-a0ed-19bd9c3a63dc"
+      }
+    },
+    "owner": "sabato"
   }
 }
