@@ -19,7 +19,7 @@ const CHECK_WIDTH = 56;
 export function SetRowHeader({ tracking, effortScale, unit }: { tracking: TrackingType; effortScale: EffortScale; unit: WeightUnit }) {
   const theme = useTheme();
   return (
-    <View style={[styles.row, { paddingHorizontal: theme.space.md, paddingVertical: 6, gap: theme.space.sm }]}>
+    <View style={[styles.row, { paddingHorizontal: theme.space.lg, paddingVertical: 6, gap: theme.space.sm }]}>
       <Text variant="label" tone="faint" style={{ width: INDEX_WIDTH, textAlign: 'center' }}>
         Ser
       </Text>
@@ -176,8 +176,8 @@ export function SetRow({
         styles.row,
         {
           minHeight: 56,
-          paddingHorizontal: theme.space.md,
-          paddingLeft: isChild ? theme.space.md + 14 : theme.space.md,
+          paddingHorizontal: theme.space.lg,
+          paddingLeft: isChild ? theme.space.lg + 14 : theme.space.lg,
           gap: theme.space.sm,
           backgroundColor: done ? theme.colors.accentGlow : 'transparent',
           borderTopColor: theme.colors.border,

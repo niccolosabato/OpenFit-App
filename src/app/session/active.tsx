@@ -3,11 +3,12 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
+import { confirm } from '@/components/ui/confirm';
 import { Surface } from '@/components/ui/surface';
 import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
@@ -229,21 +230,19 @@ export default function ActiveSessionScreen() {
 
   function confirmFinish() {
     if (totals.totalSets === 0) {
-      Alert.alert(
-        'Nessuna serie completata',
-        'Non c’è niente da salvare. Vuoi scartare questo allenamento?',
-        [
-          { text: 'Continua', style: 'cancel' },
-          {
-            text: 'Scarta',
-            style: 'destructive',
-            onPress: () => {
-              abandonSession(sessionId);
-              router.back();
-            },
+      confirm({
+        title: 'Nessuna serie completata',
+        message: 'Non c’è niente da salvare. Vuoi scartare questo allenamento?',
+        cancelLabel: 'Continua',
+        action: {
+          label: 'Scarta',
+          destructive: true,
+          onPress: () => {
+            abandonSession(sessionId);
+            router.back();
           },
-        ],
-      );
+        },
+      });
       return;
     }
     setFinishOpen(true);
@@ -363,10 +362,13 @@ export default function ActiveSessionScreen() {
                 ) : null}
 
                 <Card padded={false}>
-                  <View style={[styles.cardHead, { padding: theme.space.md, gap: theme.space.sm }]}>
+                  <View style={[styles.cardHead, { padding: theme.space.lg, gap: theme.space.md }]}>
                     <Pressable
                       onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.exercise.id } })}
-                      style={{ flex: 1 }}>
+                      // Alto quanto i tasti che gli stanno accanto: sotto i
+                      // 48dp non si azzecca con le mani sudate, e il nome
+                      // restava appeso in cima alla testata.
+                      style={{ flex: 1, gap: theme.space.xs, minHeight: theme.hit, justifyContent: 'center' }}>
                       <Text variant="subtitle" numberOfLines={2}>
                         {item.exercise.name}
                       </Text>
@@ -507,17 +509,18 @@ export default function ActiveSessionScreen() {
           destructive
           onPress={() => {
             setSessionMenuOpen(false);
-            Alert.alert('Scartare l’allenamento?', 'Le serie registrate vanno perse.', [
-              { text: 'Annulla', style: 'cancel' },
-              {
-                text: 'Scarta',
-                style: 'destructive',
+            confirm({
+              title: 'Scartare l’allenamento?',
+              message: 'Le serie registrate vanno perse.',
+              action: {
+                label: 'Scarta',
+                destructive: true,
                 onPress: () => {
                   abandonSession(sessionId);
                   router.back();
                 },
               },
-            ]);
+            });
           }}
         />
       </Sheet>
@@ -645,17 +648,18 @@ export default function ActiveSessionScreen() {
           destructive
           onPress={() => {
             setFinishOpen(false);
-            Alert.alert('Scartare tutto?', 'Niente di questa seduta finirà nello storico.', [
-              { text: 'Annulla', style: 'cancel' },
-              {
-                text: 'Scarta',
-                style: 'destructive',
+            confirm({
+              title: 'Scartare tutto?',
+              message: 'Niente di questa seduta finirà nello storico.',
+              action: {
+                label: 'Scarta',
+                destructive: true,
                 onPress: () => {
                   abandonSession(sessionId);
                   router.back();
                 },
               },
-            ]);
+            });
           }}
         />
       </Sheet>
@@ -779,7 +783,7 @@ const styles = StyleSheet.create({
   reorderRow: { flexDirection: 'row', alignItems: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   statsRow: { flexDirection: 'row', gap: 12 },
-  cardHead: { flexDirection: 'row', alignItems: 'flex-start' },
+  cardHead: { flexDirection: 'row', alignItems: 'center' },
   supersetLink: { flexDirection: 'row', alignItems: 'center', paddingLeft: 4 },
   addSet: {
     flexDirection: 'row',
