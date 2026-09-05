@@ -369,13 +369,23 @@ export const PR_TYPE_LABELS: Record<PrType, string> = {
 
 export type WeightUnit = 'kg' | 'lb';
 
-/** Scala con cui si registra lo sforzo percepito. */
-export type EffortScale = 'rpe' | 'rir' | 'none';
+/** Scala con cui si misura lo sforzo. */
+export const EFFORT_SCALES = ['rpe', 'rir', 'none'] as const;
 
+export type EffortScale = (typeof EFFORT_SCALES)[number];
+
+/** Per esteso: impostazioni, dove c'è spazio per spiegare. */
 export const EFFORT_SCALE_LABELS: Record<EffortScale, string> = {
   rpe: 'RPE (1-10)',
   rir: 'RIR (ripetizioni in riserva)',
   none: 'Non registrare',
+};
+
+/** Per le pillole, dove la riga è stretta e la sigla si capisce da sola. */
+export const EFFORT_SCALE_SHORT: Record<EffortScale, string> = {
+  rpe: 'RPE',
+  rir: 'RIR',
+  none: 'Nessuno',
 };
 
 export type SessionStatus = 'active' | 'completed';

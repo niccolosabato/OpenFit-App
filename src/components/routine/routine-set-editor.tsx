@@ -15,6 +15,8 @@ import { NumberStepper } from '@/components/ui/number-stepper';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import {
+  EFFORT_SCALES,
+  EFFORT_SCALE_SHORT,
   SET_TYPE_LABELS,
   TECHNIQUES,
   TECHNIQUE_DESCRIPTIONS,
@@ -23,6 +25,7 @@ import {
   usesDuration,
   usesReps,
   usesWeight,
+  type EffortScale,
   type SetType,
   type Technique,
   type TrackingType,
@@ -54,6 +57,7 @@ export function RoutineSetEditor({
   const [repsMax, setRepsMax] = useState<number | null>(10);
   const [weight, setWeight] = useState<number | null>(null);
   const [effort, setEffort] = useState<number | null>(null);
+  const [scale, setScale] = useState<EffortScale>('rpe');
   const [duration, setDuration] = useState<number | null>(null);
 
   // Il foglio è montato sempre: si ricarica dai dati a ogni apertura, altrimenti
@@ -65,7 +69,15 @@ export function RoutineSetEditor({
     setRepsMin(set.targetRepsMin);
     setRepsMax(set.targetRepsMax);
     setWeight(set.targetWeight === null ? null : fromKg(set.targetWeight, settings.unit));
-    setEffort(settings.effortScale === 'rir' ? set.targetRir : set.targetRpe);
+
+    // La scala è quella con cui la serie è già scritta: la colonna valorizzata
+    // dice da sé se è un RPE o un RIR. Solo per una serie ancora vuota si parte
+    // dalla preferenza generale.
+    const written: EffortScale | null =
+      set.targetRir !== null ? 'rir' : set.targetRpe !== null ? 'rpe' : null;
+    setScale(written ?? settings.effortScale);
+    setEffort(set.targetRir ?? set.targetRpe);
+
     setDuration(set.targetDurationSeconds);
   }, [set, settings.unit, settings.effortScale]);
 
@@ -76,14 +88,14 @@ export function RoutineSetEditor({
       targetRepsMin: repsMin,
       targetRepsMax: repsMax,
       targetWeight: weight === null ? null : toKg(weight, settings.unit),
-      targetRpe: settings.effortScale === 'rir' ? null : effort,
-      targetRir: settings.effortScale === 'rir' ? effort : null,
+      // Una colonna sola per volta: è quella valorizzata a dire con che scala
+      // la serie è stata pensata.
+      targetRpe: scale === 'rpe' ? effort : null,
+      targetRir: scale === 'rir' ? (effort === null ? null : Math.round(effort)) : null,
       targetDurationSeconds: duration,
     });
     onClose();
   }
-
-  const usingRir = settings.effortScale === 'rir';
 
   return (
     <Sheet
@@ -145,18 +157,42 @@ export function RoutineSetEditor({
         />
       ) : null}
 
-      {settings.effortScale !== 'none' ? (
-        <NumberStepper
-          label={usingRir ? 'Ripetizioni in riserva' : 'RPE'}
-          value={effort}
-          onChange={setEffort}
-          step={usingRir ? 1 : 0.5}
-          min={0}
-          max={usingRir ? 10 : 10}
-          allowEmpty
-          placeholder="—"
-        />
-      ) : null}
+      {/* La scala si sceglie qui, serie per serie: una scheda mescola le due
+          cose — il riscaldamento a sensazione in RIR, la top set a RPE — e
+          costringere tutta l'app a una sola scala obbligava a cambiare
+          impostazione a metà scheda. Il valore vive comunque in due colonne
+          separate, quindi passare da una scala all'altra non lo converte:
+          `2 RIR` non diventa `@8` da solo. */}
+      <View style={{ gap: theme.space.sm }}>
+        <Text variant="label" tone="dim">
+          Sforzo previsto
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm }}>
+          {EFFORT_SCALES.map((option) => (
+            <Chip
+              key={option}
+              label={EFFORT_SCALE_SHORT[option]}
+              compact
+              selected={scale === option}
+              onPress={() => {
+                setScale(option);
+                if (option === 'none') setEffort(null);
+              }}
+            />
+          ))}
+        </View>
+        {scale !== 'none' ? (
+          <NumberStepper
+            value={effort}
+            onChange={setEffort}
+            step={scale === 'rir' ? 1 : 0.5}
+            min={0}
+            max={10}
+            allowEmpty
+            placeholder="—"
+          />
+        ) : null}
+      </View>
 
       <View style={{ gap: theme.space.sm }}>
         <Text variant="label" tone="dim">
