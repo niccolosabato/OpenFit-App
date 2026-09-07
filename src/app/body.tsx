@@ -11,6 +11,7 @@ import { confirm } from '@/components/ui/confirm';
 import { NumberStepper } from '@/components/ui/number-stepper';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
+import { Section } from '@/components/ui/section';
 import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { bodyMeasurementsQuery, deleteMeasurement, saveMeasurement } from '@/db/queries/body';
@@ -88,11 +89,19 @@ export default function BodyScreen() {
         </ActionBar>
       }>
       <ScreenScroll gap={theme.space.md}>
-        <Card>
-          <View style={{ gap: theme.space.md }}>
-            <View>
-              <Text variant="heading">Peso corporeo</Text>
-              <Text variant="caption" tone="dim">
+        <Card wash>
+          <View style={{ gap: theme.space.lg }}>
+            <View style={{ gap: theme.space.xs }}>
+              <Text variant="label" tone="dim">
+                Peso corporeo
+              </Text>
+              {/* Il numero di adesso, grande: era una riga di lista come le
+                  altre venti sotto, e per sapere quanto si pesa oggi bisognava
+                  cercarlo. */}
+              <Text variant="display" tone={latest?.weight != null ? 'default' : 'faint'} numeric>
+                {latest?.weight != null ? formatWeight(latest.weight, settings.unit) : '—'}
+              </Text>
+              <Text variant="caption" tone="faint">
                 {latest
                   ? `Ultima misura ${formatSessionDate(parseISO(latest.measuredOn))}`
                   : 'Nessuna misura registrata'}
@@ -106,6 +115,10 @@ export default function BodyScreen() {
             />
           </View>
         </Card>
+
+        {measurements.length === 0 ? null : (
+          <Section title="Tutte le misurazioni" style={{ paddingHorizontal: theme.space.xs }} />
+        )}
 
         {measurements.length === 0
           ? null

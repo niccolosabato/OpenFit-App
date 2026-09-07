@@ -1,7 +1,8 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
@@ -12,22 +13,29 @@ import { TextField } from '@/components/ui/field';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import {
   createDay,
   deleteRoutine,
-  routineDaysQuery,
+  routineDaysWithCountQuery,
   routineQuery,
   updateRoutine,
 } from '@/db/queries/routines';
-import { useTheme } from '@/theme';
+import { startSessionFromDay } from '@/db/queries/sessions';
+import { startWorkout } from '@/features/session/start';
+import { pluralize } from '@/lib/format';
+import { capsule, useTheme } from '@/theme';
 
 export default function RoutineScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: routineRows } = useLiveQuery(useMemo(() => routineQuery(id), [id]), [id]);
-  const { data: dayRows } = useLiveQuery(useMemo(() => routineDaysQuery(id), [id]), [id]);
+  const { data: dayRows } = useLiveQuery(
+    useMemo(() => routineDaysWithCountQuery(id), [id]),
+    [id],
+  );
 
   const routine = routineRows?.[0];
   const days = dayRows ?? [];
@@ -75,7 +83,7 @@ export default function RoutineScreen() {
       header={
         <ScreenHeader
           title={routine.name}
-          subtitle={`${days.length} ${days.length === 1 ? 'giorno' : 'giorni'}`}
+          subtitle={pluralize(days.length, 'giorno', 'giorni')}
           showBack
           actions={[{ icon: 'dots-horizontal', label: 'Opzioni', onPress: () => setMenuOpen(true) }]}
         />
@@ -97,26 +105,55 @@ export default function RoutineScreen() {
         />
       ) : (
         <ScreenScroll gap={theme.space.md}>
-          {days.map((day, index) => (
-            <Card key={day.id} onPress={() => openDay(day.id)}>
-              <View style={styles.dayRow}>
-                <Text variant="label" tone="accent">
-                  {String(index + 1).padStart(2, '0')}
-                </Text>
+          {days.map((entry, index) => (
+            <Card key={entry.day.id} padded={false} onPress={() => openDay(entry.day.id)}>
+              <View style={[styles.dayRow, { padding: theme.space.md, gap: theme.space.md }]}>
+                <Surface level="mid" radius={theme.radius.md} bordered={false} style={styles.ordinal}>
+                  <Text variant="metric" tone="accent" numeric>
+                    {index + 1}
+                  </Text>
+                </Surface>
+
                 <View style={{ flex: 1, gap: theme.space.xs }}>
                   <Text variant="heading" numberOfLines={1}>
-                    {day.name}
+                    {entry.day.name}
                   </Text>
-                  {day.notes ? (
-                    <Text variant="caption" tone="dim" numberOfLines={1}>
-                      {day.notes}
-                    </Text>
-                  ) : null}
+                  <Text variant="caption" tone="faint" numberOfLines={1}>
+                    {entry.day.notes || pluralize(entry.exerciseCount, 'esercizio', 'esercizi')}
+                  </Text>
                 </View>
+
+                {/* Far partire un giorno da qui evita il giro "apri il giorno,
+                    scorri in fondo, tocca inizia" quando la scheda è già a
+                    posto e si è solo venuti a vedere cosa tocca oggi. */}
+                {entry.exerciseCount > 0 ? (
+                  <Pressable
+                    onPress={() => startWorkout(() => startSessionFromDay(entry.day.id))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Inizia ${entry.day.name}`}
+                    style={({ pressed }) => pressed && { opacity: 0.7 }}>
+                    <View
+                      style={[
+                        styles.play,
+                        { borderRadius: capsule(PLAY), backgroundColor: theme.colors.accent },
+                      ]}>
+                      <MaterialCommunityIcons
+                        name="play"
+                        size={22}
+                        color={theme.colors.onAccent}
+                      />
+                    </View>
+                  </Pressable>
+                ) : (
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={22}
+                    color={theme.colors.textFaint}
+                  />
+                )}
               </View>
             </Card>
           ))}
-
         </ScreenScroll>
       )}
 
@@ -167,6 +204,11 @@ export default function RoutineScreen() {
   );
 }
 
+/** Il bersaglio del play: 48, come tutto ciò che si tocca in palestra. */
+const PLAY = 48;
+
 const styles = StyleSheet.create({
-  dayRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dayRow: { flexDirection: 'row', alignItems: 'center' },
+  ordinal: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  play: { width: PLAY, height: PLAY, alignItems: 'center', justifyContent: 'center' },
 });

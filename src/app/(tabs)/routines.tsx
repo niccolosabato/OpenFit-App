@@ -1,26 +1,36 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Sheet } from '@/components/ui/sheet';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/field';
-import { createRoutine, routineListQuery } from '@/db/queries/routines';
+import { createRoutine, routineDayCountsQuery, routineListQuery } from '@/db/queries/routines';
 import { ROUTINE_TEMPLATES, createRoutineFromTemplate } from '@/db/seed/templates';
+import { pluralize } from '@/lib/format';
 import { useTheme } from '@/theme';
 
 export default function RoutinesScreen() {
   const theme = useTheme();
   const { data } = useLiveQuery(routineListQuery());
+  const { data: dayCountRows } = useLiveQuery(routineDayCountsQuery());
   const routines = data ?? [];
+
+  const daysByRoutine = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of dayCountRows ?? []) map.set(row.routineId, row.days);
+    return map;
+  }, [dayCountRows]);
 
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
@@ -40,45 +50,77 @@ export default function RoutinesScreen() {
   return (
     <Screen
       padded={false}
-      header={<ScreenHeader title="Schede" actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]} />}
+      header={
+        <ScreenHeader
+          title="Schede"
+          actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
+        />
+      }
       // "Parti da un modello" stava in fondo alla lista: con qualche scheda
       // già creata bisognava scorrere per trovarlo. Ora è sempre qui.
       actionBar={
         <ActionBar safeBottom={false}>
           <View style={{ flex: 1 }}>
-            <Button title="Nuova scheda" fullWidth onPress={() => setNewOpen(true)} />
+            <Button
+              title="Nuova scheda"
+              fullWidth
+              icon={<MaterialCommunityIcons name="plus" size={18} color={theme.colors.onAccent} />}
+              onPress={() => setNewOpen(true)}
+            />
           </View>
-          <Button
-            title="Modelli"
-            variant="secondary"
-            onPress={() => setTemplatesOpen(true)}
-          />
+          <Button title="Modelli" variant="secondary" onPress={() => setTemplatesOpen(true)} />
         </ActionBar>
       }>
       {routines.length === 0 ? (
         <EmptyState
-          icon="clipboard-list-outline"
+          icon="clipboard-text-outline"
           title="Nessuna scheda"
           description="Parti da una struttura già pronta e aggiustala, oppure costruiscine una da zero."
           actionLabel="Parti da un modello"
           onAction={() => setTemplatesOpen(true)}
         />
       ) : (
-        <ScreenScroll gap={theme.space.md}>
-          {routines.map((routine) => (
-            <Card key={routine.id} onPress={() => openRoutine(routine.id)}>
-              <View style={{ gap: 4 }}>
-                <Text variant="heading" numberOfLines={1}>
-                  {routine.name}
-                </Text>
-                {routine.notes ? (
-                  <Text variant="caption" tone="dim" numberOfLines={2}>
-                    {routine.notes}
-                  </Text>
-                ) : null}
-              </View>
-            </Card>
-          ))}
+        <ScreenScroll gap={theme.space.md} showsVerticalScrollIndicator={false}>
+          {routines.map((routine, index) => {
+            const days = daysByRoutine.get(routine.id) ?? 0;
+
+            return (
+              <Animated.View
+                key={routine.id}
+                entering={FadeInDown.delay(index * 40).duration(theme.motion.duration.slow)}>
+                <Card padded={false} onPress={() => openRoutine(routine.id)}>
+                  <View style={[styles.row, { padding: theme.space.lg, gap: theme.space.lg }]}>
+                    {/* Il quadratino con il numero di giorni: la sola cosa che
+                        distingue due schede a colpo d'occhio quando i nomi si
+                        somigliano ("PPL autunno", "PPL inverno"). */}
+                    <Surface level="mid" radius={theme.radius.md} style={styles.badge}>
+                      <Text variant="metric" tone="accent" numeric>
+                        {days}
+                      </Text>
+                      <Text variant="label" tone="faint">
+                        {days === 1 ? 'giorno' : 'giorni'}
+                      </Text>
+                    </Surface>
+
+                    <View style={{ flex: 1, gap: theme.space.xs }}>
+                      <Text variant="heading" numberOfLines={1}>
+                        {routine.name}
+                      </Text>
+                      <Text variant="caption" tone="dim" numberOfLines={2}>
+                        {routine.notes || 'Nessuna nota'}
+                      </Text>
+                    </View>
+
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={22}
+                      color={theme.colors.textFaint}
+                    />
+                  </View>
+                </Card>
+              </Animated.View>
+            );
+          })}
         </ScreenScroll>
       )}
 
@@ -90,21 +132,20 @@ export default function RoutinesScreen() {
         {ROUTINE_TEMPLATES.map((template) => (
           <Card
             key={template.id}
+            level="top"
             onPress={() => {
               setTemplatesOpen(false);
               openRoutine(createRoutineFromTemplate(template));
             }}>
             <View style={{ gap: theme.space.sm }}>
-              <View style={styles.templateHead}>
-                <Text variant="heading">{template.name}</Text>
-                <Chip label={template.level} compact />
-              </View>
+              <Text variant="heading" numberOfLines={1}>
+                {template.name}
+              </Text>
               <Text variant="caption" tone="dim">
                 {template.description}
               </Text>
               <Text variant="caption" tone="faint">
-                {template.frequency} · {template.days.length}{' '}
-                {template.days.length === 1 ? 'giorno' : 'giorni'}
+                {template.frequency} · {pluralize(template.days.length, 'giorno', 'giorni')}
               </Text>
             </View>
           </Card>
@@ -140,6 +181,7 @@ export default function RoutinesScreen() {
 }
 
 const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center' },
+  badge: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', gap: 1 },
   sheetActions: { flexDirection: 'row', alignItems: 'center' },
-  templateHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
 });

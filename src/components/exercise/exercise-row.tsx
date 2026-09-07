@@ -1,8 +1,8 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Surface } from '@/components/ui/surface';
 import { IconButton } from '@/components/ui/icon-button';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, type Equipment } from '@/db/enums';
 import type { Exercise } from '@/db/schema';
@@ -47,18 +47,25 @@ export function ExerciseRow({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{ selected }}
       style={({ pressed }) => [
         styles.row,
         {
-          minHeight: theme.hit + 8,
-          paddingHorizontal: theme.space.lg,
-          paddingVertical: theme.space.md,
+          minHeight: theme.hit + 12,
+          marginHorizontal: theme.space.lg,
+          paddingHorizontal: theme.space.sm,
+          paddingVertical: theme.space.sm,
           gap: theme.space.md,
-          borderBottomColor: theme.colors.border,
+          borderRadius: theme.radius.md,
         },
         pressed && { backgroundColor: theme.colors.surface },
       ]}>
-      <Surface level="mid" radius={capsule(ICON_SIZE)} tinted={selected} style={styles.icon}>
+      <Surface
+        level="mid"
+        radius={capsule(ICON_SIZE)}
+        tinted={selected}
+        bordered={false}
+        style={styles.icon}>
         <MaterialCommunityIcons
           name={selected ? 'check' : EQUIPMENT_ICON[exercise.equipment]}
           size={20}
@@ -88,7 +95,7 @@ export function ExerciseRow({
         <IconButton
           icon={exercise.isFavorite ? 'star' : 'star-outline'}
           label={exercise.isFavorite ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}
-          tone={exercise.isFavorite ? 'accent' : 'dim'}
+          tone={exercise.isFavorite ? 'accent' : 'faint'}
           onPress={onToggleFavorite}
         />
       ) : null}
@@ -100,7 +107,9 @@ export function ExerciseRow({
 const ICON_SIZE = 40;
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
+  // Niente filo di separazione: con centoquaranta righe la lista diventava una
+  // griglia. A separarle basta lo spazio, e la riga premuta si accende.
+  row: { flexDirection: 'row', alignItems: 'center' },
   icon: { width: ICON_SIZE, height: ICON_SIZE, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, gap: 4 },
 });

@@ -7,13 +7,13 @@
     "scheme": "openfit",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B0B0D",
-    "primaryColor": "#C6F432",
+    "backgroundColor": "#08080B",
+    "primaryColor": "#C9F53A",
     "android": {
       "package": "com.niccolosabato.openfit",
       "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#0B0B0D",
+        "backgroundColor": "#08080B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png",
         "backgroundImage": "./assets/images/android-icon-background.png"
@@ -30,7 +30,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0B0B0D",
+          "backgroundColor": "#08080B",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 140
         }
@@ -38,7 +38,7 @@
       [
         "expo-notifications",
         {
-          "color": "#C6F432",
+          "color": "#C9F53A",
           "defaultChannel": "rest-timer"
         }
       ],

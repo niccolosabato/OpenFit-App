@@ -13,10 +13,12 @@ import {
   ACCENTS,
   DEFAULT_ACCENT,
   elevation,
+  family,
   FLOAT_INSET,
   font,
   HIT,
   MONO,
+  motion,
   neutral,
   radius,
   semantic,
@@ -30,7 +32,12 @@ export type ThemeColors = typeof neutral &
     accent: string;
     accentDim: string;
     onAccent: string;
+    /** Velo traslucido: fondi selezionati. */
     accentGlow: string;
+    /** Velo più denso: bordi di ciò che è selezionato. */
+    accentEdge: string;
+    /** Alone ampio: la luce dietro un numero grande. */
+    accentHalo: string;
   };
 
 export type Theme = {
@@ -39,7 +46,10 @@ export type Theme = {
   space: typeof space;
   radius: typeof radius;
   font: typeof font;
+  /** Le famiglie tipografiche, per chi disegna testo fuori da `<Text>`. */
+  family: typeof family;
   elevation: typeof elevation;
+  motion: typeof motion;
   /** Distacco delle barre flottanti dai bordi dello schermo. */
   floatInset: number;
   mono: string;
@@ -56,12 +66,16 @@ function buildTheme(accentKey: AccentKey): Theme {
       accentDim: accent.dim,
       onAccent: accent.on,
       accentGlow: accent.glow,
+      accentEdge: accent.edge,
+      accentHalo: accent.halo,
     },
     accentKey,
     space,
     radius,
     font,
+    family,
     elevation,
+    motion,
     floatInset: FLOAT_INSET,
     mono: MONO,
     hit: HIT,

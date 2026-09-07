@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput } from 'react-native';
 
 import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
+import { typography } from './text';
 
 export function SearchInput({
   value,
@@ -34,7 +35,7 @@ export function SearchInput({
         autoFocus={autoFocus}
         autoCorrect={false}
         returnKeyType="search"
-        style={[styles.input, { color: theme.colors.text, fontSize: theme.font.size.md }]}
+        style={[styles.input, typography('body'), { color: theme.colors.text }]}
       />
       {value.length > 0 ? (
         <Pressable

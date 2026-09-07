@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { ProgressBar } from '@/components/ui/progress';
 import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { formatDuration } from '@/lib/format';
@@ -12,19 +13,22 @@ import { useRestCountdown } from './use-countdown';
 /**
  * Barra del recupero, ancorata in fondo alla sessione.
  *
- * Il numero è grande perché lo si legge da un metro di distanza, con il
- * telefono appoggiato sulla panca e mentre si respira.
+ * Il numero è grande e centrato perché lo si legge da un metro di distanza,
+ * con il telefono appoggiato sulla panca e mentre si respira: è l'unica cosa
+ * che conta finché il timer gira, e sta al centro del campo visivo invece che
+ * in un angolo.
  *
- * Non si occupa più dell'area sicura in fondo: sta dentro una `ActionBar`,
- * che gliela garantisce. Prima la gestiva da sé — e non la applicava, così i
- * tre pulsanti finivano sotto la barra dei gesti del telefono.
+ * Non si occupa dell'area sicura in fondo: sta dentro una `ActionBar`, che
+ * gliela garantisce.
  */
 export function RestTimerBar() {
   const theme = useTheme();
   const { settings } = useSettings();
-  const { remaining, total, running } = useRestCountdown();
+  const { remaining, total, running, paused } = useRestCountdown();
   const label = useRestTimer((s) => s.label);
   const adjust = useRestTimer((s) => s.adjust);
+  const pause = useRestTimer((s) => s.pause);
+  const resume = useRestTimer((s) => s.resume);
   const stop = useRestTimer((s) => s.stop);
 
   if (!running) return null;
@@ -34,29 +38,40 @@ export function RestTimerBar() {
 
   return (
     <View style={[styles.root, { gap: theme.space.md }]}>
-      <View style={[styles.track, { backgroundColor: theme.colors.surface2 }]}>
-        <View
-          style={[
-            styles.fill,
-            { backgroundColor: theme.colors.accent, width: `${progress * 100}%` },
-          ]}
-        />
+      <View style={{ gap: theme.space.xs }}>
+        <Text variant="label" tone={paused ? 'dim' : 'accent'} numberOfLines={1} style={styles.centered}>
+          Recupero{label ? ` · ${label}` : ''}
+          {paused ? ' · in pausa' : ''}
+        </Text>
+        <Text
+          variant="display"
+          tone={paused ? 'dim' : 'accent'}
+          numeric
+          style={[styles.countdown, { fontSize: COUNTDOWN, lineHeight: COUNTDOWN * 1.06 }]}>
+          {formatDuration(remaining)}
+        </Text>
       </View>
 
-      <View style={[styles.row, { gap: theme.space.md }]}>
-        <View style={{ flex: 1 }}>
-          <Text variant="label" tone="dim" numberOfLines={1}>
-            Recupero{label ? ` · ${label}` : ''}
-          </Text>
-          <Text variant="display" tone="accent" numeric>
-            {formatDuration(remaining)}
-          </Text>
-        </View>
+      <ProgressBar
+        value={progress}
+        height={6}
+        color={paused ? theme.colors.textFaint : theme.colors.accent}
+        trackColor={theme.colors.surface2}
+      />
 
+      {/* Riga a sé e non accanto al numero: con quattro bersagli da 48dp il
+          countdown si sarebbe schiacciato in uno spazio troppo stretto per
+          leggerlo da un braccio di distanza. */}
+      <View style={styles.row}>
         <TimerButton
           icon="minus"
           label={`Togli ${REST_ADJUST_STEP} secondi`}
           onPress={() => adjust(-REST_ADJUST_STEP, options)}
+        />
+        <TimerButton
+          icon={paused ? 'play' : 'pause'}
+          label={paused ? 'Riprendi il recupero' : 'Metti in pausa il recupero'}
+          onPress={() => (paused ? resume(options) : pause())}
         />
         <TimerButton
           icon="plus"
@@ -97,11 +112,7 @@ function TimerButton({
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.onAccent} />
           </View>
         ) : (
-          <Surface
-            level="mid"
-            radius={capsule(theme.hit)}
-            pressed={pressed}
-            style={[styles.button, box]}>
+          <Surface level="mid" radius={capsule(theme.hit)} pressed={pressed} style={[styles.button, box]}>
             <MaterialCommunityIcons name={icon} size={22} color={theme.colors.text} />
           </Surface>
         )
@@ -110,11 +121,19 @@ function TimerButton({
   );
 }
 
+/**
+ * Il corpo del countdown.
+ *
+ * Non è un token perché non è una taglia del sistema: è la misura che questo
+ * numero deve avere per leggersi appoggiato sulla panca, e serve solo qui.
+ */
+const COUNTDOWN = 56;
+
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  track: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 2 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  pressed: { opacity: 0.6 },
+  root: { flex: 1, paddingHorizontal: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  centered: { textAlign: 'center' },
+  countdown: { textAlign: 'center' },
+  pressed: { opacity: 0.7 },
   button: { alignItems: 'center', justifyContent: 'center' },
 });

@@ -4,9 +4,11 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/ui/card';
+import { Tag } from '@/components/ui/chip';
 import { confirm } from '@/components/ui/confirm';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
+import { Divider, Section } from '@/components/ui/section';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import {
@@ -79,6 +81,7 @@ export default function ExerciseDetailScreen() {
             {
               icon: exercise.isFavorite ? 'star' : 'star-outline',
               label: exercise.isFavorite ? 'Togli dai preferiti' : 'Aggiungi ai preferiti',
+              accent: exercise.isFavorite,
               onPress: () => toggleFavorite(exercise.id, !exercise.isFavorite),
             },
             { icon: 'dots-horizontal', label: 'Opzioni', onPress: () => setMenuOpen(true) },
@@ -86,55 +89,59 @@ export default function ExerciseDetailScreen() {
         />
       }>
       <ScreenScroll gap={theme.space.lg}>
-        <Card>
-          <View style={{ gap: theme.space.md }}>
-            {facts.map((fact) => (
-              <View key={fact.label} style={styles.factRow}>
-                <Text variant="caption" tone="dim">
+        {/* La scheda tecnica come elenco e non come griglia di coppie: le
+            etichette sono lunghe ("Recupero predefinito") e affiancate al
+            valore finivano su due righe una sì e una no. */}
+        <Card padded={false}>
+          {facts.map((fact, index) => (
+            <View key={fact.label}>
+              {index > 0 ? <Divider inset={theme.space.lg} /> : null}
+              <View style={[styles.factRow, { padding: theme.space.lg, gap: theme.space.md }]}>
+                <Text variant="body" tone="dim" style={{ flex: 1 }}>
                   {fact.label}
                 </Text>
-                <Text variant="subtitle">{fact.value}</Text>
+                <Text variant="subtitle" style={styles.factValue}>
+                  {fact.value}
+                </Text>
               </View>
-            ))}
-          </View>
+            </View>
+          ))}
         </Card>
 
         {exercise.secondaryMuscles.length > 0 ? (
-          <Card>
-            <Text variant="label" tone="dim">
-              Muscoli secondari
-            </Text>
-            <Text variant="body" style={{ marginTop: theme.space.sm }}>
-              {exercise.secondaryMuscles.map((m) => MUSCLE_LABELS[m]).join(', ')}
-            </Text>
-          </Card>
+          <View style={{ gap: theme.space.sm }}>
+            <Section title="Muscoli secondari" style={{ paddingHorizontal: theme.space.xs }} />
+            <View style={[styles.tags, { gap: theme.space.sm }]}>
+              {exercise.secondaryMuscles.map((m) => (
+                <Tag key={m} label={MUSCLE_LABELS[m]} />
+              ))}
+            </View>
+          </View>
         ) : null}
 
         {exercise.aliases ? (
-          <Card>
-            <Text variant="label" tone="dim">
-              Conosciuto anche come
-            </Text>
-            <Text variant="body" style={{ marginTop: theme.space.sm }}>
-              {exercise.aliases.split(';').map((a) => a.trim()).filter(Boolean).join(' · ')}
-            </Text>
-          </Card>
+          <View style={{ gap: theme.space.sm }}>
+            <Section title="Conosciuto anche come" style={{ paddingHorizontal: theme.space.xs }} />
+            <Card>
+              <Text variant="body" tone="dim">
+                {exercise.aliases.split(';').map((a) => a.trim()).filter(Boolean).join(' · ')}
+              </Text>
+            </Card>
+          </View>
         ) : null}
 
         {exercise.instructions ? (
-          <Card>
-            <Text variant="label" tone="dim">
-              Note tecniche
-            </Text>
-            <Text
-              variant="body"
-              style={{
-                marginTop: theme.space.sm,
-                lineHeight: theme.font.size.md * theme.font.lineHeight.normal,
-              }}>
-              {exercise.instructions}
-            </Text>
-          </Card>
+          <View style={{ gap: theme.space.sm }}>
+            <Section title="Note tecniche" style={{ paddingHorizontal: theme.space.xs }} />
+            <Card>
+              <Text
+                variant="body"
+                tone="dim"
+                style={{ lineHeight: theme.font.size.md * theme.font.lineHeight.normal }}>
+                {exercise.instructions}
+              </Text>
+            </Card>
+          </View>
         ) : null}
 
         <ExerciseSummary exercise={exercise} />
@@ -156,5 +163,7 @@ export default function ExerciseDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  factRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  factRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  factValue: { textAlign: 'right', flexShrink: 1 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap' },
 });

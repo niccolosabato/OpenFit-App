@@ -13,7 +13,9 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme } from '@/theme';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+
+import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
 import { Text } from './text';
 
@@ -62,7 +64,7 @@ export function Sheet({
         <Surface
           level="high"
           elevation="sheet"
-          radius={theme.radius.xl}
+          radius={theme.radius.xxl}
           style={[
             styles.panel,
             {
@@ -83,7 +85,7 @@ export function Sheet({
                 gap: theme.space.xs,
                 alignItems: 'center',
               }}>
-              <Text variant="heading" style={styles.centered}>
+              <Text variant="heading" style={styles.centered} numberOfLines={2}>
                 {title}
               </Text>
               {subtitle ? (
@@ -135,38 +137,50 @@ export function SheetAction({
   onPress,
   destructive,
   selected,
+  icon,
 }: {
   label: string;
   description?: string;
   onPress: () => void;
   destructive?: boolean;
   selected?: boolean;
+  /** Sopra l'etichetta, non a fianco: le voci restano centrate. */
+  icon?: keyof typeof MaterialCommunityIcons.glyphMap;
 }) {
   const theme = useTheme();
+
+  const tone = destructive ? theme.colors.danger : selected ? theme.colors.accent : theme.colors.text;
 
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: Boolean(selected) }}>
       {({ pressed }) => (
         <Surface
-          level="low"
-          radius={theme.radius.lg}
+          // `top` e non `low`: il pannello del foglio è già `high`, e una voce
+          // più scura di ciò che la contiene sembrerebbe un buco.
+          level="top"
+          radius={theme.radius.md}
           tinted={selected}
           danger={destructive}
           pressed={pressed}
+          bordered={false}
           style={[
             styles.action,
             {
               minHeight: theme.hit,
               paddingHorizontal: theme.space.md,
               paddingVertical: theme.space.sm,
+              gap: theme.space.xs,
             },
           ]}>
-          <Text
-            variant="subtitle"
-            tone={destructive ? 'danger' : selected ? 'accent' : 'default'}
-            style={styles.centered}>
-            {label}
-          </Text>
+          <View style={[styles.actionLabel, { gap: theme.space.sm }]}>
+            {icon ? <MaterialCommunityIcons name={icon} size={18} color={tone} /> : null}
+            <Text
+              variant="subtitle"
+              tone={destructive ? 'danger' : selected ? 'accent' : 'default'}
+              style={styles.centered}>
+              {label}
+            </Text>
+          </View>
           {description ? (
             <Text variant="caption" tone="faint" style={styles.centered}>
               {description}
@@ -182,9 +196,10 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   backdrop: { flex: 1 },
   panel: { maxHeight: '85%' },
-  grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginVertical: 10 },
+  grabber: { width: 36, height: 4, borderRadius: capsule(4), alignSelf: 'center', marginVertical: 10 },
   scroll: { flexGrow: 0 },
-  action: { alignItems: 'center', justifyContent: 'center', gap: 4 },
+  action: { alignItems: 'center', justifyContent: 'center' },
+  actionLabel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   centered: { textAlign: 'center' },
   footer: { borderTopWidth: StyleSheet.hairlineWidth * 2 },
 });

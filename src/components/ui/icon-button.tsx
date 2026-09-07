@@ -16,7 +16,7 @@ import { Surface } from './surface';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
-export type IconButtonTone = 'default' | 'dim' | 'accent' | 'danger';
+export type IconButtonTone = 'default' | 'dim' | 'faint' | 'accent' | 'danger';
 
 export function IconButton({
   icon,
@@ -47,6 +47,7 @@ export function IconButton({
   const color = {
     default: theme.colors.text,
     dim: theme.colors.textDim,
+    faint: theme.colors.textFaint,
     accent: theme.colors.accent,
     danger: theme.colors.danger,
   }[active ? 'accent' : tone];
@@ -67,6 +68,7 @@ export function IconButton({
             radius={capsule(HIT_TARGET)}
             tinted={active}
             pressed={pressed}
+            bordered={false}
             style={styles.box}>
             <MaterialCommunityIcons name={icon} size={size} color={color} />
           </Surface>

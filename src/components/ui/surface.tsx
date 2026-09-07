@@ -1,8 +1,10 @@
 /**
  * Superficie standard dell'app.
  *
- * Fondo carbone, bordo netto, nessuna ombra: la gerarchia si legge dalla
- * luminosità della superficie e dal bordo, come vuole `theme/tokens.ts`.
+ * La gerarchia è **tonale**: ogni livello è abbastanza più chiaro di quello
+ * che lo contiene da leggersi da solo. Il bordo è una rifinitura dello
+ * spigolo, non il modo in cui si capisce dove finisce una card — era il
+ * contrario, e dieci card di fila diventavano una griglia di rettangoli.
  *
  * Esiste per non ripetere in venti posti la stessa terna fondo/bordo/raggio, e
  * perché lo stato premuto e quello selezionato siano gli stessi ovunque.
@@ -14,8 +16,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme, type ElevationKey } from '@/theme';
 
 /**
- * I tre livelli sono una scala: ogni gradino è più chiaro del precedente, e
- * serve a far vedere cosa sta sopra cosa. Vanno usati in ordine — un controllo
+ * I quattro livelli sono una scala e vanno usati in ordine: un controllo
  * dentro un contenitore prende sempre il livello successivo, altrimenti i due
  * hanno lo stesso colore e il controllo sparisce.
  */
@@ -24,8 +25,10 @@ export type SurfaceLevel =
   | 'low'
   /** Ciò che sta sopra a quelle: input, pillole, bersagli icona. */
   | 'mid'
-  /** Pannelli dei fogli e avvisi: sopra tutto il resto. */
-  | 'high';
+  /** Pannelli dei fogli, avvisi, stato premuto. */
+  | 'high'
+  /** Un controllo dentro un foglio: l'ultimo gradino. */
+  | 'top';
 
 export type SurfaceProps = {
   children?: ReactNode;
@@ -38,6 +41,12 @@ export type SurfaceProps = {
   pressed?: boolean;
   /** Stacca la superficie dal fondo. Solo per ciò che galleggia sopra il contenuto. */
   elevation?: ElevationKey;
+  /**
+   * Il filo sullo spigolo. Acceso di default; si spegne per le superfici che
+   * stanno dentro un'altra e non devono disegnare una seconda cornice a un
+   * millimetro dalla prima.
+   */
+  bordered?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -49,6 +58,7 @@ export function Surface({
   danger = false,
   pressed = false,
   elevation = 'none',
+  bordered = true,
   style,
 }: SurfaceProps) {
   const theme = useTheme();
@@ -57,7 +67,10 @@ export function Surface({
     low: theme.colors.surface,
     mid: theme.colors.surface2,
     high: theme.colors.surface3,
+    top: theme.colors.surface4,
   }[level];
+
+  const corner = radius ?? theme.radius.lg;
 
   /**
    * Il colore degli stati non va sul fondo della vista ma su un velo sopra.
@@ -69,7 +82,7 @@ export function Surface({
    * ci pensa `overflow: 'hidden'` a ritagliarlo sulla forma giusta.
    */
   const veil = pressed
-    ? theme.colors.surface3
+    ? 'rgba(255, 255, 255, 0.07)'
     : tinted
       ? theme.colors.accentGlow
       : null;
@@ -80,14 +93,18 @@ export function Surface({
         theme.elevation[elevation],
         {
           backgroundColor: danger ? theme.colors.dangerDim : background,
-          borderRadius: radius ?? theme.radius.lg,
-          borderWidth: StyleSheet.hairlineWidth * 2,
+          borderRadius: corner,
+          borderWidth: bordered ? StyleSheet.hairlineWidth * 2 : 0,
           // Il bordo segue solo la variante, che per una data istanza non
           // cambia mai: se seguisse anche lo stato ricadremmo nello stesso
           // problema del fondo.
-          borderColor: danger ? theme.colors.danger : theme.colors.border,
+          borderColor: danger ? theme.colors.dangerEdge : theme.colors.border,
           overflow: 'hidden',
         },
+        // Un filo più chiaro sul bordo superiore, solo per ciò che
+        // galleggia: accenna uno spigolo illuminato che stacca la barra dal
+        // fondo, senza aggiungere gradienti alla tavolozza.
+        elevation !== 'none' && bordered && { borderTopColor: theme.colors.borderStrong },
         style,
       ]}>
       {veil ? (
@@ -102,8 +119,8 @@ export function Surface({
             StyleSheet.absoluteFill,
             {
               borderWidth: StyleSheet.hairlineWidth * 2,
-              borderColor: theme.colors.accent,
-              borderRadius: radius ?? theme.radius.lg,
+              borderColor: theme.colors.accentEdge,
+              borderRadius: corner,
             },
           ]}
         />

@@ -26,8 +26,12 @@ export { NOTIFICATIONS_AVAILABLE, requestNotificationPermission } from './local-
 export const REST_ADJUST_STEP = 15;
 
 type RestTimerState = {
-  /** Istante di fine in epoch ms; `null` se non c'è nessun recupero in corso. */
+  /** Istante di fine in epoch ms; `null` se non c'è nessun recupero in corso
+   *  o se è in pausa — in pausa il tempo non scorre, un istante di fine non
+   *  vorrebbe dire niente. */
   endsAt: number | null;
+  /** Secondi rimasti al momento della pausa; `null` quando non è in pausa. */
+  pausedRemaining: number | null;
   /** Durata impostata all'avvio, per disegnare la barra di avanzamento. */
   duration: number;
   /** Nome dell'esercizio da cui si sta recuperando. */
@@ -37,6 +41,10 @@ type RestTimerState = {
 
   start: (seconds: number, label: string | null, options: TimerOptions) => void;
   adjust: (deltaSeconds: number, options: TimerOptions) => void;
+  /** Congela il countdown e annulla la notifica: si riprende da dove si era. */
+  pause: () => void;
+  /** Riparte dal residuo congelato in pausa, e rischedula la notifica. */
+  resume: (options: TimerOptions) => void;
   stop: () => void;
 };
 
@@ -51,6 +59,7 @@ function cancel(notificationId: string | null): void {
 
 export const useRestTimer = create<RestTimerState>((set, get) => ({
   endsAt: null,
+  pausedRemaining: null,
   duration: 0,
   label: null,
   notificationId: null,
@@ -59,11 +68,17 @@ export const useRestTimer = create<RestTimerState>((set, get) => ({
     cancel(get().notificationId);
 
     if (seconds <= 0) {
-      set({ endsAt: null, duration: 0, label: null, notificationId: null });
+      set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
       return;
     }
 
-    set({ endsAt: Date.now() + seconds * 1000, duration: seconds, label, notificationId: null });
+    set({
+      endsAt: Date.now() + seconds * 1000,
+      pausedRemaining: null,
+      duration: seconds,
+      label,
+      notificationId: null,
+    });
 
     if (options.notify) {
       scheduleRestEnd(seconds, label, options.sound).then((id) => {
@@ -75,16 +90,34 @@ export const useRestTimer = create<RestTimerState>((set, get) => ({
   },
 
   adjust: (deltaSeconds, options) => {
-    const { endsAt, duration, label, notificationId } = get();
-    if (endsAt === null) return;
-
-    const nextEndsAt = endsAt + deltaSeconds * 1000;
-    const remaining = Math.round((nextEndsAt - Date.now()) / 1000);
+    const { endsAt, pausedRemaining, duration, label, notificationId } = get();
+    if (endsAt === null && pausedRemaining === null) return;
 
     cancel(notificationId);
 
+    // In pausa si aggiusta il residuo congelato: il conto riparte solo alla
+    // ripresa, con la sua notifica.
+    if (pausedRemaining !== null) {
+      const nextRemaining = pausedRemaining + deltaSeconds;
+
+      if (nextRemaining <= 0) {
+        set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
+        return;
+      }
+
+      set({
+        pausedRemaining: nextRemaining,
+        duration: Math.max(duration + deltaSeconds, nextRemaining),
+        notificationId: null,
+      });
+      return;
+    }
+
+    const nextEndsAt = endsAt! + deltaSeconds * 1000;
+    const remaining = Math.round((nextEndsAt - Date.now()) / 1000);
+
     if (remaining <= 0) {
-      set({ endsAt: null, duration: 0, label: null, notificationId: null });
+      set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
       return;
     }
 
@@ -102,9 +135,32 @@ export const useRestTimer = create<RestTimerState>((set, get) => ({
     }
   },
 
+  pause: () => {
+    const { endsAt, notificationId } = get();
+    if (endsAt === null) return; // già fermo o già in pausa
+
+    const remaining = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+    cancel(notificationId);
+    set({ endsAt: null, pausedRemaining: remaining, notificationId: null });
+  },
+
+  resume: (options) => {
+    const { pausedRemaining, label } = get();
+    if (pausedRemaining === null) return;
+
+    set({ endsAt: Date.now() + pausedRemaining * 1000, pausedRemaining: null });
+
+    if (options.notify) {
+      scheduleRestEnd(pausedRemaining, label, options.sound).then((id) => {
+        if (get().endsAt === null) cancel(id);
+        else set({ notificationId: id });
+      });
+    }
+  },
+
   stop: () => {
     cancel(get().notificationId);
-    set({ endsAt: null, duration: 0, label: null, notificationId: null });
+    set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
   },
 }));
 

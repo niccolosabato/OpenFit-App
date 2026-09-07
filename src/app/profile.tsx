@@ -1,9 +1,11 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import { confirm, notify } from '@/components/ui/confirm';
 import { TextField } from '@/components/ui/field';
@@ -20,8 +22,9 @@ import { pickAndRestoreBackup, shareBackup } from '@/features/settings/backup-ac
 import { NOTIFICATIONS_AVAILABLE } from '@/features/timer/rest-timer';
 import { formatRest } from '@/lib/format';
 import { formatWeight, UNIT_LABEL, WEIGHT_STEP } from '@/lib/units';
+import { Surface } from '@/components/ui/surface';
 import { useSettings } from '@/store/settings';
-import { ACCENTS, ACCENT_LABELS, useTheme, type AccentKey } from '@/theme';
+import { ACCENTS, ACCENT_LABELS, capsule, useTheme, type AccentKey } from '@/theme';
 
 const EFFORT_SCALES: EffortScale[] = ['rpe', 'rir', 'none'];
 const UNITS: WeightUnit[] = ['kg', 'lb'];
@@ -96,15 +99,30 @@ export default function ProfileScreen() {
     <Screen padded={false} header={<ScreenHeader title="Profilo" showBack />}>
 
       <ScreenScroll gap={theme.space.xl}>
+        {/* La carta d'identità dell'app: chi sei e in che unità pesi, le due
+            cose che si vengono a cambiare più spesso. Toccarla apre il nome,
+            che prima era una riga qualsiasi in mezzo ad altre otto. */}
+        <Card wash onPress={() => { setName(settings.userName ?? ''); setIdentityOpen(true); }}>
+          <View style={[styles.identity, { gap: theme.space.lg }]}>
+            <Surface level="mid" radius={capsule(AVATAR)} style={styles.avatar}>
+              <Text variant="title" tone="accent">
+                {(settings.userName?.trim()[0] ?? '?').toUpperCase()}
+              </Text>
+            </Surface>
+            <View style={{ flex: 1, gap: theme.space.xs }}>
+              <Text variant="heading" numberOfLines={1}>
+                {settings.userName?.trim() || 'Senza nome'}
+              </Text>
+              <Text variant="caption" tone="dim">
+                {UNIT_LABEL[settings.unit]} · {EFFORT_SCALE_LABELS[settings.effortScale]} ·{' '}
+                {settings.weeklySessionGoal} a settimana
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="pencil-outline" size={20} color={theme.colors.textFaint} />
+          </View>
+        </Card>
+
         <SettingsSection title="Tu">
-          <NavRow
-            label="Nome"
-            value={settings.userName ?? 'non impostato'}
-            onPress={() => {
-              setName(settings.userName ?? '');
-              setIdentityOpen(true);
-            }}
-          />
           <NavRow
             label="Peso e misure"
             description="Peso corporeo, circonferenze, andamento nel tempo"
@@ -148,19 +166,41 @@ export default function ProfileScreen() {
               </Text>
             </View>
 
-            <View style={{ gap: theme.space.sm }}>
+            <View style={{ gap: theme.space.md }}>
               <Text variant="label" tone="dim">
                 Colore accento
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm }}>
+              {/* Pastiglie con scritto "Ciano" o "Ambra" costringevano a
+                  immaginarsi il colore: qui si vede. */}
+              <View style={[styles.swatches, { rowGap: theme.space.md }]}>
                 {(Object.keys(ACCENTS) as AccentKey[]).map((key) => (
-                  <Chip
+                  <Pressable
                     key={key}
-                    label={ACCENT_LABELS[key]}
-                    compact
-                    selected={settings.accent === key}
                     onPress={() => update({ accent: key })}
-                  />
+                    accessibilityRole="button"
+                    accessibilityLabel={ACCENT_LABELS[key]}
+                    accessibilityState={{ selected: settings.accent === key }}
+                    style={({ pressed }) => [styles.swatchCell, pressed && { opacity: 0.7 }]}>
+                    <View
+                      style={[
+                        styles.swatch,
+                        {
+                          backgroundColor: ACCENTS[key].base,
+                          borderColor:
+                            settings.accent === key ? theme.colors.text : 'transparent',
+                        },
+                      ]}
+                    />
+                    {/* `caption` e non `label`: in maiuscoletto spaziato
+                        "SMERALDO" è più largo di una colonna su un telefono
+                        stretto, e si troncava. */}
+                    <Text
+                      variant="caption"
+                      tone={settings.accent === key ? 'default' : 'faint'}
+                      numberOfLines={1}>
+                      {ACCENT_LABELS[key]}
+                    </Text>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -269,8 +309,8 @@ export default function ProfileScreen() {
           <NavRow label="Cancella tutti i dati" icon="delete-outline" destructive onPress={onReset} />
         </SettingsSection>
 
-        <View style={{ alignItems: 'center', gap: 4 }}>
-          <Text variant="caption" tone="faint">
+        <View style={{ alignItems: 'center', gap: theme.space.xs }}>
+          <Text variant="label" tone="faint">
             OpenFit {Constants.expoConfig?.version ?? ''}
           </Text>
           <Text variant="caption" tone="faint">
@@ -332,3 +372,32 @@ export default function ProfileScreen() {
     </Screen>
   );
 }
+
+/** Il disco dell'iniziale: misura e raggio da un numero solo. */
+const AVATAR = 56;
+/** Il quadratino di un colore accento. */
+const SWATCH = 44;
+
+const styles = StyleSheet.create({
+  identity: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: AVATAR, height: AVATAR, alignItems: 'center', justifyContent: 'center' },
+  swatches: { flexDirection: 'row', flexWrap: 'wrap' },
+  /**
+   * Quattro per riga, sempre.
+   *
+   * Con una larghezza in punti il numero di colonne dipendeva dallo schermo:
+   * quattro su un telefono grande, tre su uno piccolo, e nel secondo caso le
+   * otto tinte finivano 3+3+2. La percentuale le tiene in due righe piene
+   * ovunque — e per questo la spaziatura orizzontale sta *dentro* la cella:
+   * un `gap` sul contenitore si sommerebbe al 100% e ne farebbe stare tre.
+   */
+  swatchCell: { width: '25%', alignItems: 'center', gap: 6 },
+  swatch: {
+    width: SWATCH,
+    height: SWATCH,
+    borderRadius: capsule(SWATCH),
+    // Il contorno c'è sempre, trasparente quando il colore non è scelto: se
+    // comparisse solo alla selezione la pastiglia cambierebbe misura.
+    borderWidth: 3,
+  },
+});

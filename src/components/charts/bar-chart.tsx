@@ -8,11 +8,13 @@
  *
  * Un solo colore per tutte le barre: qui il colore non distingue nulla — a
  * distinguere è l'etichetta sull'asse — e dare una tinta diversa a ogni barra
- * suggerirebbe un'identità che non esiste.
+ * suggerirebbe un'identità che non esiste. L'unica variazione è fra chi ha
+ * raggiunto la soglia settimanale e chi no, che è un'informazione vera.
  */
 
 import { StyleSheet, View } from 'react-native';
 
+import { ProgressBar } from '@/components/ui/progress';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/theme';
 
@@ -40,7 +42,7 @@ export function BarChart({
     // sinistra come fosse una didascalia.
     return (
       <View style={{ alignItems: 'center', justifyContent: 'center', padding: theme.space.lg }}>
-        <Text variant="caption" tone="faint" style={{ textAlign: 'center' }}>
+        <Text variant="caption" tone="faint" style={styles.centered}>
           {emptyLabel}
         </Text>
       </View>
@@ -52,33 +54,43 @@ export function BarChart({
   return (
     <View style={{ gap: theme.space.md }}>
       {data.map((datum) => (
-        <View key={datum.label} style={{ gap: 4 }}>
+        <View key={datum.label} style={{ gap: 6 }}>
           <View style={styles.labelRow}>
-            <Text variant="caption" tone="dim" numberOfLines={1} style={{ flex: 1 }}>
+            <Text
+              variant="caption"
+              tone={datum.muted ? 'faint' : 'dim'}
+              numberOfLines={1}
+              style={styles.label}>
               {datum.label}
             </Text>
-            <Text variant="caption" numeric>
+            <Text
+              variant="caption"
+              weight="semibold"
+              tone={datum.muted ? 'faint' : 'default'}
+              numeric>
               {datum.display ?? String(datum.value)}
             </Text>
           </View>
 
-          <View style={[styles.track, { backgroundColor: theme.colors.surface2, borderRadius: 4 }]}>
-            <View
-              style={{
-                width: `${Math.max((datum.value / max) * 100, datum.value > 0 ? 2 : 0)}%`,
-                height: '100%',
-                borderRadius: 4,
-                backgroundColor: datum.muted ? theme.colors.borderStrong : theme.colors.accent,
-              }}
-            />
-          </View>
+          <ProgressBar
+            // Le barre a zero restano un filo visibile: una traccia vuota e una
+            // categoria mancante si leggerebbero uguali.
+            value={datum.value > 0 ? Math.max(datum.value / max, 0.02) : 0}
+            height={BAR_HEIGHT}
+            color={datum.muted ? theme.colors.borderStrong : theme.colors.accent}
+            trackColor={theme.colors.surface2}
+          />
         </View>
       ))}
     </View>
   );
 }
 
+/** Altezza della barra; il raggio se lo calcola `ProgressBar`. */
+const BAR_HEIGHT = 8;
+
 const styles = StyleSheet.create({
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  track: { height: 10, overflow: 'hidden' },
+  label: { flex: 1 },
+  centered: { textAlign: 'center' },
 });

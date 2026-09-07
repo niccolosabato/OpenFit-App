@@ -10,9 +10,18 @@ import { restFinishedFeedback, useRestTimer } from './rest-timer';
  * Il valore è sempre ricalcolato da `endsAt`: il tick serve solo a far
  * ridisegnare la UI, non a tenere il conto. Per questo tornare dall'app in
  * background non sfasa nulla, e si aggiorna anche al risveglio.
+ *
+ * In pausa non c'è nessun `endsAt` da ricalcolare: il residuo è quello
+ * congelato al momento della pausa, e non serve nessun tick a tenerlo vivo.
  */
-export function useRestCountdown(): { remaining: number; total: number; running: boolean } {
+export function useRestCountdown(): {
+  remaining: number;
+  total: number;
+  running: boolean;
+  paused: boolean;
+} {
   const endsAt = useRestTimer((s) => s.endsAt);
+  const pausedRemaining = useRestTimer((s) => s.pausedRemaining);
   const duration = useRestTimer((s) => s.duration);
   const stop = useRestTimer((s) => s.stop);
   const { settings } = useSettings();
@@ -38,7 +47,12 @@ export function useRestCountdown(): { remaining: number; total: number; running:
     };
   }, [endsAt]);
 
-  const remaining = endsAt === null ? 0 : Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+  const paused = pausedRemaining !== null;
+  const remaining = paused
+    ? pausedRemaining
+    : endsAt === null
+      ? 0
+      : Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
 
   useEffect(() => {
     if (endsAt === null || remaining > 0 || firedRef.current) return;
@@ -49,5 +63,5 @@ export function useRestCountdown(): { remaining: number; total: number; running:
     stop();
   }, [endsAt, remaining, settings.timerVibration, stop]);
 
-  return { remaining, total: duration, running: endsAt !== null };
+  return { remaining, total: duration, running: endsAt !== null || paused, paused };
 }

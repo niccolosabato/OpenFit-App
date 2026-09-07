@@ -9,6 +9,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { confirm } from '@/components/ui/confirm';
+import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
 import { Tag } from '@/components/ui/chip';
@@ -38,7 +39,7 @@ import {
 import type { RoutineExercise, RoutineSet } from '@/db/schema';
 import { startSessionFromDay } from '@/db/queries/sessions';
 import { startWorkout } from '@/features/session/start';
-import { formatRest } from '@/lib/format';
+import { formatRest, pluralize } from '@/lib/format';
 import { describeRoutineSet } from '@/lib/set-summary';
 import { useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
@@ -118,7 +119,7 @@ export default function RoutineDayScreen() {
       header={
         <ScreenHeader
           title={day.name}
-          subtitle={`${items.length} ${items.length === 1 ? 'esercizio' : 'esercizi'} · ${totalSets} ${totalSets === 1 ? 'serie' : 'serie'}`}
+          subtitle={`${pluralize(items.length, 'esercizio', 'esercizi')} · ${totalSets} serie`}
           showBack
           // Nell'header resta solo ciò che non fa danni. "Elimina giorno" era
           // qui, a un tocco dal pollice che regge il telefono: ora sta nel
@@ -155,6 +156,15 @@ export default function RoutineDayScreen() {
           ) : null}
         </ActionBar>
       }>
+      {items.length === 0 ? (
+        <EmptyState
+          icon="dumbbell"
+          title="Giorno vuoto"
+          description="Aggiungi il primo esercizio: le serie previste si mettono dopo, una per una o tutte insieme."
+          actionLabel="Aggiungi esercizio"
+          onAction={() => router.push({ pathname: '/exercise/picker', params: { dayId } })}
+        />
+      ) : (
       <ScreenScroll scrollRef={scrollRef}>
         <Sortable.Grid
           columns={1}
@@ -195,29 +205,39 @@ export default function RoutineDayScreen() {
                 ) : null}
 
                 <Card padded={false}>
-                  <View style={{ padding: theme.space.lg }}>
-                    <View style={styles.cardHead}>
+                  <View style={{ padding: theme.space.md, paddingLeft: theme.space.sm }}>
+                    <View style={[styles.cardHead, { gap: theme.space.sm }]}>
                       {/* La presa sta sulla testata, e il tasto delle opzioni le
                           resta fuori: sotto, le righe delle serie non vengono
-                          toccate dal gesto. */}
+                          toccate dal gesto. Il simbolo dice che si può
+                          prendere: senza, il trascinamento era una funzione
+                          che si scopriva per caso. */}
                       <Sortable.Handle style={{ flex: 1 }}>
                         <Sortable.Touchable
                           // È insieme la presa e il tocco che apre l'esercizio:
                           // sotto i 48dp non si azzecca con una mano sola.
                           style={{
-                            gap: theme.space.xs,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: theme.space.sm,
                             minHeight: theme.hit,
-                            justifyContent: 'center',
                           }}
                           onTap={() => openExercise(item.exercise.id)}>
-                          <Text variant="heading" numberOfLines={2}>
-                            {item.exercise.name}
-                          </Text>
-                          <Text variant="caption" tone="faint">
-                            Recupero{' '}
-                            {formatRest(item.routineExercise.restSeconds ?? settings.defaultRestSeconds)}
-                            {item.routineExercise.notes ? ` · ${item.routineExercise.notes}` : ''}
-                          </Text>
+                          <MaterialCommunityIcons
+                            name="drag-vertical"
+                            size={22}
+                            color={theme.colors.textFaint}
+                          />
+                          <View style={{ flex: 1, gap: theme.space.xs }}>
+                            <Text variant="heading" numberOfLines={2}>
+                              {item.exercise.name}
+                            </Text>
+                            <Text variant="caption" tone="faint">
+                              Recupero{' '}
+                              {formatRest(item.routineExercise.restSeconds ?? settings.defaultRestSeconds)}
+                              {item.routineExercise.notes ? ` · ${item.routineExercise.notes}` : ''}
+                            </Text>
+                          </View>
                         </Sortable.Touchable>
                       </Sortable.Handle>
                       <IconButton
@@ -249,7 +269,7 @@ export default function RoutineDayScreen() {
                               borderTopColor: theme.colors.border,
                               gap: theme.space.md,
                             },
-                            pressed && { backgroundColor: theme.colors.surface3 },
+                            pressed && { backgroundColor: theme.colors.surface2 },
                           ]}>
                           <View style={styles.setIndex}>
                             {set.setType === 'working' ? (
@@ -261,7 +281,7 @@ export default function RoutineDayScreen() {
                             )}
                           </View>
 
-                          <Text variant="body" numeric style={{ flex: 1 }}>
+                          <Text variant="subtitle" numeric style={{ flex: 1 }}>
                             {describeRoutineSet(set, item.exercise.trackingType, settings.effortScale, settings.unit)}
                           </Text>
 
@@ -279,10 +299,10 @@ export default function RoutineDayScreen() {
                           borderTopColor: theme.colors.border,
                           gap: theme.space.sm,
                         },
-                        pressed && { backgroundColor: theme.colors.surface3 },
+                        pressed && { backgroundColor: theme.colors.surface2 },
                       ]}>
                       <MaterialCommunityIcons name="plus" size={16} color={theme.colors.accent} />
-                      <Text variant="caption" tone="accent">
+                      <Text variant="caption" weight="semibold" tone="accent">
                         Aggiungi serie
                       </Text>
                     </Pressable>
@@ -293,6 +313,7 @@ export default function RoutineDayScreen() {
           }}
         />
       </ScreenScroll>
+      )}
 
       {/* ──────────────────────────────────────────────── opzioni del giorno ── */}
       <Sheet

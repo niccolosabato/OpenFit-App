@@ -27,6 +27,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Screen, useScreenChrome } from '@/components/ui/screen';
 import { ScreenHeader, type HeaderAction } from '@/components/ui/screen-header';
 import { SearchInput } from '@/components/ui/search-input';
+import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import {
   EQUIPMENT,
@@ -114,6 +115,7 @@ export function ExerciseList({
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [chosen, setChosen] = useState<string[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const query = useMemo(
     () => exerciseListQuery({ search, muscle, equipment, favoritesOnly }),
@@ -143,6 +145,12 @@ export function ExerciseList({
     );
   }
 
+  /**
+   * L'header teneva ricerca **e** due righe di pillole: quasi un terzo dello
+   * schermo occupato da controlli, su una schermata che è una lista. Qui resta
+   * ciò che si cambia di continuo — la ricerca e il muscolo — e l'attrezzo,
+   * che si sceglie una volta ogni tanto, passa da un foglio.
+   */
   const filters = (
     <View style={{ gap: theme.space.sm }}>
       <View style={{ paddingHorizontal: theme.space.sm }}>
@@ -151,6 +159,7 @@ export function ExerciseList({
       <ChipRow>
         <Chip
           label="Preferiti"
+          icon={favoritesOnly ? 'star' : 'star-outline'}
           compact
           selected={favoritesOnly}
           onPress={() => setFavoritesOnly((v) => !v)}
@@ -165,19 +174,18 @@ export function ExerciseList({
           />
         ))}
       </ChipRow>
-      <ChipRow>
-        {EQUIPMENT.map((e) => (
-          <Chip
-            key={e}
-            label={EQUIPMENT_LABELS[e]}
-            compact
-            selected={equipment === e}
-            onPress={() => setEquipment((cur) => (cur === e ? null : e))}
-          />
-        ))}
-      </ChipRow>
     </View>
   );
+
+  const headerActions: HeaderAction[] = [
+    {
+      icon: equipment ? 'filter' : 'filter-outline',
+      label: 'Filtra per attrezzo',
+      accent: Boolean(equipment),
+      onPress: () => setFiltersOpen(true),
+    },
+    ...(actions ?? []),
+  ];
 
   const bottom = selection ? (
     <ActionBar>
@@ -199,7 +207,7 @@ export function ExerciseList({
     <Screen
       padded={false}
       header={
-        <ScreenHeader title={title} showBack={showBack} actions={actions} below={filters} />
+        <ScreenHeader title={title} showBack={showBack} actions={headerActions} below={filters} />
       }
       actionBar={bottom}>
       <ExerciseFlashList
@@ -221,6 +229,37 @@ export function ExerciseList({
           />
         )}
       />
+
+      <Sheet
+        visible={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Attrezzo"
+        subtitle="Tocca di nuovo per togliere il filtro."
+        scrollable={false}>
+        <View style={[styles.equipment, { gap: theme.space.sm }]}>
+          {EQUIPMENT.map((e) => (
+            <Chip
+              key={e}
+              label={EQUIPMENT_LABELS[e]}
+              compact
+              selected={equipment === e}
+              onPress={() => setEquipment((cur) => (cur === e ? null : e))}
+            />
+          ))}
+        </View>
+        <Button
+          title="Azzera tutti i filtri"
+          variant="ghost"
+          fullWidth
+          onPress={() => {
+            setEquipment(null);
+            setMuscle(null);
+            setFavoritesOnly(false);
+            setSearch('');
+            setFiltersOpen(false);
+          }}
+        />
+      </Sheet>
     </Screen>
   );
 }
@@ -258,9 +297,9 @@ function ExerciseFlashList({
             variant="label"
             tone="dim"
             style={{
-              paddingTop: theme.space.lg,
+              paddingTop: theme.space.xl,
               paddingBottom: theme.space.sm,
-              paddingHorizontal: theme.space.lg,
+              paddingHorizontal: theme.space.lg + theme.space.sm,
             }}>
             {MUSCLE_LABELS[row.muscle]}
           </Text>
@@ -297,4 +336,5 @@ function ExerciseFlashList({
 
 const styles = StyleSheet.create({
   footer: { textAlign: 'center' },
+  equipment: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
 });

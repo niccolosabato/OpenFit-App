@@ -1,5 +1,4 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,7 +10,9 @@ import { Tag } from '@/components/ui/chip';
 import { confirm } from '@/components/ui/confirm';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
+import { Section } from '@/components/ui/section';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
+import { Stat } from '@/components/ui/stat';
 import { Text } from '@/components/ui/text';
 import { SET_TYPE_BADGE, countsAsWorkingSet, usesDuration, usesWeight } from '@/db/enums';
 import {
@@ -20,6 +21,7 @@ import {
   sessionSetsQuery,
   startSessionFromDay,
 } from '@/db/queries/sessions';
+import { useLiveRows } from '@/db/live';
 import type { SessionSet } from '@/db/schema';
 import { removeSession } from '@/features/session/actions';
 import { startWorkout } from '@/features/session/start';
@@ -34,16 +36,18 @@ export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const { data: sessionRows } = useLiveQuery(useMemo(() => sessionQuery(id), [id]), [id]);
-  const { data: exerciseRows } = useLiveQuery(useMemo(() => sessionExercisesQuery(id), [id]), [id]);
-  const { data: setRows } = useLiveQuery(useMemo(() => sessionSetsQuery(id), [id]), [id]);
+  // Letture già pronte al primo render: con quelle vive si leggeva
+  // «Allenamento non trovato» per tutta l'animazione di entrata, e solo dopo
+  // compariva la seduta.
+  const sessionRows = useLiveRows(useMemo(() => sessionQuery(id), [id]), [id]);
+  const items = useLiveRows(useMemo(() => sessionExercisesQuery(id), [id]), [id]);
+  const setRows = useLiveRows(useMemo(() => sessionSetsQuery(id), [id]), [id]);
 
-  const session = sessionRows?.[0];
-  const items = exerciseRows ?? [];
+  const session = sessionRows[0];
 
   const setsByExercise = useMemo(() => {
     const map = new Map<string, SessionSet[]>();
-    for (const row of setRows ?? []) {
+    for (const row of setRows) {
       const list = map.get(row.set.sessionExerciseId) ?? [];
       list.push(row.set);
       map.set(row.set.sessionExerciseId, list);
@@ -103,19 +107,36 @@ export default function SessionDetailScreen() {
         ) : undefined
       }>
       <ScreenScroll gap={theme.space.md}>
-        <Card>
-          <View style={[styles.stats, { gap: theme.space.lg }]}>
-            <Metric label="Durata" value={formatDurationLong(session.durationSeconds ?? 0)} />
-            <Metric label="Volume" value={formatVolume(session.totalVolume, settings.unit)} />
-            <Metric label="Serie" value={String(session.totalSets)} />
-            <Metric label="Ripetizioni" value={String(session.totalReps)} />
+        <Card wash>
+          <View style={[styles.stats, { rowGap: theme.space.lg }]}>
+            <Stat
+              size="sm"
+              label="Durata"
+              value={formatDurationLong(session.durationSeconds ?? 0)}
+              style={styles.metric}
+            />
+            <Stat
+              size="sm"
+              label="Volume"
+              value={formatVolume(session.totalVolume, settings.unit)}
+              style={styles.metric}
+            />
+            <Stat size="sm" label="Serie" value={String(session.totalSets)} style={styles.metric} />
+            <Stat
+              size="sm"
+              label="Ripetizioni"
+              value={String(session.totalReps)}
+              style={styles.metric}
+            />
           </View>
           {session.notes ? (
-            <Text variant="caption" tone="dim" style={{ marginTop: theme.space.md }}>
+            <Text variant="caption" tone="dim" style={{ marginTop: theme.space.lg }}>
               {session.notes}
             </Text>
           ) : null}
         </Card>
+
+        <Section title="Come è andata" style={{ paddingHorizontal: theme.space.xs }} />
 
         {items.map((item) => {
           const sets = setsByExercise.get(item.sessionExercise.id) ?? [];
@@ -124,8 +145,8 @@ export default function SessionDetailScreen() {
 
           return (
             <Card key={item.sessionExercise.id} padded={false}>
-              <View style={{ padding: theme.space.md }}>
-                <Text variant="subtitle" numberOfLines={2}>
+              <View style={{ padding: theme.space.lg, paddingBottom: theme.space.sm }}>
+                <Text variant="heading" numberOfLines={2}>
                   {item.exercise.name}
                 </Text>
               </View>
@@ -206,9 +227,9 @@ function SetLine({
       style={[
         styles.setLine,
         {
-          minHeight: 38,
-          paddingHorizontal: theme.space.md,
-          paddingLeft: isChild ? theme.space.md + 16 : theme.space.md,
+          minHeight: 42,
+          paddingHorizontal: theme.space.lg,
+          paddingLeft: isChild ? theme.space.lg + 16 : theme.space.lg,
           gap: theme.space.md,
           borderTopColor: theme.colors.border,
         },
@@ -223,7 +244,7 @@ function SetLine({
         )}
       </View>
 
-      <Text variant="body" numeric style={{ flex: 1 }}>
+      <Text variant="subtitle" numeric style={{ flex: 1 }}>
         {parts.join(' ') || '—'}
       </Text>
 
@@ -232,20 +253,10 @@ function SetLine({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <View>
-      <Text variant="label" tone="faint">
-        {label}
-      </Text>
-      <Text variant="subtitle" numeric>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   stats: { flexDirection: 'row', flexWrap: 'wrap' },
+  // Due colonne esatte: con `flexGrow` l'ultima riga si allargava e i quattro
+  // numeri non stavano più incolonnati.
+  metric: { width: '50%' },
   setLine: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
 });

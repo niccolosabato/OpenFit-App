@@ -1,13 +1,15 @@
-import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { capsule, useTheme } from '@/theme';
 import { Surface } from './surface';
 import { Text } from './text';
+import { usePressScale } from './use-press-scale';
 
 export type ButtonVariant =
   /** Azione principale della schermata: pieno, colore accento. */
   | 'primary'
-  /** Azione secondaria: superficie con bordo. */
+  /** Azione secondaria: superficie con bordo marcato. */
   | 'secondary'
   /** Terziaria: solo testo. */
   | 'ghost'
@@ -17,11 +19,11 @@ export type ButtonVariant =
 /**
  * Le altezze.
  *
- * `sm` era 38: sotto la soglia dei 48dp che il progetto si è dato per tutto
- * ciò che si tocca a mani sudate. Ora parte da 44 e serve solo dove il bottone
- * sta in una riga fitta; l'azione principale di una schermata usa `lg`.
+ * `sm` è 44 e non meno: è la soglia che il progetto si è dato per tutto ciò
+ * che si tocca a mani sudate, e vale anche per il bottone stretto in fondo a
+ * una riga. L'azione principale di una schermata usa `lg`.
  */
-const HEIGHT = { sm: 44, md: 48, lg: 56 } as const;
+const HEIGHT = { sm: 44, md: 50, lg: 56 } as const;
 
 export function Button({
   title,
@@ -42,10 +44,11 @@ export function Button({
   loading?: boolean;
   icon?: React.ReactNode;
   fullWidth?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const theme = useTheme();
   const isDisabled = disabled || loading;
+  const press = usePressScale();
 
   const height = HEIGHT[size];
   const radius = capsule(height);
@@ -65,9 +68,9 @@ export function Button({
         <>
           {icon ? <View>{icon}</View> : null}
           <Text
-            variant={size === 'sm' ? 'caption' : 'subtitle'}
+            variant="subtitle"
             tone={labelTone[variant]}
-            style={styles.label}
+            style={[styles.label, size === 'lg' && { fontSize: theme.font.size.lg }]}
             numberOfLines={1}>
             {title}
           </Text>
@@ -79,21 +82,24 @@ export function Button({
   const box: ViewStyle = {
     height,
     borderRadius: radius,
-    paddingHorizontal: size === 'sm' ? theme.space.md : theme.space.lg,
+    paddingHorizontal: size === 'sm' ? theme.space.md : theme.space.xl,
     gap: theme.space.sm,
   };
 
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       disabled={isDisabled}
       accessibilityRole="button"
+      accessibilityState={{ disabled: Boolean(isDisabled) }}
       style={[fullWidth && styles.fullWidth, isDisabled && styles.disabled, style]}>
-      {({ pressed }) => {
-        // Il primario resta una tinta piena: è l'unico elemento che deve
-        // farsi trovare senza cercarlo.
-        if (variant === 'primary') {
-          return (
+      {({ pressed }) => (
+        <Animated.View style={press.style}>
+          {/* Il primario resta una tinta piena: è l'unico elemento che deve
+              farsi trovare senza cercarlo. */}
+          {variant === 'primary' ? (
             <View
               style={[
                 styles.base,
@@ -103,28 +109,22 @@ export function Button({
               ]}>
               {content}
             </View>
-          );
-        }
-
-        if (variant === 'ghost') {
-          return (
+          ) : variant === 'ghost' ? (
             <View style={[styles.base, box, pressed && styles.pressed]}>{content}</View>
-          );
-        }
-
-        return (
-          <Surface
-            level="mid"
-            radius={radius}
-            danger={variant === 'danger'}
-            pressed={pressed}
-            // Bordo marcato: un bottone deve leggersi come tale anche appoggiato
-            // su una card, che ha lo stesso fondo.
-            style={[styles.base, box, variant !== 'danger' && { borderColor: theme.colors.borderStrong }]}>
-            {content}
-          </Surface>
-        );
-      }}
+          ) : (
+            <Surface
+              level="mid"
+              radius={radius}
+              danger={variant === 'danger'}
+              pressed={pressed}
+              // Bordo marcato: un bottone deve leggersi come tale anche appoggiato
+              // su una card, che ha un fondo di poco più scuro.
+              style={[styles.base, box, variant !== 'danger' && { borderColor: theme.colors.borderStrong }]}>
+              {content}
+            </Surface>
+          )}
+        </Animated.View>
+      )}
     </Pressable>
   );
 }
@@ -132,9 +132,9 @@ export function Button({
 const styles = StyleSheet.create({
   base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   fullWidth: { alignSelf: 'stretch' },
-  pressed: { opacity: 0.75 },
-  disabled: { opacity: 0.4 },
+  pressed: { opacity: 0.8 },
+  disabled: { opacity: 0.35 },
   // Senza `flexShrink` un'etichetta più larga del bottone non si accorcia:
   // deborda da un lato e sembra spostata invece che troncata.
-  label: { fontWeight: '700', flexShrink: 1 },
+  label: { flexShrink: 1 },
 });

@@ -1,4 +1,14 @@
+// Import per singolo peso e non dalla radice del pacchetto: la radice
+// riesporta tutti e diciotto i tagli di Inter, e Metro se li porta dentro il
+// bundle tutti — sei megabyte di caratteri che nessuno usa.
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+import { SpaceGrotesk_500Medium } from '@expo-google-fonts/space-grotesk/500Medium';
+import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk/700Bold';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -70,8 +80,27 @@ function AppRoutes() {
   );
 }
 
+/**
+ * I file dei caratteri.
+ *
+ * Le chiavi sono i nomi con cui i componenti li chiedono: devono restare
+ * identici a `theme/tokens.ts → family`, o il testo esce con il carattere di
+ * sistema senza che nulla segnali l'errore.
+ */
+const FONTS = {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_700Bold,
+};
+
 export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
+  // I caratteri si caricano in parallelo alle migrazioni: sono due attese
+  // indipendenti, e metterle in fila raddoppierebbe l'avvio per niente.
+  const [fontsLoaded, fontError] = useFonts(FONTS);
   const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState<Error | null>(null);
   const [timedOut, setTimedOut] = useState(false);
@@ -107,6 +136,7 @@ export default function RootLayout() {
   const fatal =
     error ??
     bootError ??
+    fontError ??
     (timedOut
       ? new Error(
           success
@@ -121,8 +151,12 @@ export default function RootLayout() {
         <StatusBar style="light" />
         {fatal ? (
           <BootErrorScreen error={fatal} />
-        ) : !ready ? (
-          <BootScreen message={success ? 'Carico la libreria esercizi…' : 'Preparo il database…'} />
+        ) : !ready || !fontsLoaded ? (
+          <BootScreen
+            message={
+              !success ? 'Preparo il database…' : !ready ? 'Carico la libreria esercizi…' : 'Ci siamo…'
+            }
+          />
         ) : (
           <SettingsProvider>
             <ThemeProvider>

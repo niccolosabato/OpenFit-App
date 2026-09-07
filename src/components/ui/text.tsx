@@ -1,23 +1,28 @@
 /**
  * Testo tematizzato.
  *
- * Esiste per due motivi: i colori arrivano dal tema invece che a mano, e la
- * variante `numeric` usa cifre a larghezza fissa — senza, le colonne di
- * carichi e ripetizioni ballano a ogni tasto premuto durante una serie.
+ * Fa tre cose che a mano si sbaglierebbero ogni volta: prende il colore dal
+ * tema, sceglie **la famiglia giusta per il peso** — con caratteri caricati a
+ * file separati, `fontWeight` su Android non sceglie il file, lo *simula*
+ * ingrassando i contorni — e tiene le cifre a larghezza fissa dove il testo è
+ * tabellare, così le colonne di carichi e ripetizioni non ballano a ogni tasto
+ * premuto durante una serie.
  */
 
 import { Text as RNText, StyleSheet, type TextProps as RNTextProps } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { family, font, useTheme } from '@/theme';
 
 export type TextVariant =
-  /** Numeri grandi: timer, volume totale, carico di una top set. */
+  /** Numeri che *sono* il contenuto: countdown, volume totale, contatori. */
   | 'display'
   /** Titolo di schermata. */
   | 'title'
   /** Titolo di sezione o di card. */
   | 'heading'
-  /** Nome di un esercizio in lista. */
+  /** Valore numerico di media grandezza: le statistiche di una seduta. */
+  | 'metric'
+  /** Nome di un esercizio in lista, etichetta di un bottone. */
   | 'subtitle'
   /** Testo corrente. */
   | 'body'
@@ -37,14 +42,106 @@ export type TextTone =
   | 'record'
   | 'onAccent';
 
+/**
+ * Il peso, come nome e non come numero.
+ *
+ * Con i caratteri caricati a file separati `fontWeight` non sceglie il file:
+ * su Android lo *simula*, ingrassando i contorni di quello che c'è. Questo
+ * prop sceglie il file giusto, ed è l'unico modo corretto di irrobustire un
+ * testo — `style={{ fontWeight: '600' }}` è sempre un errore.
+ */
+export type TextWeight = 'regular' | 'medium' | 'semibold' | 'bold';
+
 export type TextProps = RNTextProps & {
   variant?: TextVariant;
   tone?: TextTone;
-  /** Cifre a larghezza fissa: obbligatorio per tutto ciò che è tabellare. */
+  /** Sovrascrive il peso della variante. */
+  weight?: TextWeight;
+  /**
+   * Cifre a larghezza fissa: obbligatorio per tutto ciò che è tabellare.
+   * Le varianti grandi lo sono già — Space Grotesk ha le cifre monospaziate
+   * per costruzione — quindi lì non cambia nulla.
+   */
   numeric?: boolean;
 };
 
-export function Text({ variant = 'body', tone = 'default', numeric, style, ...rest }: TextProps) {
+/**
+ * Le varianti, come stili completi.
+ *
+ * Sono fuori dal componente perché non dipendono dal tema: corpo, famiglia e
+ * crenatura di un titolo sono gli stessi con qualunque accento, e ricostruirli
+ * a ogni render era lavoro buttato.
+ */
+const VARIANT = {
+  display: {
+    fontFamily: family.displayBold,
+    fontSize: font.size.display,
+    letterSpacing: font.tracking.display,
+  },
+  title: {
+    fontFamily: family.displayBold,
+    fontSize: font.size.xxl,
+    letterSpacing: font.tracking.title,
+  },
+  metric: {
+    fontFamily: family.displayBold,
+    fontSize: font.size.xl,
+    letterSpacing: font.tracking.heading,
+  },
+  heading: {
+    fontFamily: family.bold,
+    fontSize: font.size.lg,
+    letterSpacing: font.tracking.heading,
+  },
+  subtitle: {
+    fontFamily: family.semibold,
+    fontSize: font.size.md,
+    letterSpacing: -0.1,
+  },
+  body: {
+    fontFamily: family.regular,
+    fontSize: font.size.md,
+    letterSpacing: font.tracking.body,
+  },
+  caption: {
+    fontFamily: family.regular,
+    fontSize: font.size.sm,
+    letterSpacing: font.tracking.body,
+  },
+  label: {
+    fontFamily: family.semibold,
+    fontSize: font.size.xs,
+    letterSpacing: font.tracking.label,
+    textTransform: 'uppercase',
+  },
+} as const satisfies Record<TextVariant, object>;
+
+/** Le varianti che usano già cifre monospaziate: `numeric` lì è superfluo. */
+const ALREADY_TABULAR: TextVariant[] = ['display', 'title', 'metric'];
+
+/** I file, per peso. Le varianti grandi restano su Space Grotesk. */
+const WEIGHT_FAMILY: Record<TextWeight, string> = {
+  regular: family.regular,
+  medium: family.medium,
+  semibold: family.semibold,
+  bold: family.bold,
+};
+
+const DISPLAY_WEIGHT_FAMILY: Record<TextWeight, string> = {
+  regular: family.display,
+  medium: family.display,
+  semibold: family.displayBold,
+  bold: family.displayBold,
+};
+
+export function Text({
+  variant = 'body',
+  tone = 'default',
+  weight,
+  numeric,
+  style,
+  ...rest
+}: TextProps) {
   const theme = useTheme();
 
   const toneColor: Record<TextTone, string> = {
@@ -59,23 +156,18 @@ export function Text({ variant = 'body', tone = 'default', numeric, style, ...re
     onAccent: theme.colors.onAccent,
   };
 
-  const variantStyle: Record<TextVariant, object> = {
-    display: { fontSize: theme.font.size.display, fontWeight: '800', letterSpacing: -0.5 },
-    title: { fontSize: theme.font.size.xxl, fontWeight: '700', letterSpacing: -0.3 },
-    heading: { fontSize: theme.font.size.lg, fontWeight: '700' },
-    subtitle: { fontSize: theme.font.size.md, fontWeight: '600' },
-    body: { fontSize: theme.font.size.md, fontWeight: '400' },
-    caption: { fontSize: theme.font.size.sm, fontWeight: '400' },
-    label: { fontSize: theme.font.size.xs, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
-  };
-
   return (
     <RNText
       style={[
         styles.base,
-        variantStyle[variant],
+        VARIANT[variant],
+        weight && {
+          fontFamily: (ALREADY_TABULAR.includes(variant) ? DISPLAY_WEIGHT_FAMILY : WEIGHT_FAMILY)[
+            weight
+          ],
+        },
         { color: toneColor[tone] },
-        numeric && { fontVariant: ['tabular-nums'] },
+        numeric && !ALREADY_TABULAR.includes(variant) && styles.tabular,
         style,
       ]}
       {...rest}
@@ -91,4 +183,17 @@ const styles = StyleSheet.create({
    * dirgli esplicitamente di centrarsi.
    */
   base: { includeFontPadding: false, textAlignVertical: 'center' },
+  tabular: { fontVariant: ['tabular-nums'] },
 });
+
+/**
+ * Lo stile tipografico di una variante, per chi non può usare `<Text>`.
+ *
+ * Serve ai `TextInput`, che sono componenti di React Native e non possono
+ * essere avvolti: senza questo ognuno si sceglieva famiglia e corpo a mano, e
+ * il carico digitato in una serie usciva con un carattere diverso da quello
+ * con cui veniva riletto un secondo dopo.
+ */
+export function typography(variant: TextVariant) {
+  return { ...VARIANT[variant], includeFontPadding: false } as const;
+}

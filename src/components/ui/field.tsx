@@ -4,7 +4,7 @@ import { StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-nat
 import { useTheme } from '@/theme';
 import { Chip } from './chip';
 import { Surface } from './surface';
-import { Text } from './text';
+import { Text, typography } from './text';
 
 /** Campo di testo etichettato. */
 export function TextField({
@@ -48,14 +48,14 @@ export function TextField({
           keyboardType={keyboardType}
           autoFocus={autoFocus}
           style={[
-            styles.input,
+            typography('body'),
             {
-              minHeight: multiline ? 96 : theme.hit,
+              minHeight: multiline ? 108 : theme.hit + 4,
               paddingHorizontal: theme.space.md,
               paddingVertical: multiline ? theme.space.md : 0,
               color: theme.colors.text,
-              fontSize: theme.font.size.md,
               textAlignVertical: multiline ? 'top' : 'center',
+              lineHeight: multiline ? theme.font.size.md * theme.font.lineHeight.normal : undefined,
             },
           ]}
         />
@@ -118,6 +118,5 @@ export function OptionField<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  input: { includeFontPadding: false },
   options: { flexDirection: 'row', flexWrap: 'wrap' },
 });

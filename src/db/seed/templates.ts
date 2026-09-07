@@ -39,7 +39,6 @@ export type RoutineTemplate = {
   description: string;
   /** Sessioni a settimana per cui è pensata. */
   frequency: string;
-  level: 'Principiante' | 'Intermedio' | 'Avanzato';
   days: TemplateDay[];
 };
 
@@ -53,7 +52,6 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     description:
       'Spinta, trazione e gambe su tre giorni. Il classico: si ripete due volte a settimana quando si vuole alzare la frequenza.',
     frequency: '3-6 giorni',
-    level: 'Intermedio',
     days: [
       {
         name: 'A — Spinta',
@@ -96,7 +94,6 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     description:
       'Parte alta e parte bassa alternate, quattro volte a settimana. Buon compromesso fra frequenza e recupero.',
     frequency: '4 giorni',
-    level: 'Intermedio',
     days: [
       {
         name: 'Upper A — forza',
@@ -148,7 +145,6 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     description:
       'Tre sedute a corpo intero. La scelta giusta per iniziare o per riprendere dopo una pausa lunga.',
     frequency: '3 giorni',
-    level: 'Principiante',
     days: [
       {
         name: 'A',
@@ -178,32 +174,6 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
           { ref: 'chest-press', sets: straight(3, [10, 12]), rest: 105 },
           { ref: 'alzate-laterali-manubri', sets: straight(3, [12, 15]), rest: 60 },
           { ref: 'leg-curl-sdraiato', sets: straight(3, [12, 15]), rest: 75 },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'starting-5x5',
-    name: 'Forza 5×5',
-    description:
-      'Due sedute alternate sui fondamentali, cinque serie da cinque. Poco volume accessorio, tutto sul bilanciere.',
-    frequency: '3 giorni alternati',
-    level: 'Principiante',
-    days: [
-      {
-        name: 'A',
-        exercises: [
-          { ref: 'squat-bilanciere', sets: straight(5, [5, 5], 8), rest: 210 },
-          { ref: 'panca-piana-bilanciere', sets: straight(5, [5, 5], 8), rest: 180 },
-          { ref: 'rematore-bilanciere', sets: straight(5, [5, 5], 8), rest: 180 },
-        ],
-      },
-      {
-        name: 'B',
-        exercises: [
-          { ref: 'squat-bilanciere', sets: straight(5, [5, 5], 8), rest: 210 },
-          { ref: 'lento-avanti-bilanciere', sets: straight(5, [5, 5], 8), rest: 180 },
-          { ref: 'stacco-da-terra', sets: straight(1, [5, 5], 8), rest: 240, notes: 'Una serie sola, pesante e pulita.' },
         ],
       },
     ],

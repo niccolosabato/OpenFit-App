@@ -75,7 +75,7 @@ export function ToastHost() {
       style={[
         styles.root,
         {
-          top: insets.top + theme.floatInset,
+          top: insets.top + theme.space.sm,
           marginHorizontal: theme.floatInset,
           opacity: progress,
           transform: [

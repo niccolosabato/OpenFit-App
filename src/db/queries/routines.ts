@@ -1,4 +1,4 @@
-import { asc, eq, isNull, max, sql } from 'drizzle-orm';
+import { asc, count, eq, isNull, max, sql } from 'drizzle-orm';
 
 import { newId } from '@/lib/ids';
 import { moveItem, supersetsToClear } from '@/lib/reorder';
@@ -57,6 +57,32 @@ export function routineDaysQuery(routineId: string) {
     .from(routineDays)
     .where(eq(routineDays.routineId, routineId))
     .orderBy(asc(routineDays.orderIndex));
+}
+
+/**
+ * I giorni di una scheda, con quanti esercizi contiene ognuno.
+ *
+ * Serve a chi elenca i giorni senza aprirli — "Oggi" e la schermata di una
+ * scheda — che altrimenti dovrebbe lanciare una query per giorno solo per
+ * scrivere "6 esercizi". Un `leftJoin` e non un `innerJoin`: un giorno appena
+ * creato è vuoto, e deve comparire lo stesso con zero.
+ */
+export function routineDaysWithCountQuery(routineId: string) {
+  return db
+    .select({ day: routineDays, exerciseCount: count(routineExercises.id) })
+    .from(routineDays)
+    .leftJoin(routineExercises, eq(routineExercises.dayId, routineDays.id))
+    .where(eq(routineDays.routineId, routineId))
+    .groupBy(routineDays.id)
+    .orderBy(asc(routineDays.orderIndex));
+}
+
+/** Quanti giorni ha ogni scheda, per la lista delle schede. */
+export function routineDayCountsQuery() {
+  return db
+    .select({ routineId: routineDays.routineId, days: count(routineDays.id) })
+    .from(routineDays)
+    .groupBy(routineDays.routineId);
 }
 
 export function routineDayQuery(dayId: string) {

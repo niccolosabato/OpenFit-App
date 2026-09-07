@@ -7,8 +7,9 @@
  * scorrere avanti e indietro per schermate intere, cercando a occhio il nome
  * giusto.
  *
- * Qui ogni esercizio è una pastiglia con quante serie sono fatte su quante:
- * un tocco e la lista salta lì. Sta agganciata sotto l'header e non scorre.
+ * Qui ogni esercizio è una pastiglia **che si riempie**: quanto è piena dice a
+ * che punto è quell'esercizio, il numero lo dice con precisione. Un tocco e la
+ * lista salta lì. Sta agganciata sotto l'header e non scorre.
  */
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -60,6 +61,7 @@ export function ExerciseRail({
       {items.map((item, index) => {
         const complete = item.total > 0 && item.done >= item.total;
         const active = index === activeIndex;
+        const progress = item.total > 0 ? Math.min(1, item.done / item.total) : 0;
 
         return (
           <Pressable
@@ -77,10 +79,25 @@ export function ExerciseRail({
                 radius={capsule(RAIL_HEIGHT)}
                 tinted={active}
                 pressed={pressed}
+                bordered={!active}
                 style={[styles.pill, { paddingHorizontal: theme.space.md, gap: theme.space.sm }]}>
+                {/* Il riempimento sta sotto al testo e non lo tocca: è un
+                    figlio in posizione assoluta, non il fondo della vista,
+                    che su Android perderebbe il raggio al primo cambio. */}
+                {progress > 0 && !complete ? (
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.fill,
+                      { width: `${progress * 100}%`, backgroundColor: theme.colors.accentGlow },
+                    ]}
+                  />
+                ) : null}
+
                 <Text
                   variant="caption"
-                  tone={active ? 'accent' : 'default'}
+                  weight="semibold"
+                  tone={active ? 'accent' : complete ? 'dim' : 'default'}
                   numberOfLines={1}
                   style={styles.name}>
                   {item.name}
@@ -114,9 +131,10 @@ export function ExerciseRail({
 }
 
 /** Altezza delle pastiglie della striscia; il raggio ne è la metà. */
-const RAIL_HEIGHT = 40;
+const RAIL_HEIGHT = 38;
 
 const styles = StyleSheet.create({
   pill: { height: RAIL_HEIGHT, flexDirection: 'row', alignItems: 'center' },
-  name: { fontWeight: '600', maxWidth: 140, flexShrink: 1 },
+  fill: { position: 'absolute', left: 0, top: 0, bottom: 0 },
+  name: { maxWidth: 140, flexShrink: 1 },
 });

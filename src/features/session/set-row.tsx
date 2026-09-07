@@ -1,9 +1,11 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Surface } from '@/components/ui/surface';
-import { Text } from '@/components/ui/text';
+import { Text, typography } from '@/components/ui/text';
+import { usePressScale } from '@/components/ui/use-press-scale';
 import { SET_TYPE_BADGE, usesDuration, usesReps, usesWeight, type SetType, type TrackingType } from '@/db/enums';
 import type { SessionSet } from '@/db/schema';
 import { formatDuration } from '@/lib/format';
@@ -13,36 +15,41 @@ import { useTheme } from '@/theme';
 import type { SetValues } from './actions';
 
 /** Larghezza delle colonne fisse: indice a sinistra, spunta a destra. */
-const INDEX_WIDTH = 34;
-const CHECK_WIDTH = 56;
+const INDEX_WIDTH = 32;
+const CHECK_WIDTH = 48;
+/** Altezza di una riga e delle celle che contiene. */
+const ROW_HEIGHT = 60;
+const CELL_HEIGHT = 44;
+/** Spessore della barretta che marca a sinistra una serie fatta. */
+const DONE_MARK = 3;
 
 export function SetRowHeader({ tracking, effortScale, unit }: { tracking: TrackingType; effortScale: EffortScale; unit: WeightUnit }) {
   const theme = useTheme();
   return (
-    <View style={[styles.row, { paddingHorizontal: theme.space.lg, paddingVertical: 6, gap: theme.space.sm }]}>
+    <View style={[styles.row, { paddingHorizontal: theme.space.md, paddingVertical: 6, gap: theme.space.xs }]}>
       <Text variant="label" tone="faint" style={{ width: INDEX_WIDTH, textAlign: 'center' }}>
         Ser
       </Text>
-      <Text variant="label" tone="faint" style={[styles.previousCell, styles.previousEmpty]}>
-        Prec. ⤺
+      <Text variant="label" tone="faint" style={[styles.previousCell, styles.centered]}>
+        Prec.
       </Text>
       {usesWeight(tracking) ? (
-        <Text variant="label" tone="faint" style={styles.inputCell}>
+        <Text variant="label" tone="faint" style={[styles.inputCell, styles.centered]}>
           {unit}
         </Text>
       ) : null}
       {usesReps(tracking) ? (
-        <Text variant="label" tone="faint" style={styles.inputCell}>
+        <Text variant="label" tone="faint" style={[styles.inputCell, styles.centered]}>
           Rip
         </Text>
       ) : null}
       {usesDuration(tracking) ? (
-        <Text variant="label" tone="faint" style={styles.inputCell}>
+        <Text variant="label" tone="faint" style={[styles.inputCell, styles.centered]}>
           Tempo
         </Text>
       ) : null}
       {effortScale !== 'none' ? (
-        <Text variant="label" tone="faint" style={styles.effortCell}>
+        <Text variant="label" tone="faint" style={[styles.effortCell, styles.centered]}>
           {effortScale === 'rir' ? 'RIR' : 'RPE'}
         </Text>
       ) : null}
@@ -82,6 +89,7 @@ export function SetRow({
   onChange: (values: Partial<SetValues>) => void;
 }) {
   const theme = useTheme();
+  const checkPress = usePressScale();
 
   // I campi tengono una bozza locale: scrivere sul database a ogni tasto
   // premuto farebbe rientrare `useLiveQuery` e cancellerebbe quello che si sta
@@ -175,20 +183,30 @@ export function SetRow({
       style={[
         styles.row,
         {
-          minHeight: 56,
-          paddingHorizontal: theme.space.lg,
-          paddingLeft: isChild ? theme.space.lg + 14 : theme.space.lg,
-          gap: theme.space.sm,
+          minHeight: ROW_HEIGHT,
+          paddingRight: theme.space.md,
+          // La barretta della serie fatta sta nei primi 3 punti, che sono già
+          // dentro il margine: le colonne non si spostano quando compare.
+          paddingLeft: isChild ? theme.space.md + 12 : theme.space.md,
+          gap: theme.space.xs,
           backgroundColor: done ? theme.colors.accentGlow : 'transparent',
-          borderTopColor: theme.colors.border,
         },
-        styles.bordered,
       ]}>
+      {/* La barretta d'accento sul filo sinistro: dice "questa è fatta" anche
+          quando la riga è mezza coperta dalla tastiera, e non ruba spazio a
+          nessuna colonna. */}
+      {done ? (
+        <View
+          pointerEvents="none"
+          style={[styles.doneMark, { backgroundColor: theme.colors.accent }]}
+        />
+      ) : null}
+
       <Pressable
         onPress={onOpenMenu}
         accessibilityRole="button"
         accessibilityLabel="Tipo di serie"
-        style={{ width: INDEX_WIDTH, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
+        style={{ width: INDEX_WIDTH, minHeight: theme.hit, alignItems: 'center', justifyContent: 'center' }}>
         {set.setType === 'working' && !isChild ? (
           <Text variant="subtitle" tone={done ? 'accent' : 'dim'} numeric>
             {workingIndex}
@@ -216,18 +234,15 @@ export function SetRow({
               level="mid"
               radius={theme.radius.md}
               pressed={pressed}
-              style={styles.previousBox}>
-              <MaterialCommunityIcons
-                name="content-copy"
-                size={12}
-                color={theme.colors.accentDim}
-              />
+              bordered={false}
+              style={[styles.previousBox, { height: CELL_HEIGHT }]}>
+              <MaterialCommunityIcons name="content-copy" size={11} color={theme.colors.accentDim} />
               <Text variant="caption" tone="dim" numeric numberOfLines={1}>
                 {previousLabel}
               </Text>
             </Surface>
           ) : (
-            <Text variant="caption" tone="faint" numeric numberOfLines={1} style={styles.previousEmpty}>
+            <Text variant="caption" tone="faint" numeric numberOfLines={1} style={styles.centered}>
               {previousLabel}
             </Text>
           )
@@ -241,7 +256,6 @@ export function SetRow({
           onFocus={() => (focusedRef.current = true)}
           onBlur={commit}
           placeholder={previous?.weight != null ? formatNumber(fromKg(previous.weight, unit)) : '—'}
-          done={done}
         />
       ) : null}
 
@@ -252,7 +266,6 @@ export function SetRow({
           onFocus={() => (focusedRef.current = true)}
           onBlur={commit}
           placeholder={previous?.reps != null ? String(previous.reps) : '—'}
-          done={done}
         />
       ) : null}
 
@@ -263,7 +276,6 @@ export function SetRow({
           onFocus={() => (focusedRef.current = true)}
           onBlur={commit}
           placeholder={previous?.durationSeconds != null ? String(previous.durationSeconds) : 's'}
-          done={done}
         />
       ) : null}
 
@@ -274,7 +286,6 @@ export function SetRow({
           onFocus={() => (focusedRef.current = true)}
           onBlur={commit}
           placeholder="—"
-          done={done}
           narrow
         />
       ) : null}
@@ -285,54 +296,92 @@ export function SetRow({
           if (done) onUncomplete();
           else onComplete(currentValues());
         }}
+        onPressIn={checkPress.onPressIn}
+        onPressOut={checkPress.onPressOut}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: done }}
         accessibilityLabel={done ? 'Annulla la serie' : 'Segna la serie come fatta'}
-        style={({ pressed }) => pressed && { opacity: 0.6 }}>
-        {/* Il pieno d'accento è un velo sopra, non il fondo della vista:
-            cambiare il fondo di una vista arrotondata su Android le fa perdere
-            il raggio, e la spunta tornava quadrata appena si spuntava. */}
-        <View
-          style={[
-            styles.check,
-            {
-              width: 48,
-              height: 48,
-              borderRadius: theme.radius.md,
-              backgroundColor: theme.colors.surface2,
-              borderColor: theme.colors.border,
-            },
-          ]}>
-          {done ? (
-            <View
-              pointerEvents="none"
-              style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.accent }]}
-            />
-          ) : null}
-          <MaterialCommunityIcons
-            name="check"
-            size={20}
-            color={done ? theme.colors.onAccent : theme.colors.textFaint}
-          />
-        </View>
+        style={({ pressed }) => pressed && { opacity: 0.7 }}>
+        <Animated.View style={checkPress.style}>
+          <CheckBox done={done} isPr={set.isPr} />
+        </Animated.View>
       </Pressable>
-
-      {set.isPr ? (
-        <View style={styles.prBadge}>
-          <MaterialCommunityIcons name="trophy" size={13} color={theme.colors.record} />
-        </View>
-      ) : null}
     </View>
   );
 }
 
+/**
+ * La spunta.
+ *
+ * Il pieno d'accento è un velo sopra, non il fondo della vista: cambiare il
+ * fondo di una vista arrotondata su Android le fa perdere il raggio, e la
+ * spunta tornava quadrata appena la si spuntava. Il velo si dissolve, e
+ * l'icona rimbalza: è l'unico gesto che si ripete trenta volte in una seduta,
+ * e vale la pena che risponda.
+ */
+function CheckBox({ done, isPr }: { done: boolean; isPr: boolean }) {
+  const theme = useTheme();
+  const fill = useSharedValue(done ? 1 : 0);
+  const pop = useSharedValue(1);
+  const first = useRef(true);
+
+  useEffect(() => {
+    fill.value = withTiming(done ? 1 : 0, { duration: theme.motion.duration.fast });
+    // Al primo montaggio no: rientrando in una sessione con venti serie già
+    // fatte partirebbero venti rimbalzi insieme.
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (done) {
+      pop.value = withSpring(1, { ...theme.motion.spring, velocity: 14 });
+    }
+  }, [done, fill, pop, theme.motion.duration.fast, theme.motion.spring]);
+
+  const veil = useAnimatedStyle(() => ({ opacity: fill.value }));
+  const glyph = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+
+  return (
+    <View
+      style={[
+        styles.check,
+        {
+          width: CHECK_WIDTH,
+          height: CELL_HEIGHT,
+          borderRadius: theme.radius.md,
+          backgroundColor: theme.colors.surface2,
+          borderColor: isPr && done ? theme.colors.record : theme.colors.border,
+        },
+      ]}>
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, veil, { backgroundColor: theme.colors.accent }]}
+      />
+      <Animated.View style={glyph}>
+        <MaterialCommunityIcons
+          name={isPr && done ? 'trophy' : 'check'}
+          size={20}
+          color={done ? theme.colors.onAccent : theme.colors.textFaint}
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+/**
+ * Una cella numerica.
+ *
+ * A fuoco si tinge d'accento: con quattro celle uguali affiancate e il
+ * telefono appoggiato sulla panca, sapere in quale si sta scrivendo non era
+ * scontato — e battere il peso nella colonna delle ripetizioni è un errore
+ * che ci si accorge solo dopo.
+ */
 function Cell({
   value,
   onChangeText,
   onFocus,
   onBlur,
   placeholder,
-  done,
   narrow,
 }: {
   value: string;
@@ -340,16 +389,23 @@ function Cell({
   onFocus: () => void;
   onBlur: () => void;
   placeholder: string;
-  done: boolean;
   narrow?: boolean;
 }) {
   const theme = useTheme();
+  const [focused, setFocused] = useState(false);
+
   return (
     <TextInput
       value={value}
       onChangeText={onChangeText}
-      onFocus={onFocus}
-      onBlur={onBlur}
+      onFocus={() => {
+        setFocused(true);
+        onFocus();
+      }}
+      onBlur={() => {
+        setFocused(false);
+        onBlur();
+      }}
       placeholder={placeholder}
       placeholderTextColor={theme.colors.textFaint}
       keyboardType="decimal-pad"
@@ -357,13 +413,14 @@ function Cell({
       style={[
         narrow ? styles.effortCell : styles.inputCell,
         styles.input,
+        typography('subtitle'),
         {
-          height: 36,
+          height: CELL_HEIGHT,
           borderRadius: theme.radius.md,
-          backgroundColor: theme.colors.surface2,
-          borderColor: theme.colors.border,
+          backgroundColor: focused ? theme.colors.accentGlow : theme.colors.surface2,
+          borderColor: focused ? theme.colors.accent : theme.colors.border,
           color: theme.colors.text,
-          fontSize: theme.font.size.md,
+          fontSize: theme.font.size.lg,
         },
       ]}
     />
@@ -384,25 +441,23 @@ function describePrevious(set: SessionSet, tracking: TrackingType, unit: WeightU
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
-  bordered: { borderTopWidth: StyleSheet.hairlineWidth },
-  previousCell: { flex: 1.6, justifyContent: 'center' },
+  doneMark: { position: 'absolute', left: 0, top: 6, bottom: 6, width: DONE_MARK },
+  previousCell: { flex: 1.3, justifyContent: 'center' },
   previousBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    minHeight: 40,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
   },
-  previousEmpty: { textAlign: 'center' },
-  inputCell: { flex: 1, textAlign: 'center' },
-  effortCell: { width: 46, textAlign: 'center' },
+  inputCell: { flex: 1 },
+  effortCell: { width: 40 },
+  centered: { textAlign: 'center' },
   input: {
+    textAlign: 'center',
+    textAlignVertical: 'center',
     borderWidth: StyleSheet.hairlineWidth * 2,
     padding: 0,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-    fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
   check: {
@@ -411,5 +466,4 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
     overflow: 'hidden',
   },
-  prBadge: { position: 'absolute', right: 2, top: 2 },
 });

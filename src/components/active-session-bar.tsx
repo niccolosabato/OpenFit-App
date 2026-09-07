@@ -2,10 +2,11 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { Surface } from '@/components/ui/surface';
+import { FloatingBand } from '@/components/ui/floating-band';
 import { IconButton } from '@/components/ui/icon-button';
+import { ProgressBar } from '@/components/ui/progress';
 import { Text } from '@/components/ui/text';
 import { activeSessionQuery } from '@/db/queries/sessions';
 import { formatDuration } from '@/lib/format';
@@ -28,7 +29,7 @@ export function ActiveSessionBar() {
   const theme = useTheme();
   const { data } = useLiveQuery(activeSessionQuery());
   const session = data?.[0];
-  const { remaining, running } = useRestCountdown();
+  const { remaining, total, running, paused } = useRestCountdown();
   const stopRest = useRestTimer((state) => state.stop);
 
   const [elapsed, setElapsed] = useState(0);
@@ -47,66 +48,60 @@ export function ActiveSessionBar() {
   return (
     // Sopra la tab bar, con lo stesso distacco dai bordi: le due barre si
     // leggono come una pila di elementi appoggiati, non come una fascia unica.
-    <View
-      style={{
-        backgroundColor: theme.colors.bg,
-        paddingHorizontal: theme.floatInset,
-        paddingTop: theme.floatInset,
+    <FloatingBand
+      edge="bottom"
+      bottomInset="none"
+      fade={false}
+      tinted={running}
+      onPress={() => router.push('/session/active')}
+      accessibilityLabel="Torna all’allenamento in corso"
+      surfaceStyle={{
+        paddingLeft: theme.space.lg,
+        paddingRight: theme.space.sm,
+        paddingVertical: theme.space.sm,
       }}>
-      <Pressable
-        onPress={() => router.push('/session/active')}
-        accessibilityRole="button"
-        accessibilityLabel="Torna all’allenamento in corso">
-        {({ pressed }) => (
-          <Surface
-            level="low"
-            elevation="float"
-            radius={theme.radius.xl}
-            tinted={running}
-            pressed={pressed}
-            style={[
-              styles.root,
-              {
-                paddingLeft: theme.space.lg,
-                paddingRight: theme.space.sm,
-                paddingVertical: theme.space.sm,
-                gap: theme.space.md,
-              },
-            ]}>
-            <MaterialCommunityIcons
-              name={running ? 'timer-sand' : 'dumbbell'}
-              size={22}
-              color={theme.colors.accent}
-            />
-            <View style={{ flex: 1 }}>
-              <Text variant="label" tone={running ? 'accent' : 'dim'} numberOfLines={1}>
-                {running ? 'Recupero' : 'Allenamento in corso'}
-              </Text>
-              <Text variant="subtitle" numeric numberOfLines={1}>
-                {running ? formatDuration(remaining) : `${session.name} · ${formatDuration(elapsed)}`}
-              </Text>
-            </View>
-            {/* Saltare il recupero senza rientrare in sessione: durante una
-                seduta è la ragione principale per cui si tornava indietro. */}
-            {running ? (
-              <IconButton
-                icon="skip-next"
-                label="Salta il recupero"
-                tone="accent"
-                onPress={stopRest}
-              />
-            ) : (
-              <IconButton
-                icon="chevron-up"
-                label="Riapri l’allenamento"
-                tone="dim"
-                onPress={() => router.push('/session/active')}
-              />
-            )}
-          </Surface>
+      {/* Il recupero si legge anche senza leggere: la barra si svuota, e il
+          colpo d'occhio da tre metri di distanza basta a sapere se è ora di
+          tornare sotto il bilanciere. */}
+      {running ? (
+        <View style={{ paddingBottom: theme.space.sm, paddingRight: theme.space.sm }}>
+          <ProgressBar
+            value={total > 0 ? remaining / total : 0}
+            height={3}
+            color={paused ? theme.colors.textFaint : theme.colors.accent}
+            trackColor={theme.colors.surface3}
+          />
+        </View>
+      ) : null}
+
+      <View style={[styles.root, { gap: theme.space.md }]}>
+        <MaterialCommunityIcons
+          name={running ? 'timer-sand' : 'dumbbell'}
+          size={22}
+          color={theme.colors.accent}
+        />
+        <View style={{ flex: 1, gap: theme.space.xs }}>
+          <Text variant="label" tone={running ? 'accent' : 'dim'} numberOfLines={1}>
+            {running ? `Recupero${paused ? ' · in pausa' : ''}` : 'Allenamento in corso'}
+          </Text>
+          <Text variant="subtitle" numeric numberOfLines={1}>
+            {running ? formatDuration(remaining) : `${session.name} · ${formatDuration(elapsed)}`}
+          </Text>
+        </View>
+      {/* Saltare il recupero senza rientrare in sessione: durante una
+          seduta è la ragione principale per cui si tornava indietro. */}
+        {running ? (
+          <IconButton icon="skip-next" label="Salta il recupero" tone="accent" onPress={stopRest} />
+        ) : (
+          <IconButton
+            icon="chevron-up"
+            label="Riapri l’allenamento"
+            tone="dim"
+            onPress={() => router.push('/session/active')}
+          />
         )}
-      </Pressable>
-    </View>
+      </View>
+    </FloatingBand>
   );
 }
 

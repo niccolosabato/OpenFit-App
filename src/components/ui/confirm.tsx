@@ -94,12 +94,12 @@ export function ConfirmHost() {
           <Surface
             level="high"
             elevation="sheet"
-            radius={theme.radius.xl}
+            radius={theme.radius.xxl}
             style={{
               width: '100%',
               maxWidth: 420,
-              padding: theme.space.lg,
-              gap: theme.space.lg,
+              padding: theme.space.xl,
+              gap: theme.space.xl,
             }}>
             <View style={{ gap: theme.space.xs, alignItems: 'center' }}>
               <Text variant="heading" style={styles.centered}>

@@ -2,10 +2,10 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { capsule, useTheme } from '@/theme';
 import { formatNumber } from '@/lib/units';
 import { Surface } from './surface';
-import { Text } from './text';
+import { Text, typography } from './text';
 
 /**
  * Numero con − e +, e il valore digitabile al centro.
@@ -76,7 +76,7 @@ export function NumberStepper({
         </Text>
       ) : null}
 
-      <Surface level="mid" radius={theme.radius.lg} style={[styles.row, { height: theme.hit }]}>
+      <Surface level="mid" radius={capsule(HEIGHT)} style={[styles.row, { height: HEIGHT }]}>
         <Pressable
           onPress={() => bump(-1)}
           accessibilityRole="button"
@@ -105,10 +105,7 @@ export function NumberStepper({
             placeholderTextColor={theme.colors.textFaint}
             keyboardType="decimal-pad"
             selectTextOnFocus
-            style={[
-              styles.input,
-              { color: theme.colors.text, fontSize: theme.font.size.lg, fontVariant: ['tabular-nums'] },
-            ]}
+            style={[styles.input, typography('metric'), { color: theme.colors.text }]}
           />
           {suffix ? (
             <Text variant="caption" tone="faint">
@@ -129,17 +126,18 @@ export function NumberStepper({
   );
 }
 
+/** Alto quanto un bottone grande: è il controllo che si preme di più nei fogli. */
+const HEIGHT = 56;
+
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   // 48 pieni: è il bersaglio che si preme di più in tutta l'app.
-  button: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  button: { width: 56, height: '100%', alignItems: 'center', justifyContent: 'center' },
   valueBox: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   input: {
     textAlign: 'center',
     textAlignVertical: 'center',
     minWidth: 50,
     padding: 0,
-    includeFontPadding: false,
-    fontWeight: '700',
   },
 });

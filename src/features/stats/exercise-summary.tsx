@@ -11,6 +11,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { LineChart } from '@/components/charts/line-chart';
 import { Card } from '@/components/ui/card';
+import { Divider } from '@/components/ui/section';
+import { Stat } from '@/components/ui/stat';
+import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import type { Exercise } from '@/db/schema';
 import { progressionBySession } from '@/features/stats/aggregate';
@@ -68,8 +71,8 @@ export function ExerciseSummary({ exercise }: { exercise: Exercise }) {
 
   return (
     <View style={{ gap: theme.space.md }}>
-      <Card>
-        <View style={{ gap: theme.space.md }}>
+      <Card wash>
+        <View style={{ gap: theme.space.lg }}>
           <Text variant="heading">Record</Text>
 
           <View style={[styles.row, { gap: theme.space.xl }]}>
@@ -94,17 +97,14 @@ export function ExerciseSummary({ exercise }: { exercise: Exercise }) {
               </Text>
               <View style={[styles.repGrid, { gap: theme.space.sm }]}>
                 {repMaxes.map((record) => (
-                  <View
+                  <Surface
                     key={record.id}
+                    level="mid"
+                    radius={theme.radius.md}
+                    bordered={false}
                     style={[
                       styles.repChip,
-                      {
-                        borderRadius: theme.radius.sm,
-                        borderColor: theme.colors.border,
-                        backgroundColor: theme.colors.surface2,
-                        paddingHorizontal: theme.space.md,
-                        paddingVertical: theme.space.sm,
-                      },
+                      { paddingHorizontal: theme.space.md, paddingVertical: theme.space.sm, gap: 2 },
                     ]}>
                     <Text variant="label" tone="faint">
                       {record.reps} rip
@@ -112,7 +112,7 @@ export function ExerciseSummary({ exercise }: { exercise: Exercise }) {
                     <Text variant="subtitle" numeric>
                       {formatWeight(record.value, settings.unit)}
                     </Text>
-                  </View>
+                  </Surface>
                 ))}
               </View>
             </View>
@@ -121,8 +121,8 @@ export function ExerciseSummary({ exercise }: { exercise: Exercise }) {
       </Card>
 
       <Card>
-        <View style={{ gap: theme.space.md }}>
-          <View>
+        <View style={{ gap: theme.space.lg }}>
+          <View style={{ gap: theme.space.xs }}>
             <Text variant="heading">Progressione</Text>
             <Text variant="caption" tone="dim">
               Massimale stimato migliore per seduta.
@@ -137,39 +137,42 @@ export function ExerciseSummary({ exercise }: { exercise: Exercise }) {
         </View>
       </Card>
 
-      <Card>
-        <View style={{ gap: theme.space.md }}>
+      <Card padded={false}>
+        <View style={{ padding: theme.space.lg, paddingBottom: theme.space.sm }}>
           <Text variant="heading">Sedute recenti</Text>
-          {recent.map((session) => (
-            <View key={session.sessionId} style={styles.sessionRow}>
-              <Text variant="caption" tone="dim" style={{ flex: 1 }}>
+        </View>
+        {recent.map((session, index) => (
+          <View key={session.sessionId}>
+            {index > 0 ? <Divider inset={theme.space.lg} /> : null}
+            <View
+              style={[
+                styles.sessionRow,
+                { paddingHorizontal: theme.space.lg, paddingVertical: theme.space.md, gap: theme.space.md },
+              ]}>
+              <Text variant="body" tone="dim" style={{ flex: 1 }}>
                 {formatSessionDate(new Date(session.startedAt))}
               </Text>
-              <Text variant="caption" numeric>
-                {session.sets} {session.sets === 1 ? 'serie' : 'serie'}
+              <Text variant="caption" tone="faint" numeric>
+                {session.sets} serie
               </Text>
-              <Text variant="caption" numeric tone="dim">
+              <Text variant="subtitle" numeric style={styles.topWeight}>
                 {session.topWeight !== null ? formatWeight(session.topWeight, settings.unit) : '—'}
               </Text>
             </View>
-          ))}
-        </View>
+          </View>
+        ))}
       </Card>
     </View>
   );
 }
 
 function Metric({ label, value, detail }: { label: string; value: string; detail?: string }) {
+  const theme = useTheme();
   return (
-    <View style={{ flex: 1 }}>
-      <Text variant="label" tone="faint">
-        {label}
-      </Text>
-      <Text variant="title" numeric>
-        {value}
-      </Text>
+    <View style={{ flex: 1, gap: theme.space.xs }}>
+      <Stat label={label} value={value} />
       {detail ? (
-        <Text variant="caption" tone="faint">
+        <Text variant="caption" tone="faint" numberOfLines={1}>
           {detail}
         </Text>
       ) : null}
@@ -180,6 +183,7 @@ function Metric({ label, value, detail }: { label: string; value: string; detail
 const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   repGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  repChip: { borderWidth: StyleSheet.hairlineWidth * 2, minWidth: 84 },
-  sessionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  repChip: { minWidth: 84 },
+  sessionRow: { flexDirection: 'row', alignItems: 'center' },
+  topWeight: { minWidth: 72, textAlign: 'right' },
 });

@@ -2,10 +2,9 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
-import { Surface } from './surface';
+import { FloatingBand } from './floating-band';
 import { IconButton } from './icon-button';
 import { Text } from './text';
 
@@ -15,6 +14,8 @@ export type HeaderAction = {
   icon: IconName;
   label: string;
   onPress: () => void;
+  /** Tinge d'accento: l'azione che la schermata vuole far notare. */
+  accent?: boolean;
 };
 
 /**
@@ -34,6 +35,13 @@ export function ScreenHeader({
   showBack,
   actions = [],
   below,
+  /**
+   * `large` è il titolo di una destinazione — le cinque tab. `compact` è
+   * quello di una pagina in cui si è entrati: lì accanto c'è già la freccia
+   * indietro a dire dove si è, e un titolo da trenta punti con una freccia a
+   * fianco sembra il titolo della freccia. Di default lo decide `showBack`.
+   */
+  size,
 }: {
   title: string;
   subtitle?: string;
@@ -45,64 +53,54 @@ export function ScreenHeader({
    * dopo aver guardato il contenuto, e inseguirla scorrendo all'insù è assurdo.
    */
   below?: ReactNode;
+  size?: 'large' | 'compact';
 }) {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
+  const large = (size ?? (showBack ? 'compact' : 'large')) === 'large';
 
   return (
-    // Due strati: una fascia opaca del colore del fondo, che copre il
-    // contenuto che le scorre sotto, e dentro la barra vera, arrotondata e
-    // staccata dai bordi.
-    <View
-      style={[
-        styles.band,
-        {
-          backgroundColor: theme.colors.bg,
-          paddingTop: insets.top + theme.floatInset,
-          paddingHorizontal: theme.floatInset,
-          paddingBottom: theme.floatInset,
-        },
-      ]}>
-      <Surface
-        level="low"
-        elevation="float"
-        radius={theme.radius.xl}
-        style={{ paddingVertical: below ? theme.space.sm : theme.space.xs }}>
-        <View style={[styles.bar, { paddingHorizontal: theme.space.sm, gap: theme.space.sm }]}>
-          {showBack ? (
-            <IconButton icon="chevron-left" label="Indietro" size={30} onPress={() => router.back()} />
-          ) : null}
+    <FloatingBand
+      edge="top"
+      surfaceStyle={{
+        paddingVertical: theme.space.xs,
+        paddingBottom: below ? theme.space.sm : theme.space.xs,
+      }}>
+      <View style={[styles.bar, { paddingHorizontal: theme.space.xs, gap: theme.space.xs }]}>
+        {showBack ? (
+          <IconButton icon="arrow-left" label="Indietro" size={24} onPress={() => router.back()} />
+        ) : null}
 
-          <View style={[styles.titles, !showBack && { paddingLeft: theme.space.sm }]}>
-            <Text variant="title" numberOfLines={1}>
-              {title}
+        <View style={[styles.titles, !showBack && { paddingLeft: theme.space.md }]}>
+          <Text variant={large ? 'title' : 'heading'} numberOfLines={1}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text variant="caption" tone="dim" numberOfLines={1}>
+              {subtitle}
             </Text>
-            {subtitle ? (
-              <Text variant="caption" tone="dim" numberOfLines={1}>
-                {subtitle}
-              </Text>
-            ) : null}
-          </View>
-
-          {actions.map((action) => (
-            <IconButton
-              key={action.label}
-              icon={action.icon}
-              label={action.label}
-              onPress={action.onPress}
-              surface
-            />
-          ))}
+          ) : null}
         </View>
 
-        {below ? <View style={{ paddingTop: theme.space.sm }}>{below}</View> : null}
-      </Surface>
-    </View>
+        {actions.map((action) => (
+          <IconButton
+            key={action.label}
+            icon={action.icon}
+            label={action.label}
+            onPress={action.onPress}
+            tone={action.accent ? 'accent' : 'dim'}
+            surface
+          />
+        ))}
+      </View>
+
+      {below ? <View style={{ paddingTop: theme.space.xs }}>{below}</View> : null}
+    </FloatingBand>
   );
 }
 
 const styles = StyleSheet.create({
-  band: { flexDirection: 'column' },
   bar: { flexDirection: 'row', alignItems: 'center' },
-  titles: { flex: 1, gap: 4 },
+  // `space.xs` fra titolo e sottotitolo: è la distanza di ogni coppia
+  // "riga principale + riga secondaria" dell'app.
+  titles: { flex: 1, gap: 4, justifyContent: 'center' },
 });
