@@ -11,7 +11,7 @@
     "primaryColor": "#C9F53A",
     "android": {
       "package": "com.niccolosabato.openfit",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#08080B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
