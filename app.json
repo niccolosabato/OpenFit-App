@@ -70,6 +70,12 @@
         "projectId": "755b2178-7f2d-4911-a0ed-19bd9c3a63dc"
       }
     },
-    "owner": "sabato"
+    "owner": "sabato",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/755b2178-7f2d-4911-a0ed-19bd9c3a63dc"
+    }
   }
 }

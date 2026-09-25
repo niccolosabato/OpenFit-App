@@ -11,8 +11,8 @@
  * prima, con il contenuto nel flusso.
  */
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import { StyleSheet, View, type ScrollViewProps, type ViewStyle } from 'react-native';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { Keyboard, StyleSheet, View, type ScrollViewProps, type ViewStyle } from 'react-native';
 import Animated, { type AnimatedRef } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -45,6 +45,38 @@ export function useScreenChrome(): ScreenChrome {
   return useContext(ScreenChromeContext);
 }
 
+/**
+ * Quanto la tastiera copre in fondo, in punti.
+ *
+ * Da Android 15, con l'app a target SDK 35 e oltre, la finestra è
+ * edge-to-edge: quando compare l'IME **non si ridimensiona più**, ci sta
+ * sopra. Uno `ScrollView` convinto di avere ancora tutto lo schermo non riesce
+ * a portare l'ultima riga sopra la tastiera, perché il suo margine inferiore
+ * non la contempla. `ReactRootView` emette comunque `keyboardDidShow` con
+ * l'altezza (già al netto della barra di navigazione), ed è quella che va
+ * sommata al margine dello scorrimento.
+ *
+ * Sta qui e non in ogni lista perché è la stessa geometria del chrome: chi
+ * scorre riceve già da `useScreenChrome()` lo spazio da lasciare in fondo, e
+ * non deve sapere che a volte è la tastiera a occuparlo.
+ */
+function useKeyboardHeight(): number {
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (e) =>
+      setHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener('keyboardDidHide', () => setHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return height;
+}
+
 export function Screen({
   children,
   padded = true,
@@ -65,6 +97,7 @@ export function Screen({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardHeight();
 
   const [topHeight, setTopHeight] = useState(0);
   const [bottomHeight, setBottomHeight] = useState(0);
@@ -83,14 +116,14 @@ export function Screen({
 
   if (!hasChrome) {
     return (
-      <ScreenChromeContext.Provider value={{ top: 0, bottom: outerBottom }}>
+      <ScreenChromeContext.Provider value={{ top: 0, bottom: outerBottom + keyboard }}>
         <View style={[styles.root, root, style]}>{children}</View>
       </ScreenChromeContext.Provider>
     );
   }
 
   return (
-    <ScreenChromeContext.Provider value={{ top: topHeight, bottom: bottomHeight + outerBottom }}>
+    <ScreenChromeContext.Provider value={{ top: topHeight, bottom: bottomHeight + outerBottom + keyboard }}>
       <View style={[styles.root, root, style]}>
         {/* Il chrome sta sopra il contenuto e ne copre le prime e le ultime
             righe: per questo `Screen` ne misura l'altezza e `ScreenScroll` la

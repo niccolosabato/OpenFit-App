@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, Keyboard, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionBar, ActionBarPrimary } from '@/components/ui/action-bar';
@@ -843,6 +843,31 @@ function SessionScroll({
   function settle() {
     jumpTarget.current = null;
   }
+
+  // Con la tastiera aperta il campo a fuoco non sale da sé: Android, in
+  // edge-to-edge, non ridimensiona la finestra, e il `requestChildFocus` dello
+  // ScrollView era già passato quando l'IME non c'era — il campo risultava
+  // "visibile" e nessuno lo spostava. Qui lo si rimisura e, se è finito sotto
+  // la tastiera, lo si porta sopra con lo spazio che il padding in fondo lascia.
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', (e) => {
+      const input = TextInput.State.currentlyFocusedInput();
+      if (!input) return;
+
+      const keyboardTop = e.endCoordinates.screenY;
+      input.measure((_x, _y, _w, height, _pageX, pageY) => {
+        // Un campo già sopra la tastiera non si sposta: si interviene solo se
+        // ci finirebbe sotto.
+        if (pageY + height + theme.space.md <= keyboardTop) return;
+        scrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(
+          input,
+          theme.space.md,
+          true,
+        );
+      });
+    });
+    return () => sub.remove();
+  }, [theme.space.md]);
 
   return (
     <ScrollView

@@ -311,7 +311,7 @@ export function countsTowardVolume(t: SetType): boolean {
   return t !== 'warmup';
 }
 
-/* ------------------------------------------------- tecniche di intensificazione */
+/* ------------------------------------------------------ tecniche di intensità */
 
 /**
  * Tecnica applicata a una serie di primo livello. Dice alla UI che quella

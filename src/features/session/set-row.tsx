@@ -100,6 +100,18 @@ export function SetRow({
   const [duration, setDuration] = useState('');
   const focusedRef = useRef(false);
 
+  // La spunta non aspetta il database. Fra il tocco e la rilettura della live
+  // query passano alcuni fotogrammi: in quella finestra `set.isCompleted` è
+  // ancora il valore vecchio, e un secondo tocco ripartirebbe da lì —
+  // annullando invece di confermare. Il valore ottimistico copre quel buco e
+  // si scioglie appena il dato vero lo raggiunge.
+  const [pendingDone, setPendingDone] = useState<boolean | null>(null);
+  const done = pendingDone ?? set.isCompleted;
+
+  useEffect(() => {
+    if (pendingDone !== null && pendingDone === set.isCompleted) setPendingDone(null);
+  }, [pendingDone, set.isCompleted]);
+
   useEffect(() => {
     if (focusedRef.current) return;
 
@@ -174,7 +186,6 @@ export function SetRow({
   }
 
   const badge = SET_TYPE_BADGE[set.setType];
-  const done = set.isCompleted;
 
   const previousLabel = previous ? describePrevious(previous, tracking, unit) : '—';
 
@@ -293,8 +304,10 @@ export function SetRow({
       <Pressable
         onPress={() => {
           focusedRef.current = false;
-          if (done) onUncomplete();
-          else onComplete(currentValues());
+          const next = !done;
+          setPendingDone(next);
+          if (next) onComplete(currentValues());
+          else onUncomplete();
         }}
         onPressIn={checkPress.onPressIn}
         onPressOut={checkPress.onPressOut}
@@ -395,35 +408,51 @@ function Cell({
   const [focused, setFocused] = useState(false);
 
   return (
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      onFocus={() => {
-        setFocused(true);
-        onFocus();
-      }}
-      onBlur={() => {
-        setFocused(false);
-        onBlur();
-      }}
-      placeholder={placeholder}
-      placeholderTextColor={theme.colors.textFaint}
-      keyboardType="decimal-pad"
-      selectTextOnFocus
+    <View
       style={[
         narrow ? styles.effortCell : styles.inputCell,
-        styles.input,
-        typography('subtitle'),
+        styles.cell,
         {
           height: CELL_HEIGHT,
           borderRadius: theme.radius.md,
           backgroundColor: focused ? theme.colors.accentGlow : theme.colors.surface2,
           borderColor: focused ? theme.colors.accent : theme.colors.border,
-          color: theme.colors.text,
-          fontSize: theme.font.size.lg,
         },
-      ]}
-    />
+      ]}>
+      {/* Il segnaposto lo disegniamo noi invece di lasciarlo al `TextInput`:
+          su Android, con il valore controllato, l'`hint` nativo ogni tanto
+          non compare e il campo ripetizioni restava senza il suo "—". Assoluto
+          e dietro l'input, così il cursore e il testo restano sopra. */}
+      {value === '' ? (
+        <Text
+          variant="subtitle"
+          tone="faint"
+          numeric
+          pointerEvents="none"
+          style={[styles.placeholder, { fontSize: theme.font.size.lg }]}>
+          {placeholder}
+        </Text>
+      ) : null}
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        onFocus={() => {
+          setFocused(true);
+          onFocus();
+        }}
+        onBlur={() => {
+          setFocused(false);
+          onBlur();
+        }}
+        keyboardType="decimal-pad"
+        selectTextOnFocus
+        style={[
+          styles.input,
+          typography('subtitle'),
+          { color: theme.colors.text, fontSize: theme.font.size.lg },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -454,11 +483,26 @@ const styles = StyleSheet.create({
   effortCell: { width: 40 },
   centered: { textAlign: 'center' },
   input: {
+    flex: 1,
     textAlign: 'center',
     textAlignVertical: 'center',
-    borderWidth: StyleSheet.hairlineWidth * 2,
+    backgroundColor: 'transparent',
     padding: 0,
     fontVariant: ['tabular-nums'],
+  },
+  cell: {
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    overflow: 'hidden',
+  },
+  placeholder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   check: {
     alignItems: 'center',

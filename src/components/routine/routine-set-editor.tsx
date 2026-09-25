@@ -196,7 +196,7 @@ export function RoutineSetEditor({
 
       <View style={{ gap: theme.space.sm }}>
         <Text variant="label" tone="dim">
-          Tecnica di intensificazione
+          Tecnica di intensità
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm }}>
           <Chip label="Nessuna" compact selected={technique === null} onPress={() => setTechnique(null)} />
