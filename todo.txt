@@ -15,3 +15,5 @@ FATTO 3. la spunta delle serie completate a volte è buggata
 15. capire come distribuire gli aggiornamenti
 FATTO 16. tecniche di intensità 
 FATTO 17. a volte il cursore nelle caselle è al centro a volte tutto a destra, deve essere sempre al centro
+18. durante l allenamento a volte dà il traguardo anche se non è il migliore 
+19. 
