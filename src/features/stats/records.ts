@@ -19,7 +19,12 @@ import {
   type SessionSet,
 } from '@/db/schema';
 import { newId } from '@/lib/ids';
-import { beatsRecord, candidateRecords, type RecordCandidate } from './record-rules';
+import {
+  beatsRecord,
+  candidateRecords,
+  qualifiesRepMax,
+  type RecordCandidate,
+} from './record-rules';
 
 export { candidateRecords, type RecordCandidate } from './record-rules';
 
@@ -62,6 +67,23 @@ export function applyRecords(
 
   for (const candidate of candidates) {
     const previous = current.get(key(candidate.type, candidate.reps));
+
+    // Un record per ripetizioni appena nato deve continuare la curva: vedi
+    // `qualifiesRepMax`. Un traguardo già esistente si batte e basta.
+    if (
+      candidate.type === 'rep_max' &&
+      previous === undefined &&
+      !qualifiesRepMax(
+        candidate.value,
+        candidate.reps,
+        existing
+          .filter((r) => r.type === 'rep_max')
+          .map((r) => ({ reps: r.reps, value: r.value })),
+      )
+    ) {
+      continue;
+    }
+
     if (!beatsRecord(candidate.value, previous?.value)) continue;
 
     hits.push({ ...candidate, previous: previous?.value ?? null });
@@ -129,11 +151,32 @@ export function rebuildRecords(): void {
   };
 
   const best = new Map<string, Best>();
+  // Miglior carico per numero di ripetizioni già incontrato, per esercizio:
+  // serve a `qualifiesRepMax` mentre si scorre in ordine cronologico.
+  const repMaxByExercise = new Map<string, Map<number, number>>();
+  const continuesCurve = (exerciseId: string, reps: number, weight: number) => {
+    const byReps = repMaxByExercise.get(exerciseId);
+    if (!byReps) return true;
+    return qualifiesRepMax(
+      weight,
+      reps,
+      [...byReps].map(([r, value]) => ({ reps: r, value })),
+    );
+  };
 
   for (const row of rows) {
     for (const candidate of candidateRecords(row.set.weight, row.set.reps, row.set.setType)) {
       const key = `${row.exerciseId}:${candidate.type}:${candidate.reps}`;
       const previous = best.get(key);
+
+      if (
+        candidate.type === 'rep_max' &&
+        previous === undefined &&
+        !continuesCurve(row.exerciseId, candidate.reps, candidate.value)
+      ) {
+        continue;
+      }
+
       if (!beatsRecord(candidate.value, previous?.value)) continue;
 
       best.set(key, {
@@ -148,6 +191,12 @@ export function rebuildRecords(): void {
         achievedAt: row.set.completedAt ?? new Date(),
         previousValue: previous?.value ?? null,
       });
+
+      if (candidate.type === 'rep_max') {
+        const byReps = repMaxByExercise.get(row.exerciseId) ?? new Map<number, number>();
+        byReps.set(candidate.reps, candidate.value);
+        repMaxByExercise.set(row.exerciseId, byReps);
+      }
     }
   }
 

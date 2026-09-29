@@ -29,6 +29,12 @@ export function describeRecordHits(
   if (main.previous !== null) {
     const delta = main.value - main.previous;
     parts.push(`+${formatWeight(delta, unit)} sul precedente`);
+  } else if (main.type === 'rep_max') {
+    // Un record per ripetizioni può essere il primo *a quel numero di
+    // ripetizioni* pur non essendo il primo in assoluto sull'esercizio.
+    parts.push(
+      `primo record a ${main.reps} ${main.reps === 1 ? 'ripetizione' : 'ripetizioni'}`,
+    );
   } else {
     parts.push('primo record su questo esercizio');
   }

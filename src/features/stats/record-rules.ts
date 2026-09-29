@@ -50,3 +50,22 @@ export function candidateRecords(
 export function beatsRecord(candidate: number, previous: number | null | undefined): boolean {
   return previous === null || previous === undefined || candidate > previous;
 }
+
+/**
+ * Un record per ripetizioni vale solo se continua la curva.
+ *
+ * La **prima** volta che si fanno N ripetizioni il carico deve essere almeno
+ * quello del miglior carico fatto a ripetizioni inferiori — altrimenti è solo
+ * una serie più leggera con qualche ripetizione in più, non un primato. Una
+ * volta che un record a N ripetizioni esiste, invece, basta superarlo: portarlo
+ * da 80 a 85 resta un primato anche se a ripetizioni basse c'è un massimale più
+ * pesante. Senza questa regola qualsiasi ripetizione mai provata produce un
+ * "record", e il traguardo compare su serie che non sono il meglio di niente.
+ */
+export function qualifiesRepMax(
+  weight: number,
+  reps: number,
+  repMaxes: { reps: number; value: number }[],
+): boolean {
+  return !repMaxes.some((r) => r.reps < reps && r.value > weight);
+}

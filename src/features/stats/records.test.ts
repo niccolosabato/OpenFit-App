@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { candidateRecords } from './record-rules';
+import { candidateRecords, qualifiesRepMax } from './record-rules';
 
 describe('candidateRecords', () => {
   it('propone carico massimo, e1RM e record di ripetizioni', () => {
@@ -45,5 +45,26 @@ describe('candidateRecords', () => {
     expect(candidates.map((c) => c.type)).not.toContain('best_e1rm');
     // Carico massimo e record a 20 ripetizioni restano validi.
     expect(candidates.map((c) => c.type).sort()).toEqual(['best_weight', 'rep_max']);
+  });
+});
+
+describe('qualifiesRepMax', () => {
+  it('la prima volta a N ripetizioni vale solo se il carico regge il confronto', () => {
+    // Dopo un 100×5, un 90×6 leggero non è un primato...
+    expect(qualifiesRepMax(90, 6, [{ reps: 5, value: 100 }])).toBe(false);
+    // ...ma un 105×6 sì.
+    expect(qualifiesRepMax(105, 6, [{ reps: 5, value: 100 }])).toBe(true);
+  });
+
+  it('a parità di carico vale (100×6 dopo 100×5)', () => {
+    expect(qualifiesRepMax(100, 6, [{ reps: 5, value: 100 }])).toBe(true);
+  });
+
+  it('non guarda le ripetizioni superiori', () => {
+    expect(qualifiesRepMax(60, 12, [{ reps: 15, value: 100 }])).toBe(true);
+  });
+
+  it('senza ripetizioni inferiori è sempre un primato', () => {
+    expect(qualifiesRepMax(60, 12, [])).toBe(true);
   });
 });
