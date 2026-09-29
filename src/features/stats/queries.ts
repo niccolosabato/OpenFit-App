@@ -26,6 +26,8 @@ export function statSetsQuery(since?: Date) {
       primaryMuscle: exercises.primaryMuscle,
       secondaryMuscles: exercises.secondaryMuscles,
       setType: sessionSets.setType,
+      trackingType: exercises.trackingType,
+      bodyweight: workoutSessions.bodyweight,
       parentSetId: sessionSets.parentSetId,
       weight: sessionSets.weight,
       reps: sessionSets.reps,
@@ -47,6 +49,8 @@ export function exerciseStatSetsQuery(exerciseId: string) {
       primaryMuscle: exercises.primaryMuscle,
       secondaryMuscles: exercises.secondaryMuscles,
       setType: sessionSets.setType,
+      trackingType: exercises.trackingType,
+      bodyweight: workoutSessions.bodyweight,
       parentSetId: sessionSets.parentSetId,
       weight: sessionSets.weight,
       reps: sessionSets.reps,
@@ -71,6 +75,8 @@ type RawStatRow = {
   primaryMuscle: StatSet['primaryMuscle'];
   secondaryMuscles: StatSet['secondaryMuscles'];
   setType: StatSet['setType'];
+  trackingType: StatSet['trackingType'];
+  bodyweight: number | null;
   parentSetId: string | null;
   weight: number | null;
   reps: number | null;

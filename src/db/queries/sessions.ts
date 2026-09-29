@@ -1,8 +1,16 @@
 import { and, asc, desc, eq, isNull, max, sql } from 'drizzle-orm';
 
 import { newId } from '@/lib/ids';
+import { setVolumeKg } from '@/lib/volume';
 import { db } from '../client';
-import { countsTowardVolume, countsAsWorkingSet, type SetType, type Technique } from '../enums';
+import {
+  countsTowardVolume,
+  countsAsWorkingSet,
+  type SetType,
+  type Technique,
+  type TrackingType,
+} from '../enums';
+import { latestMeasurement } from './body';
 import {
   exercises,
   routineDays,
@@ -36,6 +44,17 @@ export function sessionQuery(sessionId: string) {
   return db.select().from(workoutSessions).where(eq(workoutSessions.id, sessionId));
 }
 
+/**
+ * Peso corporeo della seduta, in kg.
+ *
+ * Si può correggere durante l'allenamento: la misurazione più recente è il
+ * valore di partenza, non una condanna, e senza poterlo toccare una pesata
+ * vecchia falserebbe il volume di tutta la seduta.
+ */
+export function updateSessionBodyweight(sessionId: string, bodyweight: number | null): void {
+  db.update(workoutSessions).set({ bodyweight }).where(eq(workoutSessions.id, sessionId)).run();
+}
+
 /* ───────────────────────────────────────────────────────────── avvio ── */
 
 /**
@@ -58,6 +77,9 @@ export function startSessionFromDay(dayId: string): string {
     .all();
 
   const sessionId = newId();
+  // Il peso corporeo si congela qui: da qui in poi il volume a corpo libero
+  // della seduta non cambia più, anche se il profilo cambia domani.
+  const bodyweight = latestMeasurement()?.weight ?? null;
 
   db.transaction((tx) => {
     tx.insert(workoutSessions)
@@ -68,6 +90,7 @@ export function startSessionFromDay(dayId: string): string {
         name: day.name,
         startedAt: new Date(),
         status: 'active',
+        bodyweight,
       })
       .run();
 
@@ -118,7 +141,15 @@ export function startSessionFromDay(dayId: string): string {
 /** Allenamento libero: si parte vuoti e si aggiungono esercizi strada facendo. */
 export function startEmptySession(name = 'Allenamento libero'): string {
   const id = newId();
-  db.insert(workoutSessions).values({ id, name, startedAt: new Date(), status: 'active' }).run();
+  db.insert(workoutSessions)
+    .values({
+      id,
+      name,
+      startedAt: new Date(),
+      status: 'active',
+      bodyweight: latestMeasurement()?.weight ?? null,
+    })
+    .run();
   return id;
 }
 
@@ -347,20 +378,33 @@ export function getPreviousPerformance(
 
 /* ─────────────────────────────────────────────────────── chiusura ── */
 
-/** Volume di una serie: carico esterno × ripetizioni, 0 se manca un dato. */
-export function setVolume(set: SessionSet): number {
-  if (!countsTowardVolume(set.setType)) return 0;
+/**
+ * Volume di una serie in kg: carico esterno × ripetizioni, con il corpo a fare
+ * da carico quando l'esercizio è a corpo libero. Vedi `lib/volume.ts`.
+ */
+export function setVolume(
+  set: SessionSet,
+  trackingType: TrackingType,
+  bodyweight: number | null,
+): number {
   if (!set.isCompleted) return 0;
-  const weight = set.weight ?? 0;
-  const reps = set.reps ?? 0;
-  // Il corpo libero assistito ha carico negativo: non genera volume esterno.
-  if (weight <= 0 || reps <= 0) return 0;
-  return weight * reps;
+  return setVolumeKg({
+    setType: set.setType,
+    trackingType,
+    weight: set.weight,
+    reps: set.reps,
+    bodyweight,
+  });
 }
 
 export type SessionTotals = { totalVolume: number; totalSets: number; totalReps: number };
 
-export function computeTotals(sets: SessionSet[]): SessionTotals {
+/** `trackingTypeOf` risolve la serie al suo esercizio: il volume dipende da come si misura. */
+export function computeTotals(
+  sets: SessionSet[],
+  trackingTypeOf: (sessionExerciseId: string) => TrackingType,
+  bodyweight: number | null,
+): SessionTotals {
   let totalVolume = 0;
   let totalSets = 0;
   let totalReps = 0;
@@ -368,7 +412,7 @@ export function computeTotals(sets: SessionSet[]): SessionTotals {
   for (const set of sets) {
     if (!set.isCompleted) continue;
     if (!countsTowardVolume(set.setType)) continue;
-    totalVolume += setVolume(set);
+    totalVolume += setVolume(set, trackingTypeOf(set.sessionExerciseId), bodyweight);
     totalReps += set.reps ?? 0;
     // Le serie allenanti si contano solo di primo livello: uno stripping resta
     // una serie sola, per quanti scalini abbia.
@@ -408,14 +452,21 @@ export function finishSession(sessionId: string, notes?: string, perceivedEffort
       .run();
 
     const remaining = tx
-      .select({ set: sessionSets })
+      .select({ set: sessionSets, trackingType: exercises.trackingType })
       .from(sessionSets)
       .innerJoin(sessionExercises, eq(sessionSets.sessionExerciseId, sessionExercises.id))
+      .innerJoin(exercises, eq(sessionExercises.exerciseId, exercises.id))
       .where(eq(sessionExercises.sessionId, sessionId))
-      .all()
-      .map((row) => row.set);
+      .all();
 
-    const totals = computeTotals(remaining);
+    const trackingTypeByExercise = new Map(
+      remaining.map((row) => [row.set.sessionExerciseId, row.trackingType]),
+    );
+    const totals = computeTotals(
+      remaining.map((row) => row.set),
+      (sessionExerciseId) => trackingTypeByExercise.get(sessionExerciseId) ?? 'weight_reps',
+      session.bodyweight,
+    );
     const endedAt = new Date();
 
     tx.update(workoutSessions)

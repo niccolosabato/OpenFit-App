@@ -29,6 +29,7 @@ import {
   TOP_LEVEL_SET_TYPES,
   countsAsWorkingSet,
   type SetType,
+  type TrackingType,
 } from '@/db/enums';
 import {
   activeSessionQuery,
@@ -42,6 +43,7 @@ import {
   removeSessionExercise,
   sessionExercisesQuery,
   sessionSetsQuery,
+  updateSessionBodyweight,
   updateSessionSet,
 } from '@/db/queries/sessions';
 import { useLiveRows } from '@/db/live';
@@ -55,7 +57,7 @@ import { RestTimerBar } from '@/features/timer/rest-timer-bar';
 import { useRestCountdown } from '@/features/timer/use-countdown';
 import { prepareRestNotifications, tapFeedback, useRestTimer } from '@/features/timer/rest-timer';
 import { formatDuration } from '@/lib/format';
-import { formatVolume } from '@/lib/units';
+import { formatVolume, formatWeight, fromKg, toKg, UNIT_LABEL, WEIGHT_STEP } from '@/lib/units';
 import { useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
 
@@ -135,6 +137,8 @@ export default function ActiveSessionScreen() {
   const [reorderOpen, setReorderOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(settings.defaultRestSeconds);
+  const [bodyweightOpen, setBodyweightOpen] = useState(false);
+  const [bodyweightValue, setBodyweightValue] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Posizione e altezza di ogni card: le scrivono le card, le legge lo
@@ -205,7 +209,24 @@ export default function ActiveSessionScreen() {
     return map;
   }, [allSets]);
 
-  const totals = useMemo(() => computeTotals(allSets), [allSets]);
+  // Come si misura ogni esercizio: serve al volume per sapere se il carico è
+  // esterno, il corpo o tutti e due.
+  const trackingTypeByExercise = useMemo(() => {
+    const map = new Map<string, TrackingType>();
+    for (const item of items) map.set(item.sessionExercise.id, item.exercise.trackingType);
+    return map;
+  }, [items]);
+  const bodyweight = session?.bodyweight ?? null;
+
+  const totals = useMemo(
+    () =>
+      computeTotals(
+        allSets,
+        (sessionExerciseId) => trackingTypeByExercise.get(sessionExerciseId) ?? 'weight_reps',
+        bodyweight,
+      ),
+    [allSets, trackingTypeByExercise, bodyweight],
+  );
 
   if (!session) {
     return (
@@ -577,6 +598,19 @@ export default function ActiveSessionScreen() {
           />
         ) : null}
         <SheetAction
+          label="Peso corporeo"
+          description={
+            bodyweight !== null
+              ? `Conta il volume a corpo libero. Ora: ${formatWeight(bodyweight, settings.unit)}.`
+              : 'Serve a contare il volume degli esercizi a corpo libero.'
+          }
+          onPress={() => {
+            setSessionMenuOpen(false);
+            setBodyweightValue(bodyweight !== null ? fromKg(bodyweight, settings.unit) : null);
+            setBodyweightOpen(true);
+          }}
+        />
+        <SheetAction
           label="Riduci a icona"
           description="L'allenamento resta aperto, la barra in fondo lo riporta qui."
           onPress={() => {
@@ -726,6 +760,33 @@ export default function ActiveSessionScreen() {
               notify: settings.timerNotification,
               kind: 'timer',
             });
+          }}
+        />
+      </Sheet>
+
+      {/* ──────────────────────────────────────────── peso corporeo ── */}
+      <Sheet visible={bodyweightOpen} onClose={() => setBodyweightOpen(false)} title="Peso corporeo" scrollable={false}>
+        <Text variant="caption" tone="dim">
+          Parte dall'ultima misurazione registrata. Serve a contare il volume degli esercizi a corpo libero e zavorrati.
+        </Text>
+        <NumberStepper
+          label="Peso"
+          value={bodyweightValue}
+          onChange={setBodyweightValue}
+          step={WEIGHT_STEP[settings.unit] * 0.2}
+          min={0}
+          suffix={UNIT_LABEL[settings.unit]}
+          allowEmpty
+        />
+        <Button
+          title="Salva"
+          fullWidth
+          onPress={() => {
+            updateSessionBodyweight(
+              sessionId,
+              bodyweightValue === null ? null : toKg(bodyweightValue, settings.unit),
+            );
+            setBodyweightOpen(false);
           }}
         />
       </Sheet>

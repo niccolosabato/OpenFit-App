@@ -15,8 +15,10 @@ import {
   type Muscle,
   type MuscleGroup,
   type SetType,
+  type TrackingType,
 } from '@/db/enums';
 import { estimate1RM } from '@/lib/e1rm';
+import { setVolumeKg } from '@/lib/volume';
 
 /** Una serie completata, appiattita con quel che serve alle statistiche. */
 export type StatSet = {
@@ -27,6 +29,9 @@ export type StatSet = {
   primaryMuscle: Muscle;
   secondaryMuscles: Muscle[];
   setType: SetType;
+  trackingType: TrackingType;
+  /** Peso corporeo congelato sulla sessione, per il volume a corpo libero. */
+  bodyweight: number | null;
   parentSetId: string | null;
   weight: number | null;
   reps: number | null;
@@ -78,13 +83,15 @@ export function setCountsByGroup(sets: StatSet[]): Record<MuscleGroup, number> {
   return counts;
 }
 
-/** Volume esterno di una serie: carico × ripetizioni, 0 se non è misurabile. */
+/** Volume esterno di una serie: carico × ripetizioni, corpo libero incluso. */
 export function volumeOf(set: StatSet): number {
-  if (!countsTowardVolume(set.setType)) return 0;
-  const weight = set.weight ?? 0;
-  const reps = set.reps ?? 0;
-  if (weight <= 0 || reps <= 0) return 0;
-  return weight * reps;
+  return setVolumeKg({
+    setType: set.setType,
+    trackingType: set.trackingType,
+    weight: set.weight,
+    reps: set.reps,
+    bodyweight: set.bodyweight,
+  });
 }
 
 export type WeekBucket = {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Muscle, SetType } from '@/db/enums';
+import type { Muscle, SetType, TrackingType } from '@/db/enums';
 import {
   SECONDARY_SET_WEIGHT,
   bucketByWeek,
@@ -23,6 +23,8 @@ function makeSet(overrides: Partial<StatSet> = {}): StatSet {
     primaryMuscle: 'chest' as Muscle,
     secondaryMuscles: [],
     setType: 'working' as SetType,
+    trackingType: 'weight_reps' as TrackingType,
+    bodyweight: null,
     parentSetId: null,
     weight: 100,
     reps: 8,
@@ -88,6 +90,50 @@ describe('volumeOf', () => {
     expect(volumeOf(makeSet({ weight: null }))).toBe(0);
     expect(volumeOf(makeSet({ weight: -15 }))).toBe(0);
     expect(volumeOf(makeSet({ reps: null }))).toBe(0);
+  });
+
+  it('il corpo libero conta il peso corporeo per ripetizioni', () => {
+    expect(
+      volumeOf(
+        makeSet({ trackingType: 'bodyweight_reps', weight: null, reps: 10, bodyweight: 80 }),
+      ),
+    ).toBe(800);
+  });
+
+  it('senza peso corporeo il corpo libero non inventa volume', () => {
+    expect(
+      volumeOf(makeSet({ trackingType: 'bodyweight_reps', weight: null, reps: 10, bodyweight: null })),
+    ).toBe(0);
+  });
+
+  it('il corpo libero zavorrato somma peso e zavorra', () => {
+    expect(
+      volumeOf(
+        makeSet({ trackingType: 'weighted_bodyweight', weight: 20, reps: 5, bodyweight: 80 }),
+      ),
+    ).toBe(500);
+  });
+
+  it('la zavorra conta anche quando il peso corporeo manca', () => {
+    expect(
+      volumeOf(makeSet({ trackingType: 'weighted_bodyweight', weight: 20, reps: 5, bodyweight: null })),
+    ).toBe(100);
+  });
+
+  it('il corpo libero assistito toglie l’aiuto dal peso corporeo', () => {
+    expect(
+      volumeOf(
+        makeSet({ trackingType: 'assisted_bodyweight', weight: -20, reps: 5, bodyweight: 80 }),
+      ),
+    ).toBe(300);
+  });
+
+  it('assistenza maggiore del peso non produce volume negativo', () => {
+    expect(
+      volumeOf(
+        makeSet({ trackingType: 'assisted_bodyweight', weight: -100, reps: 5, bodyweight: 80 }),
+      ),
+    ).toBe(0);
   });
 });
 
