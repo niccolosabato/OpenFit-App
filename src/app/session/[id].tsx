@@ -186,6 +186,14 @@ export default function SessionDetailScreen() {
           nel punto più facile da sfiorare reggendo il telefono. */}
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={session.name} scrollable={false}>
         <SheetAction
+          label="Modifica l’allenamento"
+          description="Correggi serie, aggiungi o togli esercizi. Durata e data restano quelle di allora."
+          onPress={() => {
+            setMenuOpen(false);
+            router.push({ pathname: '/session/active', params: { id } });
+          }}
+        />
+        <SheetAction
           label="Elimina l’allenamento"
           description="Sparisce dallo storico e dalle statistiche."
           destructive

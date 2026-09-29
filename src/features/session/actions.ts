@@ -6,7 +6,7 @@
  * delle statistiche.
  */
 
-import { deleteSession, discardSession, updateSessionSet } from '@/db/queries/sessions';
+import { deleteSession, discardSession, finishSession, updateSessionSet } from '@/db/queries/sessions';
 import type { SessionSet } from '@/db/schema';
 import { applyRecords, rebuildRecords, type RecordHit } from '@/features/stats/records';
 
@@ -61,5 +61,19 @@ export function removeSession(sessionId: string): void {
 /** Scarta la sessione in corso; se aveva già segnato record, li ritira. */
 export function abandonSession(sessionId: string): void {
   discardSession(sessionId);
+  rebuildRecords();
+}
+
+/**
+ * Chiude la modifica di una sessione già completata.
+ *
+ * Ricalcola i totali e ricostruisce i record da zero: durante la modifica i
+ * valori sono cambiati, quindi la cache dei primati non è più affidabile —
+ * abbassare un carico deve far retrocedere il record al secondo risultato, e
+ * solo un ricalcolo lo trova. Stato, orario di fine e durata restano quelli
+ * originali (vedi `finishSession`).
+ */
+export function saveSessionEdits(sessionId: string): void {
+  finishSession(sessionId);
   rebuildRecords();
 }

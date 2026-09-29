@@ -467,16 +467,20 @@ export function finishSession(sessionId: string, notes?: string, perceivedEffort
       (sessionExerciseId) => trackingTypeByExercise.get(sessionExerciseId) ?? 'weight_reps',
       session.bodyweight,
     );
-    const endedAt = new Date();
+
+    // Una sessione già chiusa e riaperta per la modifica conserva il suo
+    // orario di fine e la sua durata: correggere una serie vecchia non deve
+    // allungare l'allenamento fino ad adesso.
+    const endedAt = session.endedAt ?? new Date();
+    const durationSeconds =
+      session.durationSeconds ??
+      Math.max(0, Math.round((endedAt.getTime() - session.startedAt.getTime()) / 1000));
 
     tx.update(workoutSessions)
       .set({
         status: 'completed',
         endedAt,
-        durationSeconds: Math.max(
-          0,
-          Math.round((endedAt.getTime() - session.startedAt.getTime()) / 1000),
-        ),
+        durationSeconds,
         notes: notes ?? session.notes,
         perceivedEffort: perceivedEffort ?? session.perceivedEffort,
         ...totals,

@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Pressable, Keyboard, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -42,6 +42,7 @@ import {
   moveSessionExercise,
   removeSessionExercise,
   sessionExercisesQuery,
+  sessionQuery,
   sessionSetsQuery,
   updateSessionBodyweight,
   updateSessionSet,
@@ -50,7 +51,13 @@ import { useLiveRows } from '@/db/live';
 import type { SessionExercise, SessionSet } from '@/db/schema';
 import { ExerciseRail } from '@/features/session/exercise-rail';
 import { PlateSheet } from '@/features/session/plate-sheet';
-import { abandonSession, completeSet, uncompleteSet, type SetValues } from '@/features/session/actions';
+import {
+  abandonSession,
+  completeSet,
+  saveSessionEdits,
+  uncompleteSet,
+  type SetValues,
+} from '@/features/session/actions';
 import { describeRecordHits } from '@/features/session/record-message';
 import { SetRow, SetRowHeader } from '@/features/session/set-row';
 import { RestTimerBar } from '@/features/timer/rest-timer-bar';
@@ -75,11 +82,21 @@ export default function ActiveSessionScreen() {
   const stopRest = useRestTimer((s) => s.stop);
   const { running: restRunning } = useRestCountdown();
 
+  // Con `?id=` la schermata non apre la sessione in corso ma ne modifica una
+  // già conclusa: la seduta resta `completed` per tutto il tempo, così storico,
+  // barra "allenamento in corso" e invariante della sessione unica non si
+  // accorgono della modifica. A salvare ci pensa `saveSessionEdits`.
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = typeof id === 'string' && id.length > 0;
+
   // `useLiveRows` e non `useLiveQuery`: qui la prima lettura deve essere già
   // arrivata al primo render. La sessione entra dal basso con un'animazione da
   // trecento millisecondi, e con una lettura che arriva dopo si legge
   // «Allenamento vuoto» per tutta l'entrata, prima che compaia la seduta vera.
-  const sessionRows = useLiveRows(activeSessionQuery());
+  const sessionRows = useLiveRows(
+    useMemo(() => (editing ? sessionQuery(id) : activeSessionQuery()), [editing, id]),
+    [editing, id],
+  );
   const session = sessionRows[0];
   const sessionId = session?.id ?? '';
 
@@ -149,20 +166,20 @@ export default function ActiveSessionScreen() {
   // Lo schermo resta acceso per tutta la seduta: fra una serie e l'altra il
   // telefono è appoggiato sulla panca e riaccenderlo ogni volta è un attrito.
   useEffect(() => {
-    if (!session || !settings.keepAwake) return;
+    if (!session || !settings.keepAwake || editing) return;
     activateKeepAwakeAsync('openfit-session').catch(() => {});
     return () => {
       deactivateKeepAwake('openfit-session');
     };
-  }, [session, settings.keepAwake]);
+  }, [session, settings.keepAwake, editing]);
 
   // Canale e permesso si preparano all'apertura della sessione, non alla
   // prima serie: così il primo recupero non aspetta un dialogo di sistema già
   // aperto, che è la finestra in cui la notifica poteva perdersi.
   useEffect(() => {
-    if (!session || !settings.timerNotification) return;
+    if (!session || !settings.timerNotification || editing) return;
     prepareRestNotifications(settings.timerSound);
-  }, [session, settings.timerNotification, settings.timerSound]);
+  }, [session, settings.timerNotification, settings.timerSound, editing]);
 
   // Le misure sono indicizzate per posizione: togliendo un esercizio, quelle
   // in coda resterebbero appese a indici che non esistono più, e lo
@@ -175,13 +192,25 @@ export default function ActiveSessionScreen() {
   // Durata della seduta, ricalcolata dall'orario di inizio (non accumulata):
   // resta giusta anche se l'app è stata in background.
   useEffect(() => {
-    if (!session) return;
+    if (!session || editing) return;
     const update = () =>
       setElapsed(Math.max(0, Math.round((Date.now() - session.startedAt.getTime()) / 1000)));
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session, editing]);
+
+  // Modificando una seduta conclusa si scrive subito sul database, come durante
+  // l'allenamento: uscire senza premere "Salva" lascerebbe totali e record
+  // disallineati. Il salvataggio scatta anche all'uscita, e la guardia evita di
+  // farlo due volte quando si esce dal pulsante.
+  const committed = useRef(false);
+  useEffect(() => {
+    if (!editing || !sessionId) return;
+    return () => {
+      if (!committed.current) saveSessionEdits(sessionId);
+    };
+  }, [editing, sessionId]);
 
   /**
    * Prestazione precedente per ogni esercizio.
@@ -250,7 +279,7 @@ export default function ActiveSessionScreen() {
    * passare all'esercizio successivo.
    */
   function startRestFor(sessionExerciseId: string) {
-    if (!settings.autoStartTimer) return;
+    if (!settings.autoStartTimer || editing) return;
 
     const index = items.findIndex((i) => i.sessionExercise.id === sessionExerciseId);
     if (index < 0) return;
@@ -483,13 +512,21 @@ export default function ActiveSessionScreen() {
     setFinishOpen(true);
   }
 
+  /** Chiude la modifica: ricalcola totali e record e torna al dettaglio. */
+  function handleSaveEdit() {
+    committed.current = true;
+    saveSessionEdits(sessionId);
+    router.back();
+  }
+
   return (
     <Screen
       padded={false}
       header={
         <SessionHeader
           name={session.name}
-          elapsed={elapsed}
+          editing={editing}
+          elapsed={editing ? (session.durationSeconds ?? 0) : elapsed}
           volume={formatVolume(totals.totalVolume, settings.unit)}
           sets={String(totals.totalSets)}
           progress={progress}
@@ -520,7 +557,16 @@ export default function ActiveSessionScreen() {
        */
       actionBar={
         <ActionBar>
-          {restRunning ? (
+          {editing ? (
+            <ActionBarPrimary>
+              <Button
+                title="Salva modifiche"
+                size="lg"
+                fullWidth
+                onPress={handleSaveEdit}
+              />
+            </ActionBarPrimary>
+          ) : restRunning ? (
             <RestTimerBar />
           ) : items.length === 0 ? (
             <ActionBarPrimary>
@@ -611,39 +657,56 @@ export default function ActiveSessionScreen() {
           }}
         />
         <SheetAction
-          label="Riduci a icona"
-          description="L'allenamento resta aperto, la barra in fondo lo riporta qui."
+          label={editing ? 'Chiudi la modifica' : 'Riduci a icona'}
+          description={
+            editing
+              ? 'Le modifiche vengono salvate e l’allenamento torna nello storico.'
+              : 'L\'allenamento resta aperto, la barra in fondo lo riporta qui.'
+          }
           onPress={() => {
             setSessionMenuOpen(false);
-            router.back();
+            if (editing) handleSaveEdit();
+            else router.back();
           }}
         />
-        <SheetAction
-          label="Termina e salva"
-          onPress={() => {
-            setSessionMenuOpen(false);
-            confirmFinish();
-          }}
-        />
-        <SheetAction
-          label="Scarta l’allenamento"
-          destructive
-          onPress={() => {
-            setSessionMenuOpen(false);
-            confirm({
-              title: 'Scartare l’allenamento?',
-              message: 'Le serie registrate vanno perse.',
-              action: {
-                label: 'Scarta',
-                destructive: true,
-                onPress: () => {
-                  abandonSession(sessionId);
-                  router.back();
+        {editing ? (
+          <SheetAction
+            label="Salva modifiche"
+            onPress={() => {
+              setSessionMenuOpen(false);
+              handleSaveEdit();
+            }}
+          />
+        ) : (
+          <SheetAction
+            label="Termina e salva"
+            onPress={() => {
+              setSessionMenuOpen(false);
+              confirmFinish();
+            }}
+          />
+        )}
+        {editing ? null : (
+          <SheetAction
+            label="Scarta l’allenamento"
+            destructive
+            onPress={() => {
+              setSessionMenuOpen(false);
+              confirm({
+                title: 'Scartare l’allenamento?',
+                message: 'Le serie registrate vanno perse.',
+                action: {
+                  label: 'Scarta',
+                  destructive: true,
+                  onPress: () => {
+                    abandonSession(sessionId);
+                    router.back();
+                  },
                 },
-              },
-            });
-          }}
-        />
+              });
+            }}
+          />
+        )}
       </Sheet>
 
       {/* ──────────────────────────────────────────────────────── riordino ── */}
@@ -841,6 +904,7 @@ export default function ActiveSessionScreen() {
  */
 function SessionHeader({
   name,
+  editing,
   elapsed,
   volume,
   sets,
@@ -849,6 +913,7 @@ function SessionHeader({
   rail,
 }: {
   name: string;
+  editing: boolean;
   elapsed: number;
   volume: string;
   sets: string;
@@ -873,10 +938,22 @@ function SessionHeader({
         borderRightWidth: 0,
       }}>
       <View style={[styles.headerRow, { paddingHorizontal: theme.space.lg }]}>
-        <IconButton icon="chevron-down" label="Riduci a icona" size={28} onPress={() => router.back()} />
-        <Text variant="heading" style={{ flex: 1 }} numberOfLines={1}>
-          {name}
-        </Text>
+        <IconButton
+          icon="chevron-down"
+          label={editing ? 'Chiudi la modifica' : 'Riduci a icona'}
+          size={28}
+          onPress={() => router.back()}
+        />
+        <View style={{ flex: 1, gap: theme.space.xs }}>
+          {editing ? (
+            <Text variant="label" tone="accent">
+              Modifica
+            </Text>
+          ) : null}
+          <Text variant="heading" numberOfLines={1}>
+            {name}
+          </Text>
+        </View>
         <IconButton icon="dots-horizontal" label="Opzioni dell'allenamento" surface onPress={onMenu} />
       </View>
 
