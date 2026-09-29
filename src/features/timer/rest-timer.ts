@@ -20,7 +20,14 @@ import { create } from 'zustand';
 
 import { cancelScheduled, scheduleRestEnd } from './local-notifications';
 
-export { NOTIFICATIONS_AVAILABLE, requestNotificationPermission } from './local-notifications';
+export {
+  NEEDS_EXACT_ALARM_PERMISSION,
+  NOTIFICATIONS_AVAILABLE,
+  dismissPresented,
+  openExactAlarmSettings,
+  prepareRestNotifications,
+  requestNotificationPermission,
+} from './local-notifications';
 
 /** Di quanto aggiustano i tasti +/− sul countdown. */
 export const REST_ADJUST_STEP = 15;
@@ -36,6 +43,8 @@ type RestTimerState = {
   duration: number;
   /** Nome dell'esercizio da cui si sta recuperando. */
   label: string | null;
+  /** Recupero fra le serie oppure timer libero: cambia solo l'intestazione. */
+  kind: TimerKind;
   /** Notifica schedulata, da annullare se il recupero finisce prima. */
   notificationId: string | null;
 
@@ -48,121 +57,155 @@ type RestTimerState = {
   stop: () => void;
 };
 
+/** Recupero fra le serie o timer libero: stessa macchina, intestazione diversa. */
+export type TimerKind = 'rest' | 'timer';
+
 export type TimerOptions = {
   sound: boolean;
   notify: boolean;
+  /** Assente = recupero. Il timer libero lo imposta a `'timer'`. */
+  kind?: TimerKind;
 };
 
 function cancel(notificationId: string | null): void {
   cancelScheduled(notificationId);
 }
 
-export const useRestTimer = create<RestTimerState>((set, get) => ({
-  endsAt: null,
-  pausedRemaining: null,
-  duration: 0,
-  label: null,
-  notificationId: null,
+/**
+ * Numero d'ordine dell'ultima schedulazione richiesta.
+ *
+ * `scheduleRestEnd` è asincrono e passa da un eventuale dialogo di sistema: fra
+ * la richiesta e l'id che torna indietro il timer può essere stato aggiustato,
+ * messo in pausa o saltato. Senza un contatore, una schedulazione vecchia che
+ * rientra per ultima scriverebbe il suo id al posto di quello giusto, lasciando
+ * in giro una notifica che suonerà al momento sbagliato — o nascondendo quella
+ * buona. Incrementandolo a ogni rilascio, i rientri fuori tempo si annullano da
+ * soli.
+ */
+let scheduleSeq = 0;
 
-  start: (seconds, label, options) => {
+export const useRestTimer = create<RestTimerState>((set, get) => {
+  /** Annulla la notifica corrente (o quella in arrivo) e invalida i rientri. */
+  function release(): void {
     cancel(get().notificationId);
+    scheduleSeq += 1;
+    set({ notificationId: null });
+  }
 
-    if (seconds <= 0) {
-      set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
+  /**
+   * Programma la notifica di fine recupero, tenendo solo l'ultima richiesta.
+   *
+   * Cancella sempre quella precedente prima di chiedere, così due tocchi ravvicinati
+   * non lasciano in piedi due allarmi per lo stesso recupero.
+   */
+  function schedule(seconds: number, label: string | null, options: TimerOptions): void {
+    cancel(get().notificationId);
+    scheduleSeq += 1;
+    const seq = scheduleSeq;
+
+    if (!options.notify) {
+      set({ notificationId: null });
       return;
     }
 
-    set({
-      endsAt: Date.now() + seconds * 1000,
-      pausedRemaining: null,
-      duration: seconds,
-      label,
-      notificationId: null,
+    scheduleRestEnd(seconds, label, options.sound).then((id) => {
+      // Non è più la richiesta corrente, o il recupero è stato chiuso nel
+      // frattempo: questa notifica va cancellata, non registrata.
+      if (seq !== scheduleSeq || get().endsAt === null) cancel(id);
+      else set({ notificationId: id });
     });
+  }
 
-    if (options.notify) {
-      scheduleRestEnd(seconds, label, options.sound).then((id) => {
-        // Se nel frattempo il recupero è stato saltato, la notifica non serve più.
-        if (get().endsAt === null) cancel(id);
-        else set({ notificationId: id });
-      });
-    }
-  },
+  return {
+    endsAt: null,
+    pausedRemaining: null,
+    duration: 0,
+    label: null,
+    kind: 'rest',
+    notificationId: null,
 
-  adjust: (deltaSeconds, options) => {
-    const { endsAt, pausedRemaining, duration, label, notificationId } = get();
-    if (endsAt === null && pausedRemaining === null) return;
-
-    cancel(notificationId);
-
-    // In pausa si aggiusta il residuo congelato: il conto riparte solo alla
-    // ripresa, con la sua notifica.
-    if (pausedRemaining !== null) {
-      const nextRemaining = pausedRemaining + deltaSeconds;
-
-      if (nextRemaining <= 0) {
-        set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
+    start: (seconds, label, options) => {
+      if (seconds <= 0) {
+        release();
+        set({ endsAt: null, pausedRemaining: null, duration: 0, label: null });
         return;
       }
 
       set({
-        pausedRemaining: nextRemaining,
-        duration: Math.max(duration + deltaSeconds, nextRemaining),
+        endsAt: Date.now() + seconds * 1000,
+        pausedRemaining: null,
+        duration: seconds,
+        label,
+        kind: options.kind ?? 'rest',
         notificationId: null,
       });
-      return;
-    }
 
-    const nextEndsAt = endsAt! + deltaSeconds * 1000;
-    const remaining = Math.round((nextEndsAt - Date.now()) / 1000);
+      schedule(seconds, label, options);
+    },
 
-    if (remaining <= 0) {
-      set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
-      return;
-    }
+    adjust: (deltaSeconds, options) => {
+      const { endsAt, pausedRemaining, duration, label } = get();
+      if (endsAt === null && pausedRemaining === null) return;
 
-    set({
-      endsAt: nextEndsAt,
-      duration: Math.max(duration + deltaSeconds, remaining),
-      notificationId: null,
-    });
+      // In pausa si aggiusta il residuo congelato: il conto riparte solo alla
+      // ripresa, con la sua notifica.
+      if (pausedRemaining !== null) {
+        release();
 
-    if (options.notify) {
-      scheduleRestEnd(remaining, label, options.sound).then((id) => {
-        if (get().endsAt === null) cancel(id);
-        else set({ notificationId: id });
+        const nextRemaining = pausedRemaining + deltaSeconds;
+
+        if (nextRemaining <= 0) {
+          set({ endsAt: null, pausedRemaining: null, duration: 0, label: null });
+          return;
+        }
+
+        set({
+          pausedRemaining: nextRemaining,
+          duration: Math.max(duration + deltaSeconds, nextRemaining),
+        });
+        return;
+      }
+
+      const nextEndsAt = endsAt! + deltaSeconds * 1000;
+      const remaining = Math.round((nextEndsAt - Date.now()) / 1000);
+
+      if (remaining <= 0) {
+        release();
+        set({ endsAt: null, pausedRemaining: null, duration: 0, label: null });
+        return;
+      }
+
+      set({
+        endsAt: nextEndsAt,
+        duration: Math.max(duration + deltaSeconds, remaining),
       });
-    }
-  },
 
-  pause: () => {
-    const { endsAt, notificationId } = get();
-    if (endsAt === null) return; // già fermo o già in pausa
+      schedule(remaining, label, options);
+    },
 
-    const remaining = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
-    cancel(notificationId);
-    set({ endsAt: null, pausedRemaining: remaining, notificationId: null });
-  },
+    pause: () => {
+      const { endsAt } = get();
+      if (endsAt === null) return; // già fermo o già in pausa
 
-  resume: (options) => {
-    const { pausedRemaining, label } = get();
-    if (pausedRemaining === null) return;
+      const remaining = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+      release();
+      set({ endsAt: null, pausedRemaining: remaining });
+    },
 
-    set({ endsAt: Date.now() + pausedRemaining * 1000, pausedRemaining: null });
+    resume: (options) => {
+      const { pausedRemaining, label } = get();
+      if (pausedRemaining === null) return;
 
-    if (options.notify) {
-      scheduleRestEnd(pausedRemaining, label, options.sound).then((id) => {
-        if (get().endsAt === null) cancel(id);
-        else set({ notificationId: id });
-      });
-    }
-  },
+      set({ endsAt: Date.now() + pausedRemaining * 1000, pausedRemaining: null });
+      schedule(pausedRemaining, label, options);
+    },
 
-  stop: () => {
-    cancel(get().notificationId);
-    set({ endsAt: null, pausedRemaining: null, duration: 0, label: null, notificationId: null });
-  },
-}));
+    stop: () => {
+      release();
+      set({ endsAt: null, pausedRemaining: null, duration: 0, label: null });
+    },
+  };
+});
 
 /** Vibrazione di conferma quando si spunta una serie. */
 export function tapFeedback(enabled: boolean): void {

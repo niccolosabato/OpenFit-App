@@ -12,6 +12,9 @@
     "android": {
       "package": "com.niccolosabato.openfit",
       "versionCode": 3,
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#08080B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,7 +42,7 @@
         "expo-notifications",
         {
           "color": "#C9F53A",
-          "defaultChannel": "rest-timer"
+          "defaultChannel": "rest-timer-v2"
         }
       ],
       "expo-sharing",

@@ -13,6 +13,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -22,6 +23,7 @@ import { bootstrapDatabase } from '@/db/bootstrap';
 import { db } from '@/db/client';
 import { ToastHost } from '@/components/ui/toast';
 import { ConfirmHost } from '@/components/ui/confirm';
+import { dismissPresented } from '@/features/timer/local-notifications';
 import { OnboardingFlow } from '@/features/onboarding/onboarding-flow';
 import { SettingsProvider, useSettings } from '@/store/settings';
 import { ThemeProvider } from '@/theme';
@@ -57,6 +59,18 @@ const BOOT_TIMEOUT_MS = 10_000;
  */
 function AppRoutes() {
   const { settings, isLoaded } = useSettings();
+
+  // Il recupero può essere finito mentre il telefono era in tasca: quando si
+  // riapre l'app quella notifica è già stata letta e non deve restare nella
+  // tendina. Si toccano solo le notifiche presentate, mai quelle programmate.
+  useEffect(() => {
+    const clear = () => dismissPresented();
+    clear();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') clear();
+    });
+    return () => subscription.remove();
+  }, []);
 
   if (!isLoaded) return <BootScreen message="Carico il profilo…" />;
 

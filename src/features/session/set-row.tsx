@@ -12,6 +12,7 @@ import { formatDuration } from '@/lib/format';
 import { formatNumber, fromKg, toKg } from '@/lib/units';
 import type { EffortScale, WeightUnit } from '@/db/enums';
 import { useTheme } from '@/theme';
+import { useSetStopwatch, useSetStopwatchStore } from '@/features/timer/set-stopwatch';
 import type { SetValues } from './actions';
 
 /** Larghezza delle colonne fisse: indice a sinistra, spunta a destra. */
@@ -20,6 +21,8 @@ const CHECK_WIDTH = 48;
 /** Altezza di una riga e delle celle che contiene. */
 const ROW_HEIGHT = 60;
 const CELL_HEIGHT = 44;
+/** Larghezza del cronometro, accanto al campo della durata. */
+const STOPWATCH_WIDTH = 44;
 /** Spessore della barretta che marca a sinistra una serie fatta. */
 const DONE_MARK = 3;
 
@@ -48,6 +51,9 @@ export function SetRowHeader({ tracking, effortScale, unit }: { tracking: Tracki
           Tempo
         </Text>
       ) : null}
+      {/* Spazio del cronometro, così le colonne che seguono restano allineate
+          fra intestazione e righe. */}
+      {usesDuration(tracking) ? <View style={{ width: STOPWATCH_WIDTH }} /> : null}
       {effortScale !== 'none' ? (
         <Text variant="label" tone="faint" style={[styles.effortCell, styles.centered]}>
           {effortScale === 'rir' ? 'RIR' : 'RPE'}
@@ -177,6 +183,19 @@ export function SetRow({
     onChange(currentValues());
   }
 
+  /**
+   * Riempie la durata con i secondi cronometrati e la consolida subito.
+   *
+   * Non passa da `commit()`: quel percorso legge `duration` dallo stato locale,
+   * che `setDuration` non ha ancora aggiornato nello stesso giro. Si costruisce
+   * il valore a mano.
+   */
+  function applyStopwatch(seconds: number) {
+    setDuration(String(seconds));
+    focusedRef.current = false;
+    onChange({ ...currentValues(), durationSeconds: seconds });
+  }
+
   /** Ricopia la prestazione precedente nei campi: il caso più frequente. */
   function copyPrevious() {
     if (!previous) return;
@@ -289,6 +308,8 @@ export function SetRow({
           placeholder={previous?.durationSeconds != null ? String(previous.durationSeconds) : 's'}
         />
       ) : null}
+
+      {usesDuration(tracking) ? <StopwatchButton setId={set.id} onStop={applyStopwatch} /> : null}
 
       {effortScale !== 'none' ? (
         <Cell
@@ -456,6 +477,54 @@ function Cell({
   );
 }
 
+/**
+ * Il cronometro di una serie a tempo.
+ *
+ * Tocca per partire, tocca per fermare: al fermo i secondi finiscono nel campo
+ * della durata e la serie è pronta da spuntare. Il numero si legge sul tasto
+ * stesso, così non serve tenere gli occhi sul campo mentre si tiene la posizione.
+ */
+function StopwatchButton({ setId, onStop }: { setId: string; onStop: (seconds: number) => void }) {
+  const theme = useTheme();
+  const { running, elapsed } = useSetStopwatch(setId);
+  const start = useSetStopwatchStore((s) => s.start);
+  const stop = useSetStopwatchStore((s) => s.stop);
+
+  return (
+    <Pressable
+      onPress={() => {
+        if (!running) {
+          start(setId);
+          return;
+        }
+        const result = stop();
+        if (result && result.setKey === setId) onStop(result.seconds);
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={running ? 'Ferma il cronometro' : 'Avvia il cronometro'}
+      accessibilityHint="Cronometra la serie a tempo e riempie il campo con i secondi"
+      style={({ pressed }) => [
+        styles.stopwatch,
+        {
+          height: CELL_HEIGHT,
+          width: STOPWATCH_WIDTH,
+          borderRadius: theme.radius.md,
+          backgroundColor: running ? theme.colors.accentGlow : theme.colors.surface2,
+          borderColor: running ? theme.colors.accent : theme.colors.border,
+        },
+        pressed && { opacity: 0.7 },
+      ]}>
+      {running ? (
+        <Text variant="caption" tone="accent" numeric numberOfLines={1}>
+          {formatDuration(elapsed)}
+        </Text>
+      ) : (
+        <MaterialCommunityIcons name="timer-outline" size={18} color={theme.colors.textFaint} />
+      )}
+    </Pressable>
+  );
+}
+
 /** `100 × 8`, `45"`, `8 rip` — com'è andata la volta scorsa, in una riga. */
 function describePrevious(set: SessionSet, tracking: TrackingType, unit: WeightUnit): string {
   if (usesDuration(tracking)) {
@@ -505,6 +574,12 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
   check: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    overflow: 'hidden',
+  },
+  stopwatch: {
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth * 2,

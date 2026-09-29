@@ -66,7 +66,7 @@ export const semantic = {
  *
  * L'ordine non è un dettaglio: è quello in cui compaiono nel profilo e nella
  * presentazione, e girando la ruota — verde acido, verde, ciano, blu, viola,
- * fucsia, rosa, ambra — le due file da quattro si leggono come uno spettro
+ * fucsia, rosso, ambra — le due file da quattro si leggono come uno spettro
  * invece che come otto colori messi in fila a caso.
  */
 export type AccentKey =
@@ -152,13 +152,16 @@ export const ACCENTS: Record<AccentKey, Accent> = {
     edge: 'rgba(232, 121, 249, 0.35)',
     halo: 'rgba(232, 121, 249, 0.08)',
   },
+  // La chiave resta `rose` per non invalidare la scelta salvata in `settings`:
+  // è un valore persistito, e rinominarlo azzererebbe il tema a chi l'aveva
+  // scelto. Quello che si vede è `ACCENT_LABELS`, che dice "Rosso".
   rose: {
-    base: '#FF7A90',
-    dim: '#9B3B49',
-    on: '#180308',
-    glow: 'rgba(255, 122, 144, 0.15)',
-    edge: 'rgba(255, 122, 144, 0.35)',
-    halo: 'rgba(255, 122, 144, 0.08)',
+    base: '#FF4D4D',
+    dim: '#A62B2B',
+    on: '#1A0303',
+    glow: 'rgba(255, 77, 77, 0.15)',
+    edge: 'rgba(255, 77, 77, 0.35)',
+    halo: 'rgba(255, 77, 77, 0.08)',
   },
   amber: {
     base: '#FFC43D',
@@ -177,7 +180,7 @@ export const ACCENT_LABELS: Record<AccentKey, string> = {
   blue: 'Blu',
   violet: 'Viola',
   fuchsia: 'Fucsia',
-  rose: 'Rosa',
+  rose: 'Rosso',
   amber: 'Ambra',
 };
 

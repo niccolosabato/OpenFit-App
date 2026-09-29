@@ -19,7 +19,11 @@ import { useToast } from '@/components/ui/toast';
 import { EFFORT_SCALE_LABELS, type EffortScale, type WeightUnit } from '@/db/enums';
 import { wipeAllData } from '@/db/queries/backup';
 import { pickAndRestoreBackup, shareBackup } from '@/features/settings/backup-actions';
-import { NOTIFICATIONS_AVAILABLE } from '@/features/timer/rest-timer';
+import {
+  NEEDS_EXACT_ALARM_PERMISSION,
+  NOTIFICATIONS_AVAILABLE,
+  openExactAlarmSettings,
+} from '@/features/timer/rest-timer';
 import { formatRest } from '@/lib/format';
 import { formatWeight, UNIT_LABEL, WEIGHT_STEP } from '@/lib/units';
 import { Surface } from '@/components/ui/surface';
@@ -239,6 +243,17 @@ export default function ProfileScreen() {
             onChange={(timerSound) => update({ timerSound })}
             disabled={!settings.timerNotification || !NOTIFICATIONS_AVAILABLE}
           />
+          {/* Solo da Android 14 in su, dove il permesso non è più concesso in
+              partenza: lì senza "Sveglie e promemoria" il timer può ritardare
+              o non arrivare a schermo bloccato. */}
+          {NEEDS_EXACT_ALARM_PERMISSION && NOTIFICATIONS_AVAILABLE ? (
+            <NavRow
+              label="Allarmi esatti"
+              description="Apri le impostazioni e consenti le sveglie, così il timer a fine recupero è puntuale."
+              icon="alarm"
+              onPress={openExactAlarmSettings}
+            />
+          ) : null}
           <SwitchRow
             label="Vibrazione"
             description="Alla spunta di una serie, a fine recupero e quando si prende un esercizio per spostarlo."

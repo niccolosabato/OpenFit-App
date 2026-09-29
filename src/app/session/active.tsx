@@ -12,6 +12,7 @@ import { Surface } from '@/components/ui/surface';
 import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { NumberStepper } from '@/components/ui/number-stepper';
 import { ProgressBar, ProgressRing } from '@/components/ui/progress';
 import { Screen, useScreenChrome } from '@/components/ui/screen';
 import { Sheet, SheetAction } from '@/components/ui/sheet';
@@ -52,7 +53,7 @@ import { describeRecordHits } from '@/features/session/record-message';
 import { SetRow, SetRowHeader } from '@/features/session/set-row';
 import { RestTimerBar } from '@/features/timer/rest-timer-bar';
 import { useRestCountdown } from '@/features/timer/use-countdown';
-import { tapFeedback, useRestTimer } from '@/features/timer/rest-timer';
+import { prepareRestNotifications, tapFeedback, useRestTimer } from '@/features/timer/rest-timer';
 import { formatDuration } from '@/lib/format';
 import { formatVolume } from '@/lib/units';
 import { useSettings } from '@/store/settings';
@@ -69,6 +70,7 @@ export default function ActiveSessionScreen() {
   const { settings } = useSettings();
   const showToast = useToast((s) => s.show);
   const startRest = useRestTimer((s) => s.start);
+  const stopRest = useRestTimer((s) => s.stop);
   const { running: restRunning } = useRestCountdown();
 
   // `useLiveRows` e non `useLiveQuery`: qui la prima lettura deve essere già
@@ -131,6 +133,8 @@ export default function ActiveSessionScreen() {
   const [finishOpen, setFinishOpen] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [reorderOpen, setReorderOpen] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState<number | null>(settings.defaultRestSeconds);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Posizione e altezza di ogni card: le scrivono le card, le legge lo
@@ -147,6 +151,14 @@ export default function ActiveSessionScreen() {
       deactivateKeepAwake('openfit-session');
     };
   }, [session, settings.keepAwake]);
+
+  // Canale e permesso si preparano all'apertura della sessione, non alla
+  // prima serie: così il primo recupero non aspetta un dialogo di sistema già
+  // aperto, che è la finestra in cui la notifica poteva perdersi.
+  useEffect(() => {
+    if (!session || !settings.timerNotification) return;
+    prepareRestNotifications(settings.timerSound);
+  }, [session, settings.timerNotification, settings.timerSound]);
 
   // Le misure sono indicizzate per posizione: togliendo un esercizio, quelle
   // in coda resterebbero appese a indici che non esistono più, e lo
@@ -547,6 +559,24 @@ export default function ActiveSessionScreen() {
           }}
         />
         <SheetAction
+          label="Avvia un timer"
+          description="Un countdown libero: stretching, tenute, recuperi lunghi."
+          onPress={() => {
+            setSessionMenuOpen(false);
+            setTimerSeconds(settings.defaultRestSeconds);
+            setTimerOpen(true);
+          }}
+        />
+        {restRunning ? (
+          <SheetAction
+            label="Ferma il timer"
+            onPress={() => {
+              setSessionMenuOpen(false);
+              stopRest();
+            }}
+          />
+        ) : null}
+        <SheetAction
           label="Riduci a icona"
           description="L'allenamento resta aperto, la barra in fondo lo riporta qui."
           onPress={() => {
@@ -676,6 +706,26 @@ export default function ActiveSessionScreen() {
           onPress={() => {
             if (menuExercise) removeSessionExercise(menuExercise.id);
             setMenuExercise(null);
+          }}
+        />
+      </Sheet>
+
+      {/* ─────────────────────────────────────────────────── timer libero ── */}
+      <Sheet visible={timerOpen} onClose={() => setTimerOpen(false)} title="Timer libero" scrollable={false}>
+        <Text variant="caption" tone="dim">
+          Un countdown che non è legato a una serie: parte adesso e suona alla fine.
+        </Text>
+        <NumberStepper value={timerSeconds} onChange={setTimerSeconds} step={15} min={5} max={3600} suffix="s" />
+        <Button
+          title="Avvia"
+          fullWidth
+          onPress={() => {
+            setTimerOpen(false);
+            startRest(timerSeconds ?? 60, null, {
+              sound: settings.timerSound,
+              notify: settings.timerNotification,
+              kind: 'timer',
+            });
           }}
         />
       </Sheet>

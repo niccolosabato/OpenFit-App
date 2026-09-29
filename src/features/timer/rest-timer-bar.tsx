@@ -26,6 +26,7 @@ export function RestTimerBar() {
   const { settings } = useSettings();
   const { remaining, total, running, paused } = useRestCountdown();
   const label = useRestTimer((s) => s.label);
+  const kind = useRestTimer((s) => s.kind);
   const adjust = useRestTimer((s) => s.adjust);
   const pause = useRestTimer((s) => s.pause);
   const resume = useRestTimer((s) => s.resume);
@@ -40,7 +41,8 @@ export function RestTimerBar() {
     <View style={[styles.root, { gap: theme.space.md }]}>
       <View style={{ gap: theme.space.xs }}>
         <Text variant="label" tone={paused ? 'dim' : 'accent'} numberOfLines={1} style={styles.centered}>
-          Recupero{label ? ` · ${label}` : ''}
+          {kind === 'timer' ? 'Timer' : 'Recupero'}
+          {label ? ` · ${label}` : ''}
           {paused ? ' · in pausa' : ''}
         </Text>
         <Text
