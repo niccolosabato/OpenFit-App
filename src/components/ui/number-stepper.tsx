@@ -105,6 +105,7 @@ export function NumberStepper({
             placeholderTextColor={theme.colors.textFaint}
             keyboardType="decimal-pad"
             selectTextOnFocus
+            maxFontSizeMultiplier={1.0}
             style={[styles.input, typography('metric'), { color: theme.colors.text }]}
           />
           {suffix ? (
@@ -132,12 +133,15 @@ const HEIGHT = 56;
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   // 48 pieni: è il bersaglio che si preme di più in tutta l'app.
-  button: { width: 56, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  button: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
   valueBox: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   input: {
     textAlign: 'center',
     textAlignVertical: 'center',
-    minWidth: 50,
+    // Basta per tre cifre al corpo `metric`. Non di più: due stepper affiancati
+    // (le ripetizioni "da/a") devono stare in una colonna da ~140dp sui telefoni
+    // da 360, e con 50 il secondo "+" finiva tagliato fuori dalla superficie.
+    minWidth: 40,
     padding: 0,
   },
 });

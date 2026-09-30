@@ -467,6 +467,7 @@ function Cell({
         }}
         keyboardType="decimal-pad"
         selectTextOnFocus
+        maxFontSizeMultiplier={1.0}
         style={[
           styles.input,
           typography('subtitle'),

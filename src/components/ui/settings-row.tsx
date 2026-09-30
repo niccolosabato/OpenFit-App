@@ -69,7 +69,14 @@ export function SwitchRow({
     <View
       style={[
         styles.row,
-        { minHeight: theme.hit + 10, paddingHorizontal: theme.space.lg, gap: theme.space.md },
+        {
+          minHeight: theme.hit + 10,
+          paddingHorizontal: theme.space.lg,
+          // Senza padding verticale il testo di una riga con descrizione su due
+          // righe riempiva tutta l'altezza minima e toccava i bordi della card.
+          paddingVertical: theme.space.md,
+          gap: theme.space.md,
+        },
       ]}>
       <View style={{ flex: 1, gap: theme.space.xs }}>
         <Text variant="body" tone={disabled ? 'faint' : 'default'}>
@@ -115,7 +122,14 @@ export function NavRow({
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.row,
-        { minHeight: theme.hit + 10, paddingHorizontal: theme.space.lg, gap: theme.space.md },
+        {
+          minHeight: theme.hit + 10,
+          paddingHorizontal: theme.space.lg,
+          // Senza padding verticale il testo di una riga con descrizione su due
+          // righe riempiva tutta l'altezza minima e toccava i bordi della card.
+          paddingVertical: theme.space.md,
+          gap: theme.space.md,
+        },
         pressed && { backgroundColor: theme.colors.surface2 },
       ]}>
       {icon ? (

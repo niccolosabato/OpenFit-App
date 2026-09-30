@@ -152,11 +152,11 @@ export function ExerciseList({
    * che si sceglie una volta ogni tanto, passa da un foglio.
    */
   const filters = (
-    <View style={{ gap: theme.space.sm }}>
-      <View style={{ paddingHorizontal: theme.space.sm }}>
-        <SearchInput value={search} onChangeText={setSearch} placeholder="Cerca esercizio o alias…" />
-      </View>
-      <ChipRow>
+    // Lo `ScreenHeader` fa già il padding orizzontale: qui niente margini
+    // laterali propri, o la ricerca e i chip non sarebbero allineati al titolo.
+    <View style={{ gap: theme.space.md }}>
+      <SearchInput value={search} onChangeText={setSearch} placeholder="Cerca esercizio o alias…" />
+      <ChipRow inset={0}>
         <Chip
           label="Preferiti"
           icon={favoritesOnly ? 'star' : 'star-outline'}

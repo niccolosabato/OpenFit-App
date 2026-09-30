@@ -78,11 +78,9 @@ export default function StatsScreen() {
   const goal = Math.max(1, settings.weeklySessionGoal);
   const done = currentWeek?.sessionIds.size ?? 0;
 
-  const period = (
-    <View style={{ paddingHorizontal: theme.space.sm }}>
-      <Segmented options={PERIODS} value={weeks} onChange={setWeeks} />
-    </View>
-  );
+  // Nessun padding orizzontale: lo mette già lo `ScreenHeader`, che allinea
+  // titolo, azioni e filtri sullo stesso filo.
+  const period = <Segmented options={PERIODS} value={weeks} onChange={setWeeks} />;
 
   if (sets.length === 0) {
     return (

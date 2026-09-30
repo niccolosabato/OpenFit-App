@@ -158,6 +158,12 @@ export function Text({
 
   return (
     <RNText
+      // Le misure della tipografia sono di progetto e non seguono la "Dimensione
+      // testo" di Android: ingrandito, il testo sfonda i contenitori a misura
+      // fissa (pastiglie, righe a `minHeight`, celle delle serie) e l'app sembra
+      // zoomata. 1.0 è un tetto, non un blocco: chi ha il testo di sistema più
+      // piccolo continua a vederlo piccolo.
+      maxFontSizeMultiplier={1.0}
       style={[
         styles.base,
         VARIANT[variant],

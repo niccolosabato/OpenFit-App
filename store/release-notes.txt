@@ -1,0 +1,9 @@
+Note di rilascio (Novità) — Play Console, max 500 caratteri
+
+Prima versione di OpenFit!
+
+- Diario di allenamento completamente offline: nessun account, nessun server.
+- Libreria di circa 140 esercizi, schede con superset, recuperi e RPE/RIR.
+- Timer di recupero con notifica anche a schermo spento.
+- Record personali, statistiche e calcolatore dischi.
+- Backup esportabile e importabile.

@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
@@ -122,11 +122,14 @@ export function RoutineSetEditor({
       </View>
 
       {usesReps(tracking) ? (
-        <View style={{ flexDirection: 'row', gap: theme.space.md }}>
-          <View style={{ flex: 1 }}>
+        // Ripieghevole: due stepper affiancati stanno su un telefono normale
+        // (≈140dp a testa), ma su schermi più stretti o con testo ingrandito
+        // andavano a capo da soli invece di tagliare il secondo "+".
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.md }}>
+          <View style={styles.rangeStepper}>
             <NumberStepper label="Ripetizioni da" value={repsMin} onChange={setRepsMin} min={1} max={100} />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.rangeStepper}>
             <NumberStepper label="a" value={repsMax} onChange={setRepsMax} min={1} max={100} />
           </View>
         </View>
@@ -221,3 +224,12 @@ export function RoutineSetEditor({
     </Sheet>
   );
 }
+
+const styles = StyleSheet.create({
+  /**
+   * Una colonna della coppia "da/a": abbastanza larga per due stepper in una
+   * riga su 360dp, e cresce fino a metà se c'è spazio. Sotto quella soglia
+   * `flexWrap` la manda a capo invece di tagliare il secondo "+".
+   */
+  rangeStepper: { flexGrow: 1, flexBasis: 140, minWidth: 140 },
+});

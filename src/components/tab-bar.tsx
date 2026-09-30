@@ -47,7 +47,7 @@ const TABS: Tab[] = [
   { name: 'routines', href: '/routines', label: 'Schede', icon: 'clipboard-text-outline', iconActive: 'clipboard-text' },
   { name: 'exercises', href: '/exercises', label: 'Esercizi', icon: 'dumbbell', iconActive: 'dumbbell' },
   { name: 'history', href: '/history', label: 'Storico', icon: 'calendar-blank-outline', iconActive: 'calendar-check' },
-  { name: 'stats', href: '/stats', label: 'Statistiche', icon: 'chart-line-variant', iconActive: 'chart-line' },
+  { name: 'stats', href: '/stats', label: 'Stats', icon: 'chart-line-variant', iconActive: 'chart-line' },
 ];
 
 export function TabBar() {
@@ -162,12 +162,21 @@ function TabItem({
           color={focused ? theme.colors.accent : theme.colors.textFaint}
         />
       </Animated.View>
+      {/*
+        Rete di sicurezza: la cella è larga un quinto dello schermo, e un'unica
+        etichetta più lunga delle altre ("Statistiche", undici lettere) la
+        sfondava. Ora la voce si chiama "Stats", ma il testo si rimpicciolisce
+        comunque di quel tanto che basta se una futura etichetta non ci sta, e
+        le altre voci restano intatte.
+      */}
       <Text
         variant="label"
         weight={focused ? 'bold' : 'medium'}
         tone={focused ? 'accent' : 'faint'}
         style={styles.label}
-        numberOfLines={1}>
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}>
         {config.label}
       </Text>
     </Pressable>
@@ -184,7 +193,21 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.6 },
-  // Le etichette sono corte ma "Statistiche" no: senza una crenatura più
-  // stretta del solito quella sola voce andava a capo.
-  label: { fontSize: 10, letterSpacing: 0.2 },
+  /**
+   * Le etichette sono corte ma "Statistiche" no: senza una crenatura più
+   * stretta del solito quella sola voce andava a capo.
+   *
+   * `alignSelf: 'stretch'` è la parte che conta: la cella centra i figli
+   * (`alignItems: 'center'`), quindi senza di esso l'etichetta prenderebbe la
+   * sua larghezza naturale e `adjustsFontSizeToFit` non avrebbe un limite entro
+   * cui rimpicciolirla — il testo usciva dalla pastiglia colorata. Con lo
+   * stretch la larghezza è quella della cella, e il testo ci si adatta.
+   */
+  label: {
+    fontSize: 10,
+    letterSpacing: 0.2,
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    paddingHorizontal: 2,
+  },
 });

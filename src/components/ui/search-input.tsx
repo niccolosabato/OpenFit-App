@@ -35,6 +35,7 @@ export function SearchInput({
         autoFocus={autoFocus}
         autoCorrect={false}
         returnKeyType="search"
+        maxFontSizeMultiplier={1.0}
         style={[styles.input, typography('body'), { color: theme.colors.text }]}
       />
       {value.length > 0 ? (

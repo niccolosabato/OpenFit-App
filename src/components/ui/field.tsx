@@ -47,6 +47,7 @@ export function TextField({
           multiline={multiline}
           keyboardType={keyboardType}
           autoFocus={autoFocus}
+          maxFontSizeMultiplier={1.0}
           style={[
             typography('body'),
             {

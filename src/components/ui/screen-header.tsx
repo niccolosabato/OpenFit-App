@@ -62,15 +62,20 @@ export function ScreenHeader({
     <FloatingBand
       edge="top"
       surfaceStyle={{
-        paddingVertical: theme.space.xs,
-        paddingBottom: below ? theme.space.sm : theme.space.xs,
+        // Il contenuto dell'header sta a `lg` dal bordo della banda: titolo,
+        // azioni e filtri erano appiccicati allo spigolo. E il margine
+        // verticale cresce quando c'è un sottotitolo, perché titolo+sottotitolo
+        // sono più alti dei tasti e riempivano la banda toccandone i bordi.
+        paddingHorizontal: theme.space.lg,
+        paddingTop: subtitle ? theme.space.md : theme.space.sm,
+        paddingBottom: below ? theme.space.md : subtitle ? theme.space.md : theme.space.sm,
       }}>
-      <View style={[styles.bar, { paddingHorizontal: theme.space.xs, gap: theme.space.xs }]}>
+      <View style={[styles.bar, { gap: theme.space.sm }]}>
         {showBack ? (
           <IconButton icon="arrow-left" label="Indietro" size={24} onPress={() => router.back()} />
         ) : null}
 
-        <View style={[styles.titles, !showBack && { paddingLeft: theme.space.md }]}>
+        <View style={styles.titles}>
           <Text variant={large ? 'title' : 'heading'} numberOfLines={1}>
             {title}
           </Text>
@@ -93,7 +98,7 @@ export function ScreenHeader({
         ))}
       </View>
 
-      {below ? <View style={{ paddingTop: theme.space.xs }}>{below}</View> : null}
+      {below ? <View style={{ paddingTop: theme.space.md }}>{below}</View> : null}
     </FloatingBand>
   );
 }

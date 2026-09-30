@@ -28,14 +28,6 @@ import { formatVolume } from '@/lib/units';
 import { useSettings } from '@/store/settings';
 import { capsule, useTheme } from '@/theme';
 
-/** Saluto per fascia oraria: si allena a ogni ora, ma non si apre l'app a caso. */
-function greetingFor(date: Date): string {
-  const hour = date.getHours();
-  if (hour < 12) return 'Buongiorno';
-  if (hour < 18) return 'Buon pomeriggio';
-  return 'Buonasera';
-}
-
 export default function TodayScreen() {
   const theme = useTheme();
   const { settings } = useSettings();
@@ -98,12 +90,9 @@ export default function TodayScreen() {
       padded={false}
       header={
         <ScreenHeader
-          // Il nome fa da titolo e il saluto scende nel sottotitolo: messi
-          // insieme in cima — "Buon pomeriggio, Niccolò" — a corpo di titolo
-          // non ci stavano, e la prima cosa che si leggeva dell'app era una
-          // frase troncata a metà.
+          // Il nome fa da titolo e la data scende nel sottotitolo.
           title={settings.userName?.trim() || 'Oggi'}
-          subtitle={`${greetingFor(now)} · ${format(now, 'EEEE d MMMM', { locale: it })}`}
+          subtitle={format(now, 'EEEE d MMMM', { locale: it })}
           actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
         />
       }

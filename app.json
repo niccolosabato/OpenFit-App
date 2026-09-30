@@ -11,7 +11,7 @@
     "primaryColor": "#C9F53A",
     "android": {
       "package": "com.niccolosabato.openfit",
-      "versionCode": 3,
+      "versionCode": 4,
       "permissions": [
         "android.permission.SCHEDULE_EXACT_ALARM"
       ],

@@ -33,7 +33,12 @@ export function Segmented<T extends string | number>({
   const [width, setWidth] = useState(0);
 
   const index = Math.max(0, options.findIndex((o) => o.value === value));
-  const cell = width > 0 ? (width - INSET * 2) / options.length : 0;
+  // `width` è la larghezza della riga *dentro* il padding della `Surface`: la
+  // scanalatura è già rientrata di `INSET`, quindi sottrarlo di nuovo faceva la
+  // cella più stretta e spostava il cursore a sinistra dell'etichetta — tanto
+  // più quanto più avanti è la voce, che è il motivo per cui "6 mesi" sembrava
+  // fuori posto mentre le prime due no.
+  const cell = width > 0 ? width / options.length : 0;
 
   const offset = useSharedValue(0);
   const placed = useRef(false);
@@ -92,7 +97,9 @@ export function Segmented<T extends string | number>({
                 weight="semibold"
                 tone={selected ? 'default' : 'faint'}
                 numberOfLines={1}
-                style={styles.label}>
+                style={styles.label}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}>
                 {option.label}
               </Text>
             </Pressable>
@@ -107,5 +114,8 @@ const styles = StyleSheet.create({
   row: { flex: 1, flexDirection: 'row' },
   cursor: { position: 'absolute', top: 0, bottom: 0, left: 0 },
   cell: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { textAlign: 'center' },
+  // `alignSelf: 'stretch'` dà all'etichetta la larghezza della cella: senza,
+  // essendo i figli centrati, il testo prenderebbe la sua larghezza naturale e
+  // `adjustsFontSizeToFit` non avrebbe un limite entro cui rimpicciolirlo.
+  label: { textAlign: 'center', alignSelf: 'stretch', paddingHorizontal: 2 },
 });
