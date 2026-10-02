@@ -37,7 +37,6 @@ import {
   addSessionSet,
   computeTotals,
   deleteSessionSet,
-  finishSession,
   getPreviousPerformance,
   moveSessionExercise,
   removeSessionExercise,
@@ -54,6 +53,7 @@ import { PlateSheet } from '@/features/session/plate-sheet';
 import {
   abandonSession,
   completeSet,
+  finishWorkout,
   saveSessionEdits,
   uncompleteSet,
   type SetValues,
@@ -869,7 +869,7 @@ export default function ActiveSessionScreen() {
           title="Termina e salva"
           fullWidth
           onPress={() => {
-            finishSession(sessionId);
+            finishWorkout(sessionId);
             setFinishOpen(false);
             router.replace('/history');
           }}

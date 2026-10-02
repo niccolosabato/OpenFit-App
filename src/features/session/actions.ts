@@ -65,6 +65,21 @@ export function abandonSession(sessionId: string): void {
 }
 
 /**
+ * Chiude l'allenamento in corso e riallinea i record.
+ *
+ * `finishSession` butta le serie non spuntate e calcola i totali, ma non tocca
+ * la cache dei primati: una serie spuntata e poi modificata al ribasso
+ * resterebbe detentrice di un record che non ha più, e una battuta da un'altra
+ * serie della stessa seduta terrebbe la sua spunta. Il ricalcolo finale è
+ * l'ultima occasione per rimetterli in ordine prima che la seduta entri nello
+ * storico.
+ */
+export function finishWorkout(sessionId: string): void {
+  finishSession(sessionId);
+  rebuildRecords();
+}
+
+/**
  * Chiude la modifica di una sessione già completata.
  *
  * Ricalcola i totali e ricostruisce i record da zero: durante la modifica i

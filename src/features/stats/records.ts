@@ -64,6 +64,12 @@ export function applyRecords(
 
   const hits: RecordHit[] = [];
   const achievedAt = set.completedAt ?? new Date();
+  /**
+   * Serie che potrebbero aver perso il primato perché qualcuno l'ha appena
+   * battuto. La spunta va rivalutata anche sul vecchio detentore: se resta lì
+   * a dire "record" su una serie che non lo è più, il traguardo mente.
+   */
+  const dethroned = new Set<string>();
 
   for (const candidate of candidates) {
     const previous = current.get(key(candidate.type, candidate.reps));
@@ -103,9 +109,28 @@ export function applyRecords(
 
     if (previous) {
       db.update(personalRecords).set(row).where(eq(personalRecords.id, previous.id)).run();
+      if (previous.sessionSetId && previous.sessionSetId !== set.id) {
+        dethroned.add(previous.sessionSetId);
+      }
     } else {
       db.insert(personalRecords).values({ id: newId(), ...row }).run();
     }
+  }
+
+  // Il detentore spodestato può essere ancora il detentore di un *altro* tipo
+  // di primato (es. resta il massimale stimato pur perdendo il carico massimo):
+  // si guarda cosa gli è rimasto invece di spegnere la spunta e basta.
+  for (const setId of dethroned) {
+    const stillHolder = db
+      .select({ id: personalRecords.id })
+      .from(personalRecords)
+      .where(eq(personalRecords.sessionSetId, setId))
+      .get();
+
+    db.update(sessionSets)
+      .set({ isPr: stillHolder !== undefined })
+      .where(eq(sessionSets.id, setId))
+      .run();
   }
 
   return hits;

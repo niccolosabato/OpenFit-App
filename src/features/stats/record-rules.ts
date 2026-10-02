@@ -52,20 +52,30 @@ export function beatsRecord(candidate: number, previous: number | null | undefin
 }
 
 /**
- * Un record per ripetizioni vale solo se continua la curva.
+ * Un record per ripetizioni vale solo se domina davvero la curva.
  *
- * La **prima** volta che si fanno N ripetizioni il carico deve essere almeno
- * quello del miglior carico fatto a ripetizioni inferiori — altrimenti è solo
- * una serie più leggera con qualche ripetizione in più, non un primato. Una
- * volta che un record a N ripetizioni esiste, invece, basta superarlo: portarlo
- * da 80 a 85 resta un primato anche se a ripetizioni basse c'è un massimale più
- * pesante. Senza questa regola qualsiasi ripetizione mai provata produce un
- * "record", e il traguardo compare su serie che non sono il meglio di niente.
+ * La **prima** volta che si fanno N ripetizioni con un carico W non basta che
+ * le N ripetizioni siano nuove: W deve essere almeno il massimo già sollevato
+ * per N ripetizioni, e il confronto va fatto nei due versi.
+ *
+ * - Contro le ripetizioni **inferiori** già registrate: `W` deve essere almeno
+ *   il loro carico, altrimenti è solo una serie più leggera con qualche
+ *   ripetizione in più (un 90×6 dopo un 100×5 non è un primato).
+ * - Contro le ripetizioni **superiori** già registrate: `W` deve essere
+ *   *strettamente* maggiore, perché se hai già fatto 100×5 allora 100×4 non è
+ *   niente di nuovo — ma 100×6 sì, sono più ripetizioni allo stesso carico.
+ *
+ * Senza il secondo verso, ogni calo di ripetizioni a parità di carico
+ * produceva un "record a 4 ripetizioni" fasullo.
  */
 export function qualifiesRepMax(
   weight: number,
   reps: number,
   repMaxes: { reps: number; value: number }[],
 ): boolean {
-  return !repMaxes.some((r) => r.reps < reps && r.value > weight);
+  return !repMaxes.some((r) => {
+    if (r.reps === reps) return false;
+    if (r.reps > reps) return r.value >= weight;
+    return r.value > weight;
+  });
 }

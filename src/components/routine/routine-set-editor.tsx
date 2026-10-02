@@ -178,8 +178,12 @@ export function RoutineSetEditor({
               compact
               selected={scale === option}
               onPress={() => {
+                // Cambiare scala non converte il numero: sono due colonne
+                // distinte, e `2 RIR` non è `@8`. Il valore appartiene alla
+                // scala con cui è stato scritto, quindi cambiando si azzera
+                // invece di trascinarlo sotto l'altra etichetta.
+                if (option !== scale) setEffort(null);
                 setScale(option);
-                if (option === 'none') setEffort(null);
               }}
             />
           ))}

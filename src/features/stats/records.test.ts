@@ -56,12 +56,17 @@ describe('qualifiesRepMax', () => {
     expect(qualifiesRepMax(105, 6, [{ reps: 5, value: 100 }])).toBe(true);
   });
 
-  it('a parità di carico vale (100×6 dopo 100×5)', () => {
+  it('più ripetizioni a parità di carico sono un primato (100×6 dopo 100×5)', () => {
     expect(qualifiesRepMax(100, 6, [{ reps: 5, value: 100 }])).toBe(true);
   });
 
-  it('non guarda le ripetizioni superiori', () => {
-    expect(qualifiesRepMax(60, 12, [{ reps: 15, value: 100 }])).toBe(true);
+  it('meno ripetizioni a parità di carico non lo sono (100×4 dopo 100×5)', () => {
+    // Il caso che l'app sbagliava: 100×5 rende superflua una 100×4.
+    expect(qualifiesRepMax(100, 4, [{ reps: 5, value: 100 }])).toBe(false);
+    // A maggior ragione se le ripetizioni in più erano anche più pesanti.
+    expect(qualifiesRepMax(60, 12, [{ reps: 15, value: 100 }])).toBe(false);
+    // Ma un carico davvero più alto a meno ripetizioni resta un primato.
+    expect(qualifiesRepMax(105, 4, [{ reps: 5, value: 100 }])).toBe(true);
   });
 
   it('senza ripetizioni inferiori è sempre un primato', () => {

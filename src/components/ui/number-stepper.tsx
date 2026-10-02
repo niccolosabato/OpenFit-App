@@ -49,6 +49,20 @@ export function NumberStepper({
    */
   const [draft, setDraft] = useState<string | null>(null);
 
+  /**
+   * La selezione "tutto" si applica un istante, all'ingresso nel campo.
+   *
+   * `selectTextOnFocus` sembrava la scelta ovvia, ma su Android ri-seleziona
+   * il testo ogni volta che il `value` cambia: dopo la prima cifra il campo
+   * restava tutto selezionato, e la seconda la sostituiva — "10" diventava
+   * "0". Tenendo la selezione sotto controllo e liberandola al primo tasto, il
+   * valore esistente si sostituisce al primo tocco ma le cifre successive si
+   * accodano come ci si aspetta.
+   */
+  const [selection, setSelection] = useState<{ start: number; end: number } | undefined>();
+
+  const display = draft ?? (value === null ? '' : formatNumber(value));
+
   function clamp(next: number): number {
     let result = next;
     if (min !== undefined) result = Math.max(min, result);
@@ -87,8 +101,9 @@ export function NumberStepper({
 
         <View style={styles.valueBox}>
           <TextInput
-            value={draft ?? (value === null ? '' : formatNumber(value))}
+            value={display}
             onChangeText={(raw) => {
+              setSelection(undefined);
               setDraft(raw);
               const cleaned = raw.replace(',', '.').trim();
               if (cleaned === '') {
@@ -99,12 +114,21 @@ export function NumberStepper({
               // Niente `clamp` qui: solo l'arrotondamento. Vedi `draft`.
               if (Number.isFinite(parsed)) onChange(Number(parsed.toFixed(3)));
             }}
-            onBlur={commit}
+            onFocus={() =>
+              setSelection(display.length > 0 ? { start: 0, end: display.length } : undefined)
+            }
+            onSelectionChange={() => {
+              if (selection) setSelection(undefined);
+            }}
+            onBlur={() => {
+              setSelection(undefined);
+              commit();
+            }}
             onSubmitEditing={commit}
+            selection={selection}
             placeholder={placeholder}
             placeholderTextColor={theme.colors.textFaint}
             keyboardType="decimal-pad"
-            selectTextOnFocus
             maxFontSizeMultiplier={1.0}
             style={[styles.input, typography('metric'), { color: theme.colors.text }]}
           />

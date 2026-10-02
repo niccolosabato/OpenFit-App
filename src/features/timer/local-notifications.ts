@@ -64,19 +64,29 @@ function load(): NotificationsModule | null {
   }
 
   if (!handlerConfigured) {
-    handlerConfigured = true;
-    // Come si comporta una notifica che arriva ad app aperta: il suono sì — è
-    // il segnale che il recupero è finito — ma niente banner, perché la
-    // schermata mostra già il countdown e coprire i campi mentre si registra
-    // una serie sarebbe solo fastidioso.
-    cached.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: false,
-        shouldShowList: false,
-      }),
-    });
+    // Anche la configurazione del gestore sta dentro il `try`: un modulo
+    // presente ma con un'API inattesa (versione diversa, build senza il
+    // modulo giusto) lancerebbe qui, e questo `load()` viene chiamato
+    // all'apertura dell'app da `dismissPresented` — un errore qui sarebbe un
+    // crash all'avvio, non un timer senza suono.
+    try {
+      // Come si comporta una notifica che arriva ad app aperta: il suono sì —
+      // è il segnale che il recupero è finito — ma niente banner, perché la
+      // schermata mostra già il countdown e coprire i campi mentre si registra
+      // una serie sarebbe solo fastidioso.
+      cached.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: false,
+          shouldShowList: false,
+        }),
+      });
+      handlerConfigured = true;
+    } catch {
+      cached = null;
+      return null;
+    }
   }
 
   return cached;

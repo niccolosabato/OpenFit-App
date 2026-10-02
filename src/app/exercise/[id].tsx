@@ -149,6 +149,14 @@ export default function ExerciseDetailScreen() {
 
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={exercise.name} scrollable={false}>
         <SheetAction
+          label="Modifica esercizio"
+          description="Nome, muscolo, attrezzo, misurazione e recupero."
+          onPress={() => {
+            setMenuOpen(false);
+            router.push({ pathname: '/exercise/edit', params: { id: exercise.id } });
+          }}
+        />
+        <SheetAction
           label="Archivia l’esercizio"
           description="Sparisce dalla libreria; lo storico resta."
           destructive

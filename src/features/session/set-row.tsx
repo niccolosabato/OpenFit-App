@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
@@ -359,7 +359,12 @@ function CheckBox({ done, isPr }: { done: boolean; isPr: boolean }) {
   const pop = useSharedValue(1);
   const first = useRef(true);
 
-  useEffect(() => {
+  // `useLayoutEffect` e non `useEffect`: il valore va aggiornato *prima* che il
+  // fotogramma successivo venga dipinto. Con l'effetto normale, per un giro
+  // l'icona aveva già il colore "sopra l'accento" (scuro) mentre il velo era
+  // ancora trasparente — la spunta spariva nel fondo per un istante, e sotto
+  // carico quell'istante diventava imprevedibile.
+  useLayoutEffect(() => {
     fill.value = withTiming(done ? 1 : 0, { duration: theme.motion.duration.fast });
     // Al primo montaggio no: rientrando in una sessione con venti serie già
     // fatte partirebbero venti rimbalzi insieme.
@@ -368,12 +373,19 @@ function CheckBox({ done, isPr }: { done: boolean; isPr: boolean }) {
       return;
     }
     if (done) {
+      // Parte da sotto e risale: senza questo la molla andava da 1 a 1 e non
+      // rimbalzava affatto.
+      pop.value = 0.7;
       pop.value = withSpring(1, { ...theme.motion.spring, velocity: 14 });
     }
   }, [done, fill, pop, theme.motion.duration.fast, theme.motion.spring]);
 
+  const isRecord = done && isPr;
   const veil = useAnimatedStyle(() => ({ opacity: fill.value }));
-  const glyph = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+  const glyph = useAnimatedStyle(() => ({
+    opacity: fill.value,
+    transform: [{ scale: pop.value }],
+  }));
 
   return (
     <View
@@ -384,18 +396,35 @@ function CheckBox({ done, isPr }: { done: boolean; isPr: boolean }) {
           height: CELL_HEIGHT,
           borderRadius: theme.radius.md,
           backgroundColor: theme.colors.surface2,
-          borderColor: isPr && done ? theme.colors.record : theme.colors.border,
+          borderColor: isRecord ? theme.colors.record : theme.colors.border,
         },
       ]}>
       <Animated.View
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, veil, { backgroundColor: theme.colors.accent }]}
+        style={[
+          StyleSheet.absoluteFill,
+          veil,
+          // Il traguardo si riempie d'oro, non d'accento: è lo stesso colore
+          // con cui l'app segnala un record ovunque, e il trofeo scuro sopra
+          // l'oro si legge da lontano.
+          { backgroundColor: isRecord ? theme.colors.record : theme.colors.accent },
+        ]}
       />
-      <Animated.View style={glyph}>
+      {/* Icona spenta sempre presente sotto: finché il velo non è pieno è lei
+          a farsi vedere, così non esiste un fotogramma con l'icona scura su un
+          fondo trasparente. */}
+      <MaterialCommunityIcons
+        name={isRecord ? 'trophy' : 'check'}
+        size={20}
+        color={theme.colors.textFaint}
+      />
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, styles.checkCenter, glyph]}>
         <MaterialCommunityIcons
-          name={isPr && done ? 'trophy' : 'check'}
+          name={isRecord ? 'trophy' : 'check'}
           size={20}
-          color={done ? theme.colors.onAccent : theme.colors.textFaint}
+          color={isRecord ? theme.colors.onAccentDark : theme.colors.onAccent}
         />
       </Animated.View>
     </View>
@@ -428,6 +457,12 @@ function Cell({
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
 
+  // Come nel `NumberStepper`: la selezione "tutto" vale solo all'ingresso nel
+  // campo e va liberata al primo tasto. `selectTextOnFocus` da solo, su Android,
+  // ri-selezionava il testo a ogni aggiornamento del valore e la seconda cifra
+  // cancellava la prima ("10" diventava "0").
+  const [selection, setSelection] = useState<{ start: number; end: number } | undefined>();
+
   return (
     <View
       style={[
@@ -456,17 +491,25 @@ function Cell({
       ) : null}
       <TextInput
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(raw) => {
+          setSelection(undefined);
+          onChangeText(raw);
+        }}
         onFocus={() => {
           setFocused(true);
+          setSelection(value.length > 0 ? { start: 0, end: value.length } : undefined);
           onFocus();
+        }}
+        onSelectionChange={() => {
+          if (selection) setSelection(undefined);
         }}
         onBlur={() => {
           setFocused(false);
+          setSelection(undefined);
           onBlur();
         }}
+        selection={selection}
         keyboardType="decimal-pad"
-        selectTextOnFocus
         maxFontSizeMultiplier={1.0}
         style={[
           styles.input,
@@ -580,6 +623,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
     overflow: 'hidden',
   },
+  checkCenter: { alignItems: 'center', justifyContent: 'center' },
   stopwatch: {
     alignItems: 'center',
     justifyContent: 'center',
