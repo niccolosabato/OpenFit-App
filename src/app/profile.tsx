@@ -33,6 +33,21 @@ import { ACCENTS, ACCENT_LABELS, capsule, useTheme, type AccentKey } from '@/the
 const EFFORT_SCALES: EffortScale[] = ['rpe', 'rir', 'none'];
 const UNITS: WeightUnit[] = ['kg', 'lb'];
 
+/**
+ * `1.0.0 (5)`, oppure solo il nome se il numero di build non c'è.
+ *
+ * Il `versionCode` si alza da sé a ogni build (vedi `eas.json`), quindi mostra
+ * sempre a quale build si sta guardando anche quando il nome versione — quello
+ * che si alza a mano, e con parsimonia — non è cambiato. In Expo Go il numero
+ * manca e resta il solo nome.
+ */
+function versionLabel(): string {
+  const version = Constants.expoConfig?.version ?? '';
+  const build =
+    Constants.expoConfig?.android?.versionCode ?? Constants.expoConfig?.ios?.buildNumber;
+  return build ? `${version} (${build})` : version;
+}
+
 export default function ProfileScreen() {
   const theme = useTheme();
   const { settings, update } = useSettings();
@@ -326,7 +341,7 @@ export default function ProfileScreen() {
 
         <View style={{ alignItems: 'center', gap: theme.space.xs }}>
           <Text variant="label" tone="faint">
-            OpenFit {Constants.expoConfig?.version ?? ''}
+            OpenFit {versionLabel()}
           </Text>
           <Text variant="caption" tone="faint">
             I tuoi dati restano su questo telefono.

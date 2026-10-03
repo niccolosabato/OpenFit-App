@@ -27,7 +27,6 @@ import {
   dayRoutineSetsQuery,
   deleteDay,
   deleteRoutineSet,
-  moveRoutineExercise,
   removeRoutineExercise,
   reorderRoutineExercises,
   routineDayQuery,
@@ -343,20 +342,6 @@ export default function RoutineDayScreen() {
       {/* ─────────────────────────────────────────── opzioni di un esercizio ── */}
       <Sheet visible={menuFor !== null} onClose={() => setMenuFor(null)} title="Esercizio" scrollable={false}>
         <SheetAction
-          label="Sposta su"
-          onPress={() => {
-            if (menuFor) moveRoutineExercise(dayId, menuFor.id, -1);
-            setMenuFor(null);
-          }}
-        />
-        <SheetAction
-          label="Sposta giù"
-          onPress={() => {
-            if (menuFor) moveRoutineExercise(dayId, menuFor.id, 1);
-            setMenuFor(null);
-          }}
-        />
-        <SheetAction
           label="Superset con il precedente"
           description="Li alterni senza recupero; il timer parte a fine giro."
           onPress={() => {
@@ -380,6 +365,19 @@ export default function RoutineDayScreen() {
             if (menuFor) {
               setNotesValue(menuFor.notes ?? '');
               setNotesFor(menuFor);
+            }
+            setMenuFor(null);
+          }}
+        />
+        <SheetAction
+          label="Sostituisci esercizio"
+          description="Per quando l'attrezzo è occupato: cambi movimento e tieni le serie previste."
+          onPress={() => {
+            if (menuFor) {
+              router.push({
+                pathname: '/exercise/picker',
+                params: { replaceRoutineExerciseId: menuFor.id },
+              });
             }
             setMenuFor(null);
           }}

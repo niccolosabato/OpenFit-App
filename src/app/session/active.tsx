@@ -44,6 +44,7 @@ import {
   sessionQuery,
   sessionSetsQuery,
   updateSessionBodyweight,
+  updateSessionExercise,
   updateSessionSet,
 } from '@/db/queries/sessions';
 import { useLiveRows } from '@/db/live';
@@ -794,6 +795,19 @@ export default function ActiveSessionScreen() {
           label="Sposta giù"
           onPress={() => {
             if (menuExercise) moveSessionExercise(sessionId, menuExercise.id, 1);
+            setMenuExercise(null);
+          }}
+        />
+        <SheetAction
+          label="Sostituisci esercizio"
+          description="Per quando l'attrezzo è occupato: cambi movimento e tieni le serie già segnate."
+          onPress={() => {
+            if (menuExercise) {
+              router.push({
+                pathname: '/exercise/picker',
+                params: { replaceSessionExerciseId: menuExercise.id },
+              });
+            }
             setMenuExercise(null);
           }}
         />
