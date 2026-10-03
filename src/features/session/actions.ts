@@ -74,8 +74,8 @@ export function abandonSession(sessionId: string): void {
  * l'ultima occasione per rimetterli in ordine prima che la seduta entri nello
  * storico.
  */
-export function finishWorkout(sessionId: string): void {
-  finishSession(sessionId);
+export function finishWorkout(sessionId: string, notes?: string): void {
+  finishSession(sessionId, notes);
   rebuildRecords();
 }
 

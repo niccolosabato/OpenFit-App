@@ -13,6 +13,7 @@ import { Surface } from '@/components/ui/surface';
 import { IconButton } from '@/components/ui/icon-button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { TextField } from '@/components/ui/field';
 import { NumberStepper } from '@/components/ui/number-stepper';
 import { ProgressBar, ProgressRing } from '@/components/ui/progress';
 import { Screen, useScreenChrome } from '@/components/ui/screen';
@@ -47,11 +48,13 @@ import {
   sessionSetsQuery,
   updateSessionBodyweight,
   updateSessionExercise,
+  updateSessionNotes,
   updateSessionSchedule,
   updateSessionSet,
 } from '@/db/queries/sessions';
 import { useLiveRows } from '@/db/live';
 import { exercises, sessionExercises, type SessionExercise, type SessionSet } from '@/db/schema';
+import { ExerciseNotesField } from '@/features/session/exercise-notes';
 import { ExerciseRail } from '@/features/session/exercise-rail';
 import { PlateSheet } from '@/features/session/plate-sheet';
 import {
@@ -154,6 +157,9 @@ export default function ActiveSessionScreen() {
   const [menuSet, setMenuSet] = useState<SessionSet | null>(null);
   const [menuExercise, setMenuExercise] = useState<SessionExercise | null>(null);
   const [setListFor, setSetListFor] = useState<SessionExercise | null>(null);
+  const [sessionNotesOpen, setSessionNotesOpen] = useState(false);
+  const [sessionNotesValue, setSessionNotesValue] = useState('');
+  const [finishNotes, setFinishNotes] = useState('');
   const [plateFor, setPlateFor] = useState<number | null>(null);
   const [finishOpen, setFinishOpen] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
@@ -376,11 +382,6 @@ export default function ActiveSessionScreen() {
               <Text variant="subtitle" numberOfLines={2}>
                 {item.exercise.name}
               </Text>
-              {item.sessionExercise.notes ? (
-                <Text variant="caption" tone="faint" numberOfLines={1}>
-                  {item.sessionExercise.notes}
-                </Text>
-              ) : null}
             </Pressable>
 
             {PLATE_LOADED_EQUIPMENT.includes(item.exercise.equipment) ? (
@@ -466,6 +467,12 @@ export default function ActiveSessionScreen() {
               Aggiungi serie
             </Text>
           </Pressable>
+
+          <ExerciseNotesField
+            technicalNote={item.sessionExercise.notes}
+            value={item.sessionExercise.logNotes}
+            onSave={(notes) => updateSessionExercise(item.sessionExercise.id, { logNotes: notes })}
+          />
         </Card>
       </View>
     );
@@ -521,6 +528,7 @@ export default function ActiveSessionScreen() {
       });
       return;
     }
+    setFinishNotes(session.notes ?? '');
     setFinishOpen(true);
   }
 
@@ -678,6 +686,17 @@ export default function ActiveSessionScreen() {
             setBodyweightOpen(true);
           }}
         />
+        <SheetAction
+          label="Note dell’allenamento"
+          description={
+            session.notes ? session.notes : 'Come è andata, cosa cambiare la prossima volta.'
+          }
+          onPress={() => {
+            setSessionMenuOpen(false);
+            setSessionNotesValue(session.notes ?? '');
+            setSessionNotesOpen(true);
+          }}
+        />
         {editing ? null : (
           <SheetAction
             label="Riduci a icona"
@@ -730,6 +749,30 @@ export default function ActiveSessionScreen() {
             }}
           />
         )}
+      </Sheet>
+
+      {/* ─────────────────────────────────────── note dell'allenamento ── */}
+      <Sheet
+        visible={sessionNotesOpen}
+        onClose={() => setSessionNotesOpen(false)}
+        title="Note dell’allenamento"
+        scrollable={false}>
+        <TextField
+          label="Come è andata"
+          value={sessionNotesValue}
+          onChangeText={setSessionNotesValue}
+          placeholder="Sensazioni, carichi, cosa cambiare…"
+          multiline
+          autoFocus
+        />
+        <Button
+          title="Salva"
+          fullWidth
+          onPress={() => {
+            updateSessionNotes(sessionId, sessionNotesValue.trim() || null);
+            setSessionNotesOpen(false);
+          }}
+        />
       </Sheet>
 
       {/* ──────────────────────────────────────────────────────── riordino ── */}
@@ -973,11 +1016,18 @@ export default function ActiveSessionScreen() {
           {formatVolume(totals.totalVolume, settings.unit)} di volume · {formatDuration(elapsed)}.
           {'\n'}Le serie lasciate in bianco verranno scartate.
         </Text>
+        <TextField
+          label="Note"
+          value={finishNotes}
+          onChangeText={setFinishNotes}
+          placeholder="Come è andata, cosa cambiare la prossima volta…"
+          multiline
+        />
         <Button
           title="Termina e salva"
           fullWidth
           onPress={() => {
-            finishWorkout(sessionId);
+            finishWorkout(sessionId, finishNotes.trim() || undefined);
             setFinishOpen(false);
             router.replace('/history');
           }}

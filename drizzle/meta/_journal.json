@@ -8,6 +8,13 @@
       "when": 1788477117284,
       "tag": "0000_wealthy_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791033847538,
+      "tag": "0001_lyrical_blizzard",
+      "breakpoints": true
     }
   ]
 }

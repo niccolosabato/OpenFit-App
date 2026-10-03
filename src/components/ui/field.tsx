@@ -16,6 +16,8 @@ export function TextField({
   keyboardType,
   autoFocus,
   hint,
+  onFocus,
+  onBlur,
 }: {
   label: string;
   value: string;
@@ -25,6 +27,8 @@ export function TextField({
   keyboardType?: KeyboardTypeOptions;
   autoFocus?: boolean;
   hint?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const theme = useTheme();
   // Il campo a fuoco si tinge d'accento: si vede da lontano dove si sta
@@ -40,8 +44,14 @@ export function TextField({
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={() => {
+            setFocused(true);
+            onFocus?.();
+          }}
+          onBlur={() => {
+            setFocused(false);
+            onBlur?.();
+          }}
           placeholder={placeholder}
           placeholderTextColor={theme.colors.textFaint}
           multiline={multiline}

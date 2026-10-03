@@ -205,6 +205,11 @@ export function updateSessionExercise(id: string, patch: Partial<SessionExercise
   db.update(sessionExercises).set(patch).where(eq(sessionExercises.id, id)).run();
 }
 
+/** Nota dell'intera seduta: "come è andata", gambe stanche, sensazioni. */
+export function updateSessionNotes(sessionId: string, notes: string | null): void {
+  db.update(workoutSessions).set({ notes }).where(eq(workoutSessions.id, sessionId)).run();
+}
+
 export function moveSessionExercise(sessionId: string, id: string, direction: -1 | 1): void {
   const list = db
     .select()

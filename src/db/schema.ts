@@ -224,7 +224,17 @@ export const sessionExercises = sqliteTable(
     orderIndex: integer('order_index').notNull().default(0),
     supersetGroup: integer('superset_group'),
     restSeconds: integer('rest_seconds'),
+    /**
+     * Nota tecnica, copiata dalla scheda all'avvio: promemoria su setup e
+     * presa. È un riferimento in sola lettura, non si tocca in sessione.
+     */
     notes: text('notes'),
+    /**
+     * Diario della serie di oggi: cosa è successo davvero su questo esercizio.
+     * Separato da `notes` di proposito — la nota tecnica si scrive prima, in
+     * scheda, e non va confusa con quello che si appunta durante l'allenamento.
+     */
+    logNotes: text('log_notes'),
   },
   (t) => [
     index('idx_session_exercises_session').on(t.sessionId, t.orderIndex),

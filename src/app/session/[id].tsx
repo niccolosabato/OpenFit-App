@@ -148,10 +148,15 @@ export default function SessionDetailScreen() {
 
           return (
             <Card key={item.sessionExercise.id} padded={false}>
-              <View style={{ padding: theme.space.lg, paddingBottom: theme.space.sm }}>
+              <View style={{ padding: theme.space.lg, paddingBottom: theme.space.sm, gap: theme.space.xs }}>
                 <Text variant="heading" numberOfLines={2}>
                   {item.exercise.name}
                 </Text>
+                {item.sessionExercise.logNotes ? (
+                  <Text variant="caption" tone="dim">
+                    {item.sessionExercise.logNotes}
+                  </Text>
+                ) : null}
               </View>
 
               {topLevel.map((set) => {
