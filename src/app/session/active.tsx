@@ -1,3 +1,4 @@
+import DateTimePicker from '@expo/ui/community/datetime-picker';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -46,6 +47,7 @@ import {
   sessionSetsQuery,
   updateSessionBodyweight,
   updateSessionExercise,
+  updateSessionSchedule,
   updateSessionSet,
 } from '@/db/queries/sessions';
 import { useLiveRows } from '@/db/live';
@@ -65,7 +67,7 @@ import { SetRow, SetRowHeader } from '@/features/session/set-row';
 import { RestTimerBar } from '@/features/timer/rest-timer-bar';
 import { useRestCountdown } from '@/features/timer/use-countdown';
 import { prepareRestNotifications, tapFeedback, useRestTimer } from '@/features/timer/rest-timer';
-import { formatDuration } from '@/lib/format';
+import { formatDuration, formatSessionDate, formatTime } from '@/lib/format';
 import { formatVolume, formatWeight, fromKg, toKg, UNIT_LABEL, WEIGHT_STEP } from '@/lib/units';
 import { useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
@@ -156,6 +158,12 @@ export default function ActiveSessionScreen() {
   const [finishOpen, setFinishOpen] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [reorderOpen, setReorderOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [scheduleStart, setScheduleStart] = useState<Date>(new Date());
+  // In secondi, non in minuti: se non si tocca la durata si conserva esatta
+  // anche quando lo stepper la mostra arrotondata.
+  const [scheduleDuration, setScheduleDuration] = useState(0);
   const [timerOpen, setTimerOpen] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(settings.defaultRestSeconds);
   const [bodyweightOpen, setBodyweightOpen] = useState(false);
@@ -670,28 +678,29 @@ export default function ActiveSessionScreen() {
             setBodyweightOpen(true);
           }}
         />
-        <SheetAction
-          label={editing ? 'Chiudi la modifica' : 'Riduci a icona'}
-          description={
-            editing
-              ? 'Le modifiche vengono salvate e l’allenamento torna nello storico.'
-              : 'L\'allenamento resta aperto, la barra in fondo lo riporta qui.'
-          }
-          onPress={() => {
-            setSessionMenuOpen(false);
-            if (editing) handleSaveEdit();
-            else router.back();
-          }}
-        />
-        {editing ? (
+        {editing ? null : (
           <SheetAction
-            label="Salva modifiche"
+            label="Riduci a icona"
+            description="L'allenamento resta aperto, la barra in fondo lo riporta qui."
             onPress={() => {
               setSessionMenuOpen(false);
-              handleSaveEdit();
+              router.back();
             }}
           />
-        ) : (
+        )}
+        {editing ? (
+          <SheetAction
+            label="Data e durata"
+            description="Sposta l'allenamento a un altro giorno o correggi quanto è durato."
+            onPress={() => {
+              setSessionMenuOpen(false);
+              setScheduleStart(session.startedAt);
+              setScheduleDuration(session.durationSeconds ?? 0);
+              setScheduleOpen(true);
+            }}
+          />
+        ) : null}
+        {editing ? null : (
           <SheetAction
             label="Termina e salva"
             onPress={() => {
@@ -993,6 +1002,60 @@ export default function ActiveSessionScreen() {
           }}
         />
       </Sheet>
+      {/* ──────────────────────────────── data e durata (in modifica) ── */}
+      <Sheet
+        visible={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        title="Data e durata"
+        subtitle="Correggi quando e quanto è durato. L'ora di inizio resta quella."
+        scrollable={false}>
+        <SheetAction
+          label="Data"
+          description={`${formatSessionDate(scheduleStart)} · ${formatTime(scheduleStart)}`}
+          onPress={() => setDatePickerOpen(true)}
+        />
+        <NumberStepper
+          label="Durata"
+          value={Math.round(scheduleDuration / 60)}
+          onChange={(minutes) => setScheduleDuration((minutes ?? 0) * 60)}
+          step={5}
+          min={0}
+          max={600}
+          suffix="min"
+        />
+        <Button
+          title="Salva"
+          fullWidth
+          onPress={() => {
+            const endedAt = new Date(scheduleStart.getTime() + scheduleDuration * 1000);
+            updateSessionSchedule(sessionId, scheduleStart, endedAt, scheduleDuration);
+            setScheduleOpen(false);
+          }}
+        />
+      </Sheet>
+
+      {datePickerOpen ? (
+        <DateTimePicker
+          value={scheduleStart}
+          mode="date"
+          display="default"
+          onValueChange={(_event, date) => {
+            setScheduleStart(
+              (current) =>
+                new Date(
+                  date.getFullYear(),
+                  date.getMonth(),
+                  date.getDate(),
+                  current.getHours(),
+                  current.getMinutes(),
+                  current.getSeconds(),
+                ),
+            );
+            setDatePickerOpen(false);
+          }}
+          onDismiss={() => setDatePickerOpen(false)}
+        />
+      ) : null}
     </Screen>
   );
 }

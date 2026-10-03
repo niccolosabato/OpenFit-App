@@ -495,6 +495,23 @@ export function discardSession(sessionId: string): void {
   db.delete(workoutSessions).where(eq(workoutSessions.id, sessionId)).run();
 }
 
+/**
+ * Sposta un allenamento nel tempo. Inizio, fine e durata vanno insieme: la fine
+ * è l'inizio più la durata, e tenerne una sola delle due disallineerebbe ciò
+ * che lo storico mostra.
+ */
+export function updateSessionSchedule(
+  id: string,
+  startedAt: Date,
+  endedAt: Date | null,
+  durationSeconds: number | null,
+): void {
+  db.update(workoutSessions)
+    .set({ startedAt, endedAt, durationSeconds })
+    .where(eq(workoutSessions.id, id))
+    .run();
+}
+
 /* ───────────────────────────────────────────────────────── storico ── */
 
 export function sessionHistoryQuery(limit = 100) {
