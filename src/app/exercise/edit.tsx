@@ -6,6 +6,7 @@ import { Screen } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Text } from '@/components/ui/text';
 import { getExercise, updateExercise } from '@/db/queries/exercises';
+import { syncRoutineRestFromExercise } from '@/db/queries/routines';
 import { useTheme } from '@/theme';
 
 export default function EditExerciseScreen() {
@@ -39,6 +40,7 @@ export default function EditExerciseScreen() {
         // Solo i campi del modulo: `isCustom`, `isFavorite`, `isUnilateral` e i
         // muscoli secondari restano quelli che erano.
         updateExercise(exercise.id, values);
+        syncRoutineRestFromExercise(exercise.id, exercise.defaultRestSeconds, values.defaultRestSeconds);
         router.back();
       }}
     />

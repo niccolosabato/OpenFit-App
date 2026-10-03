@@ -18,6 +18,8 @@ export type TargetLike = {
   targetRir: number | null;
   targetDurationSeconds: number | null;
   targetDistanceMeters: number | null;
+  /** Solo le serie previste lo portano: serve a tacere il target delle AMRAP. */
+  setType?: SetType;
 };
 
 /** `8-10`, `5`, `45"`, `—`. */
@@ -57,7 +59,9 @@ export function describeRoutineSet(
 ): string {
   const parts: string[] = [];
 
-  if (usesReps(tracking) || usesDuration(tracking)) {
+  // L'AMRAP si va a esaurimento: mostrare un "8-10" accanto alla sigla AM
+  // farebbe credere a un obiettivo che non c'è.
+  if ((usesReps(tracking) || usesDuration(tracking)) && set.setType !== 'amrap') {
     parts.push(formatTargetReps(set, tracking));
   }
   if (usesDistance(tracking) && set.targetDistanceMeters) {

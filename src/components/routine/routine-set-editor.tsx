@@ -82,11 +82,14 @@ export function RoutineSetEditor({
   }, [set, settings.unit, settings.effortScale]);
 
   function save() {
+    // Una serie AMRAP non ha un target di ripetizioni: si va a esaurimento, e
+    // un numero previsto sarebbe una bugia. Si azzera anche se c'era.
+    const amrap = setType === 'amrap';
     onSave({
       setType,
       technique,
-      targetRepsMin: repsMin,
-      targetRepsMax: repsMax,
+      targetRepsMin: amrap ? null : repsMin,
+      targetRepsMax: amrap ? null : repsMax,
       targetWeight: weight === null ? null : toKg(weight, settings.unit),
       // Una colonna sola per volta: è quella valorizzata a dire con che scala
       // la serie è stata pensata.
@@ -121,7 +124,7 @@ export function RoutineSetEditor({
         </View>
       </View>
 
-      {usesReps(tracking) ? (
+      {usesReps(tracking) && setType !== 'amrap' ? (
         // Ripieghevole: due stepper affiancati stanno su un telefono normale
         // (≈140dp a testa), ma su schermi più stretti o con testo ingrandito
         // andavano a capo da soli invece di tagliare il secondo "+".

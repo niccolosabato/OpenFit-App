@@ -1,4 +1,4 @@
-import { asc, count, eq, isNull, max, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, max, sql } from 'drizzle-orm';
 
 import { newId } from '@/lib/ids';
 import { moveItem, supersetsToClear } from '@/lib/reorder';
@@ -180,6 +180,34 @@ export function addExerciseToDay(dayId: string, exerciseId: string): string {
 
 export function updateRoutineExercise(id: string, patch: Partial<RoutineExercise>): void {
   db.update(routineExercises).set(patch).where(eq(routineExercises.id, id)).run();
+}
+
+/**
+ * Allinea il recupero ereditato nelle schede quando cambia quello predefinito
+ * dell'esercizio. Le righe del giorno portano una copia del default fatta al
+ * momento dell'aggiunta, quindi senza questo resterebbero indietro. Si toccano
+ * solo le righe che portavano ancora il vecchio valore — o nessuno, quando
+ * l'esercizio non aveva un default: un recupero personalizzato a mano resta.
+ *
+ * Le sessioni non si toccano: sono istantanee di un allenamento, e riscriverle
+ * cambierebbe il passato.
+ */
+export function syncRoutineRestFromExercise(
+  exerciseId: string,
+  previousRest: number | null,
+  nextRest: number | null,
+): void {
+  if (previousRest === nextRest) return;
+
+  const inherited =
+    previousRest === null
+      ? isNull(routineExercises.restSeconds)
+      : eq(routineExercises.restSeconds, previousRest);
+
+  db.update(routineExercises)
+    .set({ restSeconds: nextRest })
+    .where(and(eq(routineExercises.exerciseId, exerciseId), inherited))
+    .run();
 }
 
 export function removeRoutineExercise(id: string): void {

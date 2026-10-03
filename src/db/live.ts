@@ -18,14 +18,56 @@
  */
 
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useRef } from 'react';
+import { addDatabaseChangeListener } from 'expo-sqlite';
+import { useEffect, useRef, useState } from 'react';
 
-import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
+import { getTableConfig, type AnySQLiteSelect, type SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 type LiveSelect = Pick<AnySQLiteSelect, '_' | 'then'>;
 
-export function useLiveRows<T extends LiveSelect>(query: T, deps: unknown[] = []): Awaited<T> {
-  const { data, updatedAt } = useLiveQuery(query, deps);
+/**
+ * `useLiveQuery`, ma con la prima lettura già fatta.
+ *
+ * `useLiveQuery` di Drizzle risolve la prima lettura dentro una promessa: fino
+ * a quando non arriva restituisce una lista vuota. Su una schermata che si
+ * apre con un'animazione — la sessione entra dal basso e ci mette trecento
+ * millisecondi — quella lista vuota non dura un fotogramma ma tutta l'entrata,
+ * e per tutta l'entrata si legge "Nessun allenamento in corso" o "Allenamento
+ * vuoto" prima che compaia il contenuto vero.
+ *
+ * Il driver di expo-sqlite però è **sincrono**: la prima risposta la si può
+ * avere subito, nel corpo del componente, senza aspettare niente. La query
+ * viva continua a servire per tutto il resto, cioè tenere la schermata
+ * aggiornata quando i dati cambiano.
+ *
+ * Da usare dove il «non c'è niente» ha una resa diversa dal «c'è qualcosa»:
+ * per una lista che si limita a essere vuota non cambia nulla.
+ *
+ * `watch` sono le tabelle in più da ascoltare. `useLiveQuery` si iscrive ai
+ * cambi della **sola prima tabella** della query: in una join, una modifica
+ * alla libreria (nome, tipo di misurazione) non risveglia una schermata che
+ * parte da `routine_exercises` o `session_exercises`, e resta coi dati vecchi.
+ */
+export function useLiveRows<T extends LiveSelect>(
+  query: T,
+  deps: unknown[] = [],
+  watch: SQLiteTable[] = [],
+): Awaited<T> {
+  // Il nome, non l'array: chi chiama può passare una lista nuova a ogni render
+  // senza far ripartire l'iscrizione.
+  const watchedTables = watch.map((table) => getTableConfig(table).name).join(',');
+  const [bump, setBump] = useState(0);
+
+  useEffect(() => {
+    if (!watchedTables) return;
+    const watched = new Set(watchedTables.split(','));
+    const listener = addDatabaseChangeListener(({ tableName }) => {
+      if (watched.has(tableName)) setBump((current) => current + 1);
+    });
+    return () => listener.remove();
+  }, [watchedTables]);
+
+  const { data, updatedAt } = useLiveQuery(query, [...deps, bump]);
 
   /**
    * La lettura sincrona, e il valore di `updatedAt` visto nel momento in cui

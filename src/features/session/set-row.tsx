@@ -209,7 +209,8 @@ export function SetRow({
   const previousLabel = previous ? describePrevious(previous, tracking, unit) : '—';
 
   return (
-    <View
+    <Pressable
+      onLongPress={onOpenMenu}
       style={[
         styles.row,
         {
@@ -234,6 +235,7 @@ export function SetRow({
 
       <Pressable
         onPress={onOpenMenu}
+        onLongPress={onOpenMenu}
         accessibilityRole="button"
         accessibilityLabel="Tipo di serie"
         style={{ width: INDEX_WIDTH, minHeight: theme.hit, alignItems: 'center', justifyContent: 'center' }}>
@@ -253,6 +255,7 @@ export function SetRow({
           l'icona che dice cosa fa. */}
       <Pressable
         onPress={copyPrevious}
+        onLongPress={onOpenMenu}
         disabled={!previous}
         accessibilityRole="button"
         accessibilityLabel="Ricopia la volta precedente"
@@ -340,7 +343,7 @@ export function SetRow({
           <CheckBox done={done} isPr={set.isPr} />
         </Animated.View>
       </Pressable>
-    </View>
+    </Pressable>
   );
 }
 

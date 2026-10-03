@@ -22,7 +22,7 @@ import {
   startSessionFromDay,
 } from '@/db/queries/sessions';
 import { useLiveRows } from '@/db/live';
-import type { SessionSet } from '@/db/schema';
+import { exercises, sessionExercises, type SessionSet } from '@/db/schema';
 import { removeSession } from '@/features/session/actions';
 import { startWorkout } from '@/features/session/start';
 import { formatDuration, formatDurationLong, formatSessionDate, formatTime } from '@/lib/format';
@@ -40,7 +40,10 @@ export default function SessionDetailScreen() {
   // «Allenamento non trovato» per tutta l'animazione di entrata, e solo dopo
   // compariva la seduta.
   const sessionRows = useLiveRows(useMemo(() => sessionQuery(id), [id]), [id]);
-  const items = useLiveRows(useMemo(() => sessionExercisesQuery(id), [id]), [id]);
+  const items = useLiveRows(useMemo(() => sessionExercisesQuery(id), [id]), [id], [
+    sessionExercises,
+    exercises,
+  ]);
   const setRows = useLiveRows(useMemo(() => sessionSetsQuery(id), [id]), [id]);
 
   const session = sessionRows[0];

@@ -35,7 +35,8 @@ import {
   updateRoutineExercise,
   updateRoutineSet,
 } from '@/db/queries/routines';
-import type { RoutineExercise, RoutineSet } from '@/db/schema';
+import { useLiveRows } from '@/db/live';
+import { exercises, routineExercises, type RoutineExercise, type RoutineSet } from '@/db/schema';
 import { startSessionFromDay } from '@/db/queries/sessions';
 import { startWorkout } from '@/features/session/start';
 import { formatRest, pluralize } from '@/lib/format';
@@ -53,11 +54,15 @@ export default function RoutineDayScreen() {
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
 
   const { data: dayRows } = useLiveQuery(useMemo(() => routineDayQuery(dayId), [dayId]), [dayId]);
-  const { data: exerciseRows } = useLiveQuery(useMemo(() => dayExercisesQuery(dayId), [dayId]), [dayId]);
   const { data: setRows } = useLiveQuery(useMemo(() => dayRoutineSetsQuery(dayId), [dayId]), [dayId]);
 
+  const items = useLiveRows(
+    useMemo(() => dayExercisesQuery(dayId), [dayId]),
+    [dayId],
+    [routineExercises, exercises],
+  );
+
   const day = dayRows?.[0];
-  const items = exerciseRows ?? [];
 
   /** Serie raggruppate per esercizio: una query sola, poi si smista in memoria. */
   const setsByExercise = useMemo(() => {

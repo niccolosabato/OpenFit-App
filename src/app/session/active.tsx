@@ -21,6 +21,7 @@ import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import {
   PLATE_LOADED_EQUIPMENT,
+  SET_TYPE_BADGE,
   SET_TYPE_LABELS,
   TECHNIQUES,
   TECHNIQUE_CHILD_TYPE,
@@ -48,7 +49,7 @@ import {
   updateSessionSet,
 } from '@/db/queries/sessions';
 import { useLiveRows } from '@/db/live';
-import type { SessionExercise, SessionSet } from '@/db/schema';
+import { exercises, sessionExercises, type SessionExercise, type SessionSet } from '@/db/schema';
 import { ExerciseRail } from '@/features/session/exercise-rail';
 import { PlateSheet } from '@/features/session/plate-sheet';
 import {
@@ -104,6 +105,7 @@ export default function ActiveSessionScreen() {
   const items = useLiveRows(
     useMemo(() => sessionExercisesQuery(sessionId), [sessionId]),
     [sessionId],
+    [sessionExercises, exercises],
   );
   const setRows = useLiveRows(
     useMemo(() => sessionSetsQuery(sessionId), [sessionId]),
@@ -149,6 +151,7 @@ export default function ActiveSessionScreen() {
   const [elapsed, setElapsed] = useState(0);
   const [menuSet, setMenuSet] = useState<SessionSet | null>(null);
   const [menuExercise, setMenuExercise] = useState<SessionExercise | null>(null);
+  const [setListFor, setSetListFor] = useState<SessionExercise | null>(null);
   const [plateFor, setPlateFor] = useState<number | null>(null);
   const [finishOpen, setFinishOpen] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
@@ -520,6 +523,16 @@ export default function ActiveSessionScreen() {
     router.back();
   }
 
+  // Serie di primo livello dell'esercizio di cui è aperto l'elenco: le figlie
+  // (drop set, rest-pause…) restano agganciate al padre e non si riordinano da
+  // sole.
+  const setListExercise = setListFor
+    ? items.find((entry) => entry.sessionExercise.id === setListFor.id)
+    : undefined;
+  const setListSets = (setListFor ? (setsByExercise.get(setListFor.id) ?? []) : []).filter(
+    (set) => set.parentSetId === null,
+  );
+
   return (
     <Screen
       padded={false}
@@ -812,12 +825,84 @@ export default function ActiveSessionScreen() {
           }}
         />
         <SheetAction
+          label="Modifica serie"
+          description="Riordina, cambia tipo e tecniche, elimina: senza cercare il numerino."
+          onPress={() => {
+            if (menuExercise) setSetListFor(menuExercise);
+            setMenuExercise(null);
+          }}
+        />
+        <SheetAction
           label="Rimuovi dall’allenamento"
           destructive
           onPress={() => {
             if (menuExercise) removeSessionExercise(menuExercise.id);
             setMenuExercise(null);
           }}
+        />
+      </Sheet>
+
+      {/* ───────────────────────────────── elenco serie di un esercizio ── */}
+      {/* Seconda strada ai settings della serie, scopribile: dal menu
+          dell'esercizio, invece che dal numerino. Ogni riga è una superficie
+          con la freccia, come le voci di un foglio: si vede che si tocca. */}
+      <Sheet
+        visible={setListFor !== null}
+        onClose={() => setSetListFor(null)}
+        title={setListExercise?.exercise.name ?? 'Serie'}>
+        {setListSets.map((set, index) => {
+          const label =
+            set.setType === 'working'
+              ? String(
+                  setListSets
+                    .slice(0, index + 1)
+                    .filter((entry) => countsAsWorkingSet(entry.setType)).length,
+                )
+              : SET_TYPE_BADGE[set.setType];
+
+          return (
+            <Pressable
+              key={set.id}
+              onPress={() => {
+                setSetListFor(null);
+                setMenuSet(set);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Modifica la serie ${label}`}>
+              {({ pressed }) => (
+                <Surface
+                  level="top"
+                  radius={theme.radius.md}
+                  pressed={pressed}
+                  bordered={false}
+                  style={{
+                    minHeight: theme.hit,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: theme.space.sm,
+                    paddingHorizontal: theme.space.md,
+                  }}>
+                  <View style={{ width: 32, alignItems: 'center' }}>
+                    <Text variant="subtitle" tone="dim" numeric>
+                      {label}
+                    </Text>
+                  </View>
+                  <Text variant="subtitle" style={{ flex: 1 }} numberOfLines={1}>
+                    {SET_TYPE_LABELS[set.setType]}
+                  </Text>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={20}
+                    color={theme.colors.textFaint}
+                  />
+                </Surface>
+              )}
+            </Pressable>
+          );
+        })}
+        <SheetAction
+          label="Aggiungi serie"
+          onPress={() => setListFor && addSessionSet(setListFor.id)}
         />
       </Sheet>
 
