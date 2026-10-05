@@ -131,13 +131,16 @@ export const useRestTimer = create<RestTimerState>((set, get) => {
         return;
       }
 
+      // `notificationId` non si azzera qui: lo fa `schedule`, ma solo dopo aver
+      // annullato la notifica che rappresenta. Azzerandolo prima, l'id andava
+      // perso e l'allarme precedente restava armato: un doppio tocco sulla
+      // spunta lasciava due o tre notifiche per lo stesso recupero.
       set({
         endsAt: Date.now() + seconds * 1000,
         pausedRemaining: null,
         duration: seconds,
         label,
         kind: options.kind ?? 'rest',
-        notificationId: null,
       });
 
       schedule(seconds, label, options);
