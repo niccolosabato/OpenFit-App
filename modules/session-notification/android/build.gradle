@@ -1,0 +1,21 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.sessionnotification'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.sessionnotification"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+}
+
+dependencies {
+  // `NotificationCompat` e `NotificationManagerCompat`: l'unico modo di
+  // costruire una notifica compatibile con API 24.
+  implementation 'androidx.core:core:1.17.0'
+}

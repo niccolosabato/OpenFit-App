@@ -10,7 +10,9 @@
  */
 
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { type AnimatedRef } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -33,6 +35,12 @@ export function Sheet({
    * scorrendo — che è esattamente il problema che questo redesign risolve.
    */
   footer,
+  /**
+   * Ref al contenitore che scorre: serve a chi, dentro il foglio, deve farlo
+   * muovere da sé — il riordino a trascinamento quando il dito è contro un
+   * bordo. È una `ScrollView` di Reanimated, come in `ScreenScroll`.
+   */
+  scrollRef,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -41,6 +49,7 @@ export function Sheet({
   children: ReactNode;
   scrollable?: boolean;
   footer?: ReactNode;
+  scrollRef?: AnimatedRef<Animated.ScrollView>;
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -49,77 +58,85 @@ export function Sheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      {/* Il foglio è un `Modal`, cioè una finestra a sé: la tastiera non lo
-          ridimensiona come fa con il resto dell'app, e senza questo copre il
-          campo che si sta compilando e i pulsanti sotto. */}
-      <KeyboardAvoidingView style={styles.fill} behavior="padding">
-        <Pressable
-          style={[styles.backdrop, { backgroundColor: theme.colors.scrim }]}
-          onPress={onClose}
-          accessibilityLabel="Chiudi"
-        />
+      {/* Il foglio è un `Modal`, cioè una finestra a sé: i gesti non arrivano
+          alla root view dell'app, e senza una radice qui dentro il
+          trascinamento (e qualunque gesto futuro) non partirebbe mai.
+          Per la tastiera vale lo stesso: la finestra non si ridimensiona
+          come fa il resto dell'app, e senza questo avvolgimento coprirebbe
+          il campo che si sta compilando e i pulsanti sotto. */}
+      <GestureHandlerRootView style={styles.fill}>
+        <KeyboardAvoidingView style={styles.fill} behavior="padding">
+          <Pressable
+            style={[styles.backdrop, { backgroundColor: theme.colors.scrim }]}
+            onPress={onClose}
+            accessibilityLabel="Chiudi"
+          />
 
-        {/* Il pannello non è incollato al bordo: galleggia, con lo stesso
-            distacco delle barre. */}
-        <Surface
-          level="high"
-          elevation="sheet"
-          radius={theme.radius.xxl}
-          style={[
-            styles.panel,
-            {
-              marginHorizontal: theme.floatInset,
-              // L'area sicura la tiene il margine del pannello: chi sta dentro
-              // non deve sommarla una seconda volta.
-              marginBottom: Math.max(insets.bottom, theme.floatInset),
-              paddingBottom: footer ? 0 : theme.space.md,
-            },
-          ]}>
-          <View style={[styles.grabber, { backgroundColor: theme.colors.borderStrong }]} />
+          {/* Il pannello non è incollato al bordo: galleggia, con lo stesso
+              distacco delle barre. */}
+          <Surface
+            level="high"
+            elevation="sheet"
+            radius={theme.radius.xxl}
+            style={[
+              styles.panel,
+              {
+                marginHorizontal: theme.floatInset,
+                // L'area sicura la tiene il margine del pannello: chi sta dentro
+                // non deve sommarla una seconda volta.
+                marginBottom: Math.max(insets.bottom, theme.floatInset),
+                paddingBottom: footer ? 0 : theme.space.md,
+              },
+            ]}>
+            <View style={[styles.grabber, { backgroundColor: theme.colors.borderStrong }]} />
 
-          {title ? (
-            <View
-              style={{
-                paddingHorizontal: theme.space.lg,
-                paddingBottom: theme.space.sm,
-                gap: theme.space.xs,
-                alignItems: 'center',
-              }}>
-              <Text variant="heading" style={styles.centered} numberOfLines={2}>
-                {title}
-              </Text>
-              {subtitle ? (
-                <Text variant="caption" tone="dim" style={styles.centered}>
-                  {subtitle}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
-
-          {scrollable ? (
-            <ScrollView keyboardShouldPersistTaps="handled" style={styles.scroll}>
-              {body}
-            </ScrollView>
-          ) : (
-            body
-          )}
-
-          {footer ? (
-            <View
-              style={[
-                styles.footer,
-                {
-                  borderTopColor: theme.colors.border,
+            {title ? (
+              <View
+                style={{
                   paddingHorizontal: theme.space.lg,
-                  paddingVertical: theme.space.md,
-                  gap: theme.space.sm,
-                },
-              ]}>
-              {footer}
-            </View>
-          ) : null}
-        </Surface>
-      </KeyboardAvoidingView>
+                  paddingBottom: theme.space.sm,
+                  gap: theme.space.xs,
+                  alignItems: 'center',
+                }}>
+                <Text variant="heading" style={styles.centered} numberOfLines={2}>
+                  {title}
+                </Text>
+                {subtitle ? (
+                  <Text variant="caption" tone="dim" style={styles.centered}>
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {scrollable ? (
+              <Animated.ScrollView
+                ref={scrollRef}
+                keyboardShouldPersistTaps="handled"
+                style={styles.scroll}>
+                {body}
+              </Animated.ScrollView>
+            ) : (
+              body
+            )}
+
+            {footer ? (
+              <View
+                style={[
+                  styles.footer,
+                  {
+                    borderTopColor: theme.colors.border,
+                    paddingHorizontal: theme.space.lg,
+                    paddingVertical: theme.space.md,
+                    gap: theme.space.sm,
+                  },
+                ]}>
+                {footer}
+              </View>
+            ) : null}
+          </Surface>
+        </KeyboardAvoidingView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

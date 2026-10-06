@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, isNull, max, sql } from 'drizzle-orm';
 
 import { newId } from '@/lib/ids';
+import { moveItem, supersetsToClear } from '@/lib/reorder';
 import { setVolumeKg } from '@/lib/volume';
 import { db } from '../client';
 import {
@@ -210,28 +211,64 @@ export function updateSessionNotes(sessionId: string, notes: string | null): voi
   db.update(workoutSessions).set({ notes }).where(eq(workoutSessions.id, sessionId)).run();
 }
 
-export function moveSessionExercise(sessionId: string, id: string, direction: -1 | 1): void {
-  const list = db
+/**
+ * Riscrive in blocco l'ordine degli esercizi di una sessione.
+ *
+ * Stesso mestiere di `reorderRoutineExercises`: insieme all'ordine vanno
+ * rimessi a posto i superset, che sono contiguità e non sopravvivono a un
+ * esercizio portato altrove. Da qui passa ogni riordino — il trascinamento e
+ * le frecce del menu esercizio.
+ */
+export function reorderSessionExercises(sessionId: string, orderedIds: string[]): void {
+  const list = sessionExercisesInOrder(sessionId);
+  const byId = new Map(list.map((e) => [e.id, e]));
+  const ordered = orderedIds.map((id) => byId.get(id)).filter((e) => e !== undefined);
+
+  // Se la lista arrivata non copre esattamente la sessione è vecchia: meglio
+  // non scrivere niente che lasciare fuori un esercizio.
+  if (ordered.length !== list.length) return;
+
+  writeSessionOrder(ordered);
+}
+
+function sessionExercisesInOrder(sessionId: string): SessionExercise[] {
+  return db
     .select()
     .from(sessionExercises)
     .where(eq(sessionExercises.sessionId, sessionId))
     .orderBy(asc(sessionExercises.orderIndex))
     .all();
+}
+
+/** Fissa una sequenza già verificata: indici 0..n-1 e superset ricuciti. */
+function writeSessionOrder(ordered: SessionExercise[]): void {
+  const toClear = new Set(supersetsToClear(ordered));
+
+  db.transaction((tx) => {
+    ordered.forEach((exercise, index) => {
+      const supersetGroup = toClear.has(exercise.id) ? null : exercise.supersetGroup;
+      if (exercise.orderIndex === index && exercise.supersetGroup === supersetGroup) return;
+
+      tx.update(sessionExercises)
+        .set({ orderIndex: index, supersetGroup })
+        .where(eq(sessionExercises.id, exercise.id))
+        .run();
+    });
+  });
+}
+
+/**
+ * Sposta un esercizio di una posizione. Resta accanto al trascinamento come
+ * ripiego preciso: un posto solo, senza mirare.
+ */
+export function moveSessionExercise(sessionId: string, id: string, direction: -1 | 1): void {
+  const list = sessionExercisesInOrder(sessionId);
 
   const index = list.findIndex((e) => e.id === id);
   const target = index + direction;
   if (index < 0 || target < 0 || target >= list.length) return;
 
-  db.transaction((tx) => {
-    tx.update(sessionExercises)
-      .set({ orderIndex: list[target].orderIndex })
-      .where(eq(sessionExercises.id, list[index].id))
-      .run();
-    tx.update(sessionExercises)
-      .set({ orderIndex: list[index].orderIndex })
-      .where(eq(sessionExercises.id, list[target].id))
-      .run();
-  });
+  writeSessionOrder(moveItem(list, index, target));
 }
 
 /* ─────────────────────────────────────────────── serie della sessione ── */

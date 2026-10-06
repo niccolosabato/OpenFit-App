@@ -4,7 +4,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Pressable, Keyboard, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Sortable from 'react-native-sortables';
 
 import { ActionBar, ActionBarPrimary } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
@@ -43,6 +45,7 @@ import {
   getPreviousPerformance,
   moveSessionExercise,
   removeSessionExercise,
+  reorderSessionExercises,
   sessionExercisesQuery,
   sessionQuery,
   sessionSetsQuery,
@@ -180,6 +183,10 @@ export default function ActiveSessionScreen() {
   // scorrimento per sapere dove saltare e cosa si sta guardando.
   const cards = useRef<(CardBox | undefined)[]>([]);
   const scroll = useRef<SessionScrollHandle>(null);
+
+  // Lo scorrimento del foglio di riordino: il trascinamento lo deve poter
+  // muovere da sé quando il dito arriva contro un bordo.
+  const reorderScrollRef = useAnimatedRef<Animated.ScrollView>();
 
   // Lo schermo resta acceso per tutta la seduta: fra una serie e l'altra il
   // telefono è appoggiato sulla panca e riaccenderlo ogni volta è un attrito.
@@ -776,33 +783,58 @@ export default function ActiveSessionScreen() {
       </Sheet>
 
       {/* ──────────────────────────────────────────────────────── riordino ── */}
-      {/* Le frecce non chiudono il foglio: spostare un esercizio di quattro
-          posti costava otto tocchi e quattro aperture di menu. */}
+      {/* Si prende la riga e si trascina: le frecce chiedevano un tocco per
+          posto e quattro tocchi per uno spostamento di quattro. */}
       <Sheet
         visible={reorderOpen}
         onClose={() => setReorderOpen(false)}
-        title="Riordina gli esercizi">
-        {items.map((item, index) => (
-          <View key={item.sessionExercise.id} style={[styles.reorderRow, { gap: theme.space.sm }]}>
-            <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
-              {item.exercise.name}
-            </Text>
-            <IconButton
-              icon="chevron-up"
-              label={`Sposta ${item.exercise.name} in su`}
-              surface
-              disabled={index === 0}
-              onPress={() => moveSessionExercise(sessionId, item.sessionExercise.id, -1)}
-            />
-            <IconButton
-              icon="chevron-down"
-              label={`Sposta ${item.exercise.name} in giù`}
-              surface
-              disabled={index === items.length - 1}
-              onPress={() => moveSessionExercise(sessionId, item.sessionExercise.id, 1)}
-            />
-          </View>
-        ))}
+        title="Riordina gli esercizi"
+        subtitle="Tieni premuto e trascina per spostare."
+        scrollRef={reorderScrollRef}>
+        <Sortable.Grid
+          columns={1}
+          data={items}
+          keyExtractor={(item) => item.sessionExercise.id}
+          rowGap={theme.space.sm}
+          // Si prende dalla riga intera: qui dentro non c'è nient'altro da
+          // toccare, e a trascinare si impara dal simbolo.
+          customHandle
+          scrollableRef={reorderScrollRef}
+          hapticsEnabled={settings.timerVibration}
+          dragActivationDelay={250}
+          activeItemScale={1.02}
+          onDragEnd={({ data }) =>
+            reorderSessionExercises(
+              sessionId,
+              data.map((entry) => entry.sessionExercise.id),
+            )
+          }
+          renderItem={({ item }) => (
+            <Sortable.Handle>
+              <Surface
+                level="top"
+                radius={theme.radius.md}
+                bordered={false}
+                style={[
+                  styles.reorderRow,
+                  {
+                    minHeight: theme.hit,
+                    paddingHorizontal: theme.space.md,
+                    gap: theme.space.sm,
+                  },
+                ]}>
+                <MaterialCommunityIcons
+                  name="drag-vertical"
+                  size={22}
+                  color={theme.colors.textFaint}
+                />
+                <Text variant="subtitle" style={{ flex: 1 }} numberOfLines={1}>
+                  {item.exercise.name}
+                </Text>
+              </Surface>
+            </Sortable.Handle>
+          )}
+        />
       </Sheet>
 
       {/* ───────────────────────────────────────────── menu di una serie ── */}

@@ -250,9 +250,17 @@ export function openExactAlarmSettings(): void {
  * telefono era in tasca, e chi ha appena aperto l'app quel recupero l'ha già
  * letto. Annulla solo quelle *presentate*, non quelle programmate — un timer
  * ancora in corso non si tocca.
+ *
+ * Restituisce una promessa perché la tendina è una sola: la pulizia porta via
+ * anche la notifica fissa della sessione, e chi la chiama deve poterla
+ * rimettere *dopo*, non durante (vedi `_layout.tsx`).
  */
-export function dismissPresented(): void {
+export async function dismissPresented(): Promise<void> {
   const module = load();
   if (!module) return;
-  module.dismissAllNotificationsAsync().catch(() => {});
+  try {
+    await module.dismissAllNotificationsAsync();
+  } catch {
+    // Se la tendina non si può pulire, il timer resta comunque valido.
+  }
 }

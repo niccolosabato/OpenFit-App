@@ -24,6 +24,7 @@ import { db } from '@/db/client';
 import { ToastHost } from '@/components/ui/toast';
 import { ConfirmHost } from '@/components/ui/confirm';
 import { dismissPresented } from '@/features/timer/local-notifications';
+import { syncSessionNotification, useSessionNotification } from '@/features/session/session-notification';
 import { OnboardingFlow } from '@/features/onboarding/onboarding-flow';
 import { SettingsProvider, useSettings } from '@/store/settings';
 import { ThemeProvider } from '@/theme';
@@ -60,11 +61,21 @@ const BOOT_TIMEOUT_MS = 10_000;
 function AppRoutes() {
   const { settings, isLoaded } = useSettings();
 
+  // La notifica fissa segue la sessione anche da fuori: sta nella tendina, e
+  // da lì dice che l'allenamento è in corso e quanto manca al recupero.
+  useSessionNotification();
+
   // Il recupero può essere finito mentre il telefono era in tasca: quando si
   // riapre l'app quella notifica è già stata letta e non deve restare nella
   // tendina. Si toccano solo le notifiche presentate, mai quelle programmate.
+  //
+  // La pulizia però porta via anche la notifica fissa della sessione — la
+  // tendina è una sola — quindi subito dopo la si rimette, se c'è ancora una
+  // seduta in corso.
   useEffect(() => {
-    const clear = () => dismissPresented();
+    const clear = () => {
+      dismissPresented().finally(() => syncSessionNotification());
+    };
     clear();
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') clear();

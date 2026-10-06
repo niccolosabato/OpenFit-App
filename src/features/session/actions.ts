@@ -9,6 +9,7 @@
 import { deleteSession, discardSession, finishSession, updateSessionSet } from '@/db/queries/sessions';
 import type { SessionSet } from '@/db/schema';
 import { applyRecords, rebuildRecords, type RecordHit } from '@/features/stats/records';
+import { useRestTimer } from '@/features/timer/rest-timer';
 
 export type SetValues = {
   weight: number | null;
@@ -60,6 +61,9 @@ export function removeSession(sessionId: string): void {
 
 /** Scarta la sessione in corso; se aveva già segnato record, li ritira. */
 export function abandonSession(sessionId: string): void {
+  // Fermare la seduta deve spegnere anche un recupero armato: altrimenti la
+  // notifica "Recupero finito" suonerebbe per un allenamento già abbandonato.
+  useRestTimer.getState().stop();
   discardSession(sessionId);
   rebuildRecords();
 }
@@ -75,6 +79,9 @@ export function abandonSession(sessionId: string): void {
  * storico.
  */
 export function finishWorkout(sessionId: string, notes?: string): void {
+  // Come per `abandonSession`: la seduta è chiusa, il recupero non ha più
+  // niente da ricordare.
+  useRestTimer.getState().stop();
   finishSession(sessionId, notes);
   rebuildRecords();
 }
