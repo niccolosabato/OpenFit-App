@@ -1,8 +1,10 @@
 # OpenFit
 
-Diario di allenamento per la sala pesi. App Android nativa: si registra ogni
-serie mentre la si fa, il recupero è cronometrato e i carichi della volta
-precedente sono sempre sotto gli occhi.
+[![Licenza: MIT](https://img.shields.io/badge/licenza-MIT-c9f53a.svg)](LICENSE)
+
+Diario di allenamento per la sala pesi. App Android nativa e open source
+(licenza MIT): si registra ogni serie mentre la si fa, il recupero è
+cronometrato e i carichi della volta precedente sono sempre sotto gli occhi.
 
 L'interfaccia è scura, con le azioni ancorate in fondo allo schermo: durante
 una seduta il telefono si tiene con una mano sola, e ciò che si tocca fra una
@@ -86,3 +88,9 @@ npx eas build -p android --profile preview
 Profilo, schede, storico e misurazioni vivono in un database SQLite nella
 sandbox dell'app. Non escono dal telefono. Disinstallare l'app cancella tutto:
 l'export JSON dal Profilo è l'unico modo per conservarli o spostarli.
+
+## Licenza
+
+Il codice di OpenFit è distribuito con licenza MIT. Vedi il file
+[`LICENSE`](LICENSE). Le dipendenze, i caratteri e le icone mantengono le
+proprie licenze.

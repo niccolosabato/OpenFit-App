@@ -34,7 +34,7 @@ const EFFORT_SCALES: EffortScale[] = ['rpe', 'rir', 'none'];
 const UNITS: WeightUnit[] = ['kg', 'lb'];
 
 /**
- * `1.0.0 (5)`, oppure solo il nome se il numero di build non c'è.
+ * `1.2.0 (7)`, oppure solo il nome se il numero di build non c'è.
  *
  * Il `versionCode` si alza da sé a ogni build (vedi `eas.json`), quindi mostra
  * sempre a quale build si sta guardando anche quando il nome versione — quello

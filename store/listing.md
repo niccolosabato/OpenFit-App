@@ -10,9 +10,9 @@ Diario di allenamento per la sala pesi. Offline, senza account, privacy oriented
 
 ## Descrizione completa (max 4000)
 
-OpenFit è il diario di allenamento definito disegnato da chi si allena per chi si allena.
+OpenFit è il diario di allenamento disegnato da chi si allena per chi si allena.
 
-Registri ogni serie mentre la fai: carico, ripetizioni e quanto è stata dura. Il carico della volta precedente è già lì, in colonna, così sai cosa devi battere  senza andarlo a cercare. Il timer di recupero parte da solo e ti avvisa alla
+Registri ogni serie mentre la fai: carico, ripetizioni e quanto è stata dura. Il carico della volta precedente è già lì, in colonna, così sai cosa devi battere senza andarlo a cercare. Il timer di recupero parte da solo e ti avvisa alla
 fine, anche a schermo spento.
 
 Tutto quello che serve in palestra, in un'app veloce e senza distrazioni:
@@ -35,6 +35,9 @@ palestra
 I tuoi dati restano sul telefono. Nessun account, nessun server, nessuna
 sincronizzazione: quello che registri è tuo e basta. L'app funziona
 completamente offline e open-source.
+
+Il codice sorgente è su GitHub, con licenza MIT:
+https://github.com/niccolosabato/OpenFit-App
 
 ## Categoria
 
@@ -76,7 +79,14 @@ atteso: **Tutti / PEGI 3**.
 
 ## Asset
 
-- `store/icon-512.png` — icona 512×512
-- `store/feature-graphic.png` — grafica in evidenza 1024×500
-- Screenshot telefono: **da fare dal dispositivo** (almeno 2, min 320 px lato
-  corto, max 3840, rapporto fra 16:9 e 9:16)
+- `store/icon-512.png`: icona 512×512
+- `store/feature-graphic.png`: grafica in evidenza 1024×500
+- Screenshot in `store/mockups/` (1080×1920, rapporto 9:16, validi per il
+  Play Store):
+  - `01-oggi.jpg`
+  - `02-statistiche.jpg`
+  - `03-profilo.jpg`
+
+  Vanno rifatti dalla build corrente: mostrano ancora "Buonasera", rimosso
+  dalla schermata Oggi il 30 settembre. Le catture grezze `store/IMG_*.jpg`
+  (576×1280) sono più alte del rapporto massimo 9:16 e non vanno caricate.
