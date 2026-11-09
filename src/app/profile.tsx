@@ -13,7 +13,7 @@ import { NumberStepper } from '@/components/ui/number-stepper';
 import { Screen, ScreenScroll } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { NavRow, SettingsSection, SwitchRow } from '@/components/ui/settings-row';
-import { Sheet, SheetAction } from '@/components/ui/sheet';
+import { Sheet } from '@/components/ui/sheet';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { EFFORT_SCALE_LABELS, type EffortScale, type WeightUnit } from '@/db/enums';
@@ -25,7 +25,7 @@ import {
   openExactAlarmSettings,
 } from '@/features/timer/rest-timer';
 import { formatRest } from '@/lib/format';
-import { formatWeight, UNIT_LABEL, WEIGHT_STEP } from '@/lib/units';
+import { formatWeight, UNIT_LABEL } from '@/lib/units';
 import { Surface } from '@/components/ui/surface';
 import { useSettings } from '@/store/settings';
 import { ACCENTS, ACCENT_LABELS, capsule, useTheme, type AccentKey } from '@/theme';

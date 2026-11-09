@@ -32,6 +32,8 @@ export function PlateSheet({
 
   useEffect(() => {
     if (targetWeight === null) return;
+    // Il carico di partenza arriva a ogni apertura e poi lo si modifica a mano.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplay(fromKg(targetWeight, settings.unit));
   }, [targetWeight, settings.unit]);
 

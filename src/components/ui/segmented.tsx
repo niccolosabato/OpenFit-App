@@ -51,10 +51,10 @@ export function Segmented<T extends string | number>({
     if (cell === 0) return;
     const target = cell * index;
     if (placed.current) {
-      offset.value = withSpring(target, theme.motion.spring);
+      offset.set(withSpring(target, theme.motion.spring));
     } else {
       placed.current = true;
-      offset.value = target;
+      offset.set(target);
     }
   }, [cell, index, offset, theme.motion.spring]);
 

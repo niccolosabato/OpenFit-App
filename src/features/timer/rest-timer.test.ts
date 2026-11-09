@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// `vi.mock` viene sollevato sopra gli import da vitest: l'ordine qui sotto è
+// solo di lettura.
+import { cancelScheduled, scheduleRestEnd } from './local-notifications';
+import { useRestTimer } from './rest-timer';
+
 vi.mock('./local-notifications', () => ({
   cancelScheduled: vi.fn(),
   scheduleRestEnd: vi.fn(),
@@ -17,9 +22,6 @@ vi.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Medium: 'medium' },
   NotificationFeedbackType: { Success: 'success' },
 }));
-
-import { cancelScheduled, scheduleRestEnd } from './local-notifications';
-import { useRestTimer } from './rest-timer';
 
 const scheduleMock = vi.mocked(scheduleRestEnd);
 const cancelMock = vi.mocked(cancelScheduled);

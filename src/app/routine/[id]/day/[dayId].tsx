@@ -47,7 +47,7 @@ import { useTheme } from '@/theme';
 export default function RoutineDayScreen() {
   const theme = useTheme();
   const { settings } = useSettings();
-  const { id, dayId } = useLocalSearchParams<{ id: string; dayId: string }>();
+  const { dayId } = useLocalSearchParams<{ id: string; dayId: string }>();
 
   // Lo scroll va passato al riordino, che deve poterlo far scorrere da sé
   // mentre il dito sta contro un bordo.

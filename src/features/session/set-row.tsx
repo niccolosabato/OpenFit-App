@@ -6,11 +6,18 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } fr
 import { Surface } from '@/components/ui/surface';
 import { Text, typography } from '@/components/ui/text';
 import { usePressScale } from '@/components/ui/use-press-scale';
-import { SET_TYPE_BADGE, usesDuration, usesReps, usesWeight, type SetType, type TrackingType } from '@/db/enums';
+import {
+  SET_TYPE_BADGE,
+  usesDuration,
+  usesReps,
+  usesWeight,
+  type EffortScale,
+  type TrackingType,
+  type WeightUnit,
+} from '@/db/enums';
 import type { SessionSet } from '@/db/schema';
 import { formatDuration } from '@/lib/format';
 import { formatNumber, fromKg, toKg } from '@/lib/units';
-import type { EffortScale, WeightUnit } from '@/db/enums';
 import { useTheme } from '@/theme';
 import { useSetStopwatch, useSetStopwatchStore } from '@/features/timer/set-stopwatch';
 import type { SetValues } from './actions';
@@ -112,11 +119,10 @@ export function SetRow({
   // annullando invece di confermare. Il valore ottimistico copre quel buco e
   // si scioglie appena il dato vero lo raggiunge.
   const [pendingDone, setPendingDone] = useState<boolean | null>(null);
+  // Sciolto durante il render, non in un effetto: così il valore ottimistico
+  // e quello vero non convivono mai in un fotogramma già disegnato.
+  if (pendingDone !== null && pendingDone === set.isCompleted) setPendingDone(null);
   const done = pendingDone ?? set.isCompleted;
-
-  useEffect(() => {
-    if (pendingDone !== null && pendingDone === set.isCompleted) setPendingDone(null);
-  }, [pendingDone, set.isCompleted]);
 
   useEffect(() => {
     if (focusedRef.current) return;

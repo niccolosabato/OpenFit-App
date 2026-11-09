@@ -52,7 +52,11 @@ export function useRestCountdown(): {
     ? pausedRemaining
     : endsAt === null
       ? 0
-      : Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      : // Voluto: il tick forza il render e il residuo va riletto dall'orologio
+        // ogni volta. Verificato sull'output del compilatore, che qui non
+        // memorizza niente (il valore è ricalcolato a ogni render).
+        // eslint-disable-next-line react-hooks/purity
+        Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
 
   useEffect(() => {
     if (endsAt === null || remaining > 0 || firedRef.current) return;

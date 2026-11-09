@@ -152,6 +152,9 @@ export default function RootLayout() {
     try {
       bootstrapDatabase(db);
     } catch (e) {
+      // Il bootstrap è sincrono e va fatto una volta sola dopo le migrazioni:
+      // l'errore non si può ricavare durante il render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBootError(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setReady(true);

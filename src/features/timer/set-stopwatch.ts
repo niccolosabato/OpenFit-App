@@ -61,6 +61,8 @@ export function useSetStopwatch(setId: string): { running: boolean; elapsed: num
 
   useEffect(() => {
     if (!running || startedAt === null) {
+      // Azzeramento del cronometro quando si ferma: va col resto dell'effetto.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setElapsed(0);
       return;
     }

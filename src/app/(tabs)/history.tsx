@@ -15,6 +15,7 @@ import { Stat } from '@/components/ui/stat';
 import { Surface } from '@/components/ui/surface';
 import { Text } from '@/components/ui/text';
 import { sessionHistoryQuery } from '@/db/queries/sessions';
+import { useToday } from '@/hooks/use-today';
 import { formatDurationLong, formatTime, pluralize } from '@/lib/format';
 import { formatVolume } from '@/lib/units';
 import { useSettings } from '@/store/settings';
@@ -40,7 +41,7 @@ export default function HistoryScreen() {
   const { data } = useLiveQuery(sessionHistoryQuery());
   const sessions = useMemo(() => data ?? [], [data]);
 
-  const now = new Date();
+  const now = new Date(useToday());
 
   return (
     <Screen

@@ -82,12 +82,18 @@ export function useLiveRows<T extends LiveSelect>(
   const primed = useRef<{ key: string; rows: Awaited<T>; at: Date | undefined } | null>(null);
 
   const key = deps.map(String).join(' ');
+  // Cache letta e scritta durante il render, di proposito: il compilatore React
+  // per questo salta l'hook, che gira come React normale. Riscriverlo per farlo
+  // compilare darebbe solo un guadagno di prestazioni, sul caricamento dati della
+  // seduta in corso, dove un errore costerebbe più di quanto si guadagna.
+  /* eslint-disable react-hooks/refs */
   if (primed.current === null || primed.current.key !== key) {
     primed.current = { key, rows: readNow(query), at: updatedAt };
   }
 
   const live = updatedAt !== undefined && updatedAt !== primed.current.at;
   return live ? data : primed.current.rows;
+  /* eslint-enable react-hooks/refs */
 }
 
 /**

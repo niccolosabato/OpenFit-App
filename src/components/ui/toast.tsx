@@ -7,7 +7,7 @@
  */
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
@@ -44,7 +44,9 @@ export function ToastHost() {
 
   // `Animated` di React Native, non Reanimated: qui basta una dissolvenza e
   // non vale la pena essere i primi in questo progetto a dipendere dai worklet.
-  const progress = useRef(new Animated.Value(0)).current;
+  // Creato una volta sola e mai sostituito: tenerlo in uno stato invece che in
+  // un ref permette al compilatore di leggerlo durante il render.
+  const [progress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!message) return;

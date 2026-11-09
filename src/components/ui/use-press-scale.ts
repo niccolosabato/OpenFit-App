@@ -19,10 +19,10 @@ export function usePressScale() {
   return {
     style,
     onPressIn: () => {
-      scale.value = withTiming(motion.pressScale, { duration: motion.duration.fast });
+      scale.set(withTiming(motion.pressScale, { duration: motion.duration.fast }));
     },
     onPressOut: () => {
-      scale.value = withSpring(1, motion.spring);
+      scale.set(withSpring(1, motion.spring));
     },
   };
 }

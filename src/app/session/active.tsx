@@ -1,4 +1,4 @@
-import DateTimePicker from '@expo/ui/community/datetime-picker';
+import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -1013,7 +1013,7 @@ export default function ActiveSessionScreen() {
       {/* ──────────────────────────────────────────── peso corporeo ── */}
       <Sheet visible={bodyweightOpen} onClose={() => setBodyweightOpen(false)} title="Peso corporeo" scrollable={false}>
         <Text variant="caption" tone="dim">
-          Parte dall'ultima misurazione registrata. Serve a contare il volume degli esercizi a corpo libero e zavorrati.
+          Parte dall&apos;ultima misurazione registrata. Serve a contare il volume degli esercizi a corpo libero e zavorrati.
         </Text>
         <NumberStepper
           label="Peso"

@@ -122,7 +122,7 @@ export function ExerciseList({
     [search, muscle, equipment, favoritesOnly],
   );
   const { data } = useLiveQuery(query, [search, muscle, equipment, favoritesOnly]);
-  const items = data ?? [];
+  const items = useMemo(() => data ?? [], [data]);
 
   const hasFilters = Boolean(search || muscle || equipment || favoritesOnly);
 

@@ -20,6 +20,7 @@ import { MUSCLE_GROUPS, MUSCLE_GROUP_LABELS } from '@/db/enums';
 import { bucketByWeek, setCountsByGroup, weeklyStreak } from '@/features/stats/aggregate';
 import { statSetsQuery, toStatSets } from '@/features/stats/queries';
 import { pluralize } from '@/lib/format';
+import { useToday } from '@/hooks/use-today';
 import { formatVolume } from '@/lib/units';
 import { useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
@@ -40,13 +41,17 @@ export default function StatsScreen() {
   const { settings } = useSettings();
   const [weeks, setWeeks] = useState<number>(12);
 
-  const since = useMemo(() => new Date(Date.now() - weeks * WEEK_MS), [weeks]);
+  // La finestra parte da `useToday()`, stabile per tutta la giornata: con
+  // `Date.now()` qui il compilatore ricalcolava `since` a ogni render, e la
+  // query viva ripartiva in un ciclo senza fine.
+  const today = useToday();
+  const since = useMemo(() => new Date(today - weeks * WEEK_MS), [today, weeks]);
   const { data } = useLiveQuery(useMemo(() => statSetsQuery(since), [since]), [since]);
   const sets = useMemo(() => toStatSets(data), [data]);
 
   const buckets = useMemo(
-    () => bucketByWeek(sets, { weeks, now: Date.now(), firstDayOfWeek: settings.firstDayOfWeek }),
-    [sets, weeks, settings.firstDayOfWeek],
+    () => bucketByWeek(sets, { weeks, now: today, firstDayOfWeek: settings.firstDayOfWeek }),
+    [sets, weeks, today, settings.firstDayOfWeek],
   );
 
   const currentWeek = buckets[buckets.length - 1];

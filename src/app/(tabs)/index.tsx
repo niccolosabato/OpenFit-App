@@ -23,6 +23,7 @@ import { routineDaysWithCountQuery, routineListQuery } from '@/db/queries/routin
 import { sessionHistoryQuery, startEmptySession, startSessionFromDay } from '@/db/queries/sessions';
 import { exercises } from '@/db/schema';
 import { startWorkout } from '@/features/session/start';
+import { useToday } from '@/hooks/use-today';
 import { formatDurationLong, formatSessionDate, pluralize } from '@/lib/format';
 import { formatVolume } from '@/lib/units';
 import { useSettings } from '@/store/settings';
@@ -31,7 +32,7 @@ import { capsule, useTheme } from '@/theme';
 export default function TodayScreen() {
   const theme = useTheme();
   const { settings } = useSettings();
-  const now = new Date();
+  const today = useToday();
 
   const { data: exerciseCount } = useLiveQuery(db.select({ value: count() }).from(exercises));
   const { data: routineRows } = useLiveQuery(routineListQuery());
@@ -45,8 +46,8 @@ export default function TodayScreen() {
     [firstRoutine?.id],
   );
 
-  const days = dayRows ?? [];
-  const sessions = sessionRows ?? [];
+  const days = useMemo(() => dayRows ?? [], [dayRows]);
+  const sessions = useMemo(() => sessionRows ?? [], [sessionRows]);
   const lastSession = sessions[0];
 
   /**
@@ -74,14 +75,14 @@ export default function TodayScreen() {
     // gli allenamenti della settimana devono contarli dalla stessa mezzanotte,
     // o una delle due sembra sbagliata.
     const weekStartsOn = (settings.firstDayOfWeek % 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6;
-    const from = startOfWeek(new Date(), { weekStartsOn }).getTime();
+    const from = startOfWeek(today, { weekStartsOn }).getTime();
     const inWeek = sessions.filter((session) => session.startedAt.getTime() >= from);
     return {
       count: inWeek.length,
       volume: inWeek.reduce((total, session) => total + session.totalVolume, 0),
       seconds: inWeek.reduce((total, session) => total + (session.durationSeconds ?? 0), 0),
     };
-  }, [sessions, settings.firstDayOfWeek]);
+  }, [sessions, settings.firstDayOfWeek, today]);
 
   const goal = Math.max(1, settings.weeklySessionGoal);
 
@@ -92,7 +93,7 @@ export default function TodayScreen() {
         <ScreenHeader
           // Il nome fa da titolo e la data scende nel sottotitolo.
           title={settings.userName?.trim() || 'Oggi'}
-          subtitle={format(now, 'EEEE d MMMM', { locale: it })}
+          subtitle={format(today, 'EEEE d MMMM', { locale: it })}
           actions={[{ icon: 'cog-outline', label: 'Profilo', onPress: () => router.push('/profile') }]}
         />
       }

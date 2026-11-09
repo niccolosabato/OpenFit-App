@@ -64,6 +64,8 @@ export function RoutineSetEditor({
   // mostrerebbe la serie precedente.
   useEffect(() => {
     if (!set) return;
+    // Bozza ricaricata all'apertura del foglio: sincronizzazione voluta.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSetType(set.setType);
     setTechnique(set.technique);
     setRepsMin(set.targetRepsMin);
